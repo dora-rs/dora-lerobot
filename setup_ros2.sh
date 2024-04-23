@@ -1,7 +1,7 @@
 # setup ros2
 
-docker run --network=host -e DISPLAY=${DISPLAY} -v $(pwd):/dora-benchmark -it osrf/ros:humble-desktop
 
+## Within the docker container
 
 ## Source: https://docs.trossenrobotics.com/interbotix_xsarms_docs/ros_interface/ros2/software_setup.html
 
@@ -9,11 +9,15 @@ sudo apt update
 
 sudo apt install curl vim git -y
 
-curl 'https://raw.githubusercontent.com/Interbotix/interbotix_ros_manipulators/main/interbotix_ros_xsarms/install/amd64/xsarm_amd64_install.sh' > xsarm_amd64_install.sh
+curl 'https://raw.githubusercontent.com/Interbotix/interbotix_ros_manipulators/humble/interbotix_ros_xsarms/install/amd64/xsarm_amd64_install.sh' > xsarm_amd64_install.sh
+
+source /opt/ros/$ROS_DISTRO/setup.bash
 
 chmod +x xsarm_amd64_install.sh
 
-./xsarm_amd64_install.sh -d humble
+./xsarm_amd64_install.sh -d humble -n
+
+## Andswer
 
 ## Follow CLI interface withotu matlab
 
@@ -30,21 +34,21 @@ ros2 pkg list | grep interbotix
 
 ros2 launch interbotix_xsarm_descriptions xsarm_description.launch.py robot_model:=wx200 use_joint_pub_gui:=true
 
-ros2 service call /vx250/torque_enable interbotix_xs_msgs/srv/TorqueEnable "{cmd_type: 'group', name: 'all', enable: false}"
+# ros2 service call /vx250/torque_enable interbotix_xs_msgs/srv/TorqueEnable "{cmd_type: 'group', name: 'all', enable: false}"
 
-ros2 service call /vx250/torque_enable interbotix_xs_msgs/srv/TorqueEnable "{cmd_type: 'group', name: 'all', enable: true}"
+# ros2 service call /vx250/torque_enable interbotix_xs_msgs/srv/TorqueEnable "{cmd_type: 'group', name: 'all', enable: true}"
 
-vim /root/interbotix_ws/src/interbotix_ros_toolboxes/interbotix_xs_toolbox/interbotix_xs_modules/interbotix_xs_modules/xs_robot/arm.py
+# vim /root/interbotix_ws/src/interbotix_ros_toolboxes/interbotix_xs_toolbox/interbotix_xs_modules/interbotix_xs_modules/xs_robot/arm.py
 
-#  Change self.T_sb = mr.FKinSpace(self.robot_des.M, self.robot_des.Slist, self.joint_commands) to self.T_sb = None. This prevents the code from calculating FK at every step which delays teleoperation.
+# #  Change self.T_sb = mr.FKinSpace(self.robot_des.M, self.robot_des.Slist, self.joint_commands) to self.T_sb = None. This prevents the code from calculating FK at every step which delays teleoperation.
 
-colcon build
+# colcon build
 
-# ros2 launch ...
+# # ros2 launch ...
 
-ros2 launch ~/interbotix_ws/src/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_control/launch/xsarm_control.launch.py robot_model:=wx250s  use_sim:=true
+# ros2 launch ~/interbotix_ws/src/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_control/launch/xsarm_control.launch.py robot_model:=wx250s  use_sim:=true
 
 
-# from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
-# from interbotix_xs_msgs.msg import JointSingleCommand
+# # from interbotix_xs_modules.xs_robot.arm import InterbotixManipulatorXS
+# # from interbotix_xs_msgs.msg import JointSingleCommand
 
