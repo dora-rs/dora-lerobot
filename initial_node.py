@@ -29,6 +29,12 @@ turtle_twist_topic = ros2_node.create_topic(
 )
 twist_writer = ros2_node.create_publisher(turtle_twist_topic)
 
+gripper_topic = ros2_node.create_topic(
+    "/robot_model_puppet/commands/joint_single",
+    "interbotix_xs_msgs/JointSingleCommand",
+    topic_qos,
+)
+gripper_writer = ros2_node.create_publisher(gripper_topic)
 # Create a listener to pose topic
 turtle_pose_topic = ros2_node.create_topic(
     "/robot_model_master/joint_states", "sensor_msgs/JointState", topic_qos
@@ -49,15 +55,29 @@ for event in dora_node:
     # ROS2 Event
     if event_kind == "external":
         pose = event.inner()[0]
+
         values = np.array(pose["position"].values, dtype=np.float32)
-        twist_writer.publish(
+        # gripper = values[]
+        # print(values, flush=True)
+        gripper_writer.publish(
             pa.array(
                 [
                     {
-                        "name": "all",
-                        "cmd": values,
+                        "name": "gripper",
+                        "cmd": values[6],
                     }
                 ]
             ),
         )
+        twist_writer.publish(
+            pa.array(
+                [
+                    {
+                        "name": "arm",
+                        "cmd": values[:6],
+                    }
+                ]
+            ),
+        )
+
     # dora_node.send_output("turtle_pose", event.inner())

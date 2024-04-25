@@ -3,7 +3,7 @@
 ## Getting started
 
 ```bash
-docker run  --name ros2-aloha --network=host -e DISPLAY=${DISPLAY} -v /dev:/dev -v $(pwd):/dora-aloha -it osrf/ros:humble-desktop
+docker run --privileged --name ros2-aloha --network=host -e DISPLAY=${DISPLAY} -v /dev:/dev -v $(pwd):/dora-aloha -it osrf/ros:humble-desktop
 
 
 ## In the container
