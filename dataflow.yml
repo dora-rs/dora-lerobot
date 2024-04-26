@@ -1,15 +1,4 @@
 nodes:
   - id: control
     custom:
-      source: initial_node.py
-      inputs:
-        tick: dora/timer/millis/500
-      outputs:
-        - log
-  - id: rerun
-    custom:
-      source: dora-rerun
-      inputs:
-        textlog: control/log
-    envs:
-      RERUN_MEMORY_LIMIT: 25%
+      source: teleop.py

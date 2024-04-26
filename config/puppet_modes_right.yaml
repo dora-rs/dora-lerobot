@@ -10,8 +10,8 @@ groups:
 
 singles:
   gripper:
-    operating_mode: current_based_position
-    profile_type: velocity
-    profile_velocity: 0
-    profile_acceleration: 0
+    operating_mode: linear_position
+    profile_type: time
+    profile_velocity: 200
+    profile_acceleration: 300
     torque_enable: true

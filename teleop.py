@@ -1,14 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import dora
 from dora import Node
 import pyarrow as pa
 import numpy as np
 
-CHECK_TICK = 50
 
-# Create a ROS2 Context
 ros2_context = dora.experimental.ros2_bridge.Ros2Context()
 ros2_node = ros2_context.new_node(
     "robot_model_master",
@@ -22,32 +17,43 @@ topic_qos = dora.experimental.ros2_bridge.Ros2QosPolicies(
 )
 
 # Create a publisher to cmd_vel topic
-turtle_twist_topic = ros2_node.create_topic(
-    "/robot_model_puppet/commands/joint_group",
-    "interbotix_xs_msgs/JointGroupCommand",
-    topic_qos,
+puppet_arm_command = ros2_node.create_publisher(
+    ros2_node.create_topic(
+        "/robot_model_puppet/commands/joint_group",
+        "interbotix_xs_msgs/JointGroupCommand",
+        topic_qos,
+    )
 )
-twist_writer = ros2_node.create_publisher(turtle_twist_topic)
 
-gripper_topic = ros2_node.create_topic(
-    "/robot_model_puppet/commands/joint_single",
-    "interbotix_xs_msgs/JointSingleCommand",
-    topic_qos,
+gripper_command = ros2_node.create_publisher(
+    ros2_node.create_topic(
+        "/robot_model_puppet/commands/joint_single",
+        "interbotix_xs_msgs/JointSingleCommand",
+        topic_qos,
+    )
 )
-gripper_writer = ros2_node.create_publisher(gripper_topic)
 # Create a listener to pose topic
-turtle_pose_topic = ros2_node.create_topic(
-    "/robot_model_master/joint_states", "sensor_msgs/JointState", topic_qos
+master_state = ros2_node.create_subscription(
+    ros2_node.create_topic(
+        "/robot_model_master/joint_states", "sensor_msgs/JointState", topic_qos
+    )
 )
-pose_reader = ros2_node.create_subscription(turtle_pose_topic)
 
 # Create a dora node
 dora_node = Node()
 
 # Listen for both stream on the same loop as Python does not handle well multiprocessing
-dora_node.merge_external_events(pose_reader)
+dora_node.merge_external_events(master_state)
 
-print("looping", flush=True)
+PUPPET_GRIPPER_MAX = 0.115
+PUPPET_GRIPPER_MIN = 0.0965
+
+MASTER_GRIPPER_MAX = 0.8
+MASTER_GRIPPER_MIN = -0.1
+
+RATIO = (PUPPET_GRIPPER_MAX - PUPPET_GRIPPER_MIN) / (
+    MASTER_GRIPPER_MAX - MASTER_GRIPPER_MIN
+)
 
 for event in dora_node:
     event_kind = event["kind"]
@@ -57,19 +63,22 @@ for event in dora_node:
         pose = event.inner()[0]
 
         values = np.array(pose["position"].values, dtype=np.float32)
-        # gripper = values[]
-        # print(values, flush=True)
-        gripper_writer.publish(
+        values[6] = np.clip(
+            (values[6] - MASTER_GRIPPER_MIN) * RATIO + PUPPET_GRIPPER_MIN,
+            PUPPET_GRIPPER_MIN,
+            PUPPET_GRIPPER_MAX,
+        )
+        gripper_command.publish(
             pa.array(
                 [
                     {
                         "name": "gripper",
-                        "cmd": values[6],
+                        "cmd": np.float32(values[6]),
                     }
                 ]
             ),
         )
-        twist_writer.publish(
+        puppet_arm_command.publish(
             pa.array(
                 [
                     {
@@ -79,5 +88,3 @@ for event in dora_node:
                 ]
             ),
         )
-
-    # dora_node.send_output("turtle_pose", event.inner())
