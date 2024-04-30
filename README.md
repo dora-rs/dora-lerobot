@@ -3,6 +3,8 @@
 ## Teleop Getting started
 
 ```bash
+sudo apt install libudev-dev
+
 cargo run -p aloha-teleop --release
 ```
 
@@ -41,8 +43,8 @@ cargo run -p aloha-teleop --release
 > You have an example of the given rules in `hardware_config.yml`.
 
 ```bash
-sudo cp hardware_config/99-interbotix-udev /etc/udev/rules.d
-# sudo cp hardware_config/99-fixed-interbotix-udev /etc/udev/rules.d
+sudo cp hardware_config/99-interbotix-udev.rules /etc/udev/rules.d
+sudo cp hardware_config/99-fixed-interbotix-udev.rules /etc/udev/rules.d
 ```
 
 - To apply the changes, run `sudo udevadm control --reload && sudo udevadm trigger`

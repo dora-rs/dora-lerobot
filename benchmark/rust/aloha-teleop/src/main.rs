@@ -3,28 +3,6 @@ use rustypot::{device::xm, DynamixelSerialIO};
 use serialport::SerialPort;
 use std::{sync::mpsc, time::Duration};
 
-fn main_singlethread(
-    io: DynamixelSerialIO,
-    mut master_serial_port: Box<dyn SerialPort>,
-    mut puppet_serial_port: Box<dyn SerialPort>,
-) -> Result<()> {
-    loop {
-        let pos = xm::sync_read_present_position(
-            &io,
-            master_serial_port.as_mut(),
-            &[1, 2, 3, 4, 5, 6, 7, 8],
-        )
-        .expect("Communication error");
-        xm::sync_write_goal_position(
-            &io,
-            puppet_serial_port.as_mut(),
-            &[1, 2, 3, 4, 5, 6, 7, 8],
-            &pos,
-        )
-        .expect("Communication error");
-    }
-}
-
 fn main_multithreaded(
     io: DynamixelSerialIO,
     mut master_serial_port: Box<dyn SerialPort>,
@@ -54,7 +32,7 @@ fn main_multithreaded(
 }
 
 fn main() -> Result<()> {
-    let mut master_serial_port = serialport::new("/dev/ttyDXL_master_right", 1_000_000)
+    let master_serial_port = serialport::new("/dev/ttyDXL_master_right", 1_000_000)
         .timeout(Duration::from_millis(200))
         .open()
         .expect("Failed to open port");
@@ -62,7 +40,6 @@ fn main() -> Result<()> {
         .timeout(Duration::from_millis(200))
         .open()
         .expect("Failed to open port");
-
     let io = DynamixelSerialIO::v2();
     xm::sync_write_torque_enable(
         &io,

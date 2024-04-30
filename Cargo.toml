@@ -1,2 +1,2 @@
 [workspace]
-members = ["benchmark/rust/aloha-teleop"]
+members = ["benchmark/rust/aloha-teleop", "dxl-xm-client"]
