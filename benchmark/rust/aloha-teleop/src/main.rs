@@ -3,6 +3,12 @@ use rustypot::{device::xm, DynamixelSerialIO};
 use serialport::SerialPort;
 use std::{sync::mpsc, time::Duration};
 
+static MAX_MASTER_GRIPER: u32 = 2554;
+static MAX_PUPPET_GRIPER: u32 = 3145;
+
+static MIN_MASTER_GRIPER: u32 = 1965;
+static MIN_PUPPET_GRIPER: u32 = 2500;
+
 fn main_multithreaded(
     io: DynamixelSerialIO,
     mut master_serial_port: Box<dyn SerialPort>,
@@ -13,18 +19,24 @@ fn main_multithreaded(
         let pos = xm::sync_read_present_position(
             &io,
             master_serial_port.as_mut(),
-            &[1, 2, 3, 4, 5, 6, 7, 8],
+            &[1, 2, 3, 4, 5, 6, 7, 8, 9],
         )
         .expect("Communication error");
         tx.send(pos).unwrap();
     });
     let io = DynamixelSerialIO::v2();
     while let Ok(pos) = rx.recv() {
+        // Compute linear interpolation for gripper as input and output range missmatch
+        let gripper = (pos[8] - MIN_MASTER_GRIPER) * (MAX_PUPPET_GRIPER - MIN_PUPPET_GRIPER)
+            / (MAX_MASTER_GRIPER - MIN_MASTER_GRIPER)
+            + MIN_PUPPET_GRIPER;
+        let mut target = pos;
+        target[8] = gripper;
         xm::sync_write_goal_position(
             &io,
             puppet_serial_port.as_mut(),
-            &[1, 2, 3, 4, 5, 6, 7, 8],
-            &pos,
+            &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+            &target,
         )
         .expect("Communication error");
     }
@@ -44,8 +56,8 @@ fn main() -> Result<()> {
     xm::sync_write_torque_enable(
         &io,
         puppet_serial_port.as_mut(),
-        &[1, 2, 3, 4, 5, 6, 7, 8],
-        &[1; 8],
+        &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+        &[1; 9],
     )
     .expect("Communication error");
 

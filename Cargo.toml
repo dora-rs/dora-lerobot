@@ -1,2 +1,3 @@
 [workspace]
 members = ["benchmark/rust/aloha-teleop", "dxl-xm-client"]
+resolver = "2"
