@@ -47,10 +47,9 @@ cargo run -p aloha-teleop --release
 
 ## Support Matrix
 
-|                               | dora-aloha            |
-| ----------------------------- | --------------------- |
-| **Supported Platforms (x86)** | Windows, macOS, Linux |
-| **Supported Platforms (ARM)** | Linux(RPI4)           |
+This application should be cross-platformed: Linux, Windows, MacOS.
+
+Please raise an issue if not.
 
 ## Documentation
 
