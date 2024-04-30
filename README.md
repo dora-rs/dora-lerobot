@@ -38,6 +38,13 @@ cargo run -p aloha-teleop --release
   4. This will make sure the right master robot is _always_ binding to `ttyDXL_master_right`
   5. Repeat with the rest of 3 arms.
 
+> You have an example of the given rules in `hardware_config.yml`.
+
+```bash
+sudo cp hardware_config/99-interbotix-udev /etc/udev/rules.d
+# sudo cp hardware_config/99-fixed-interbotix-udev /etc/udev/rules.d
+```
+
 - To apply the changes, run `sudo udevadm control --reload && sudo udevadm trigger`
 - If successful, you should be able to find `ttyDXL*` in your `/dev`
 
