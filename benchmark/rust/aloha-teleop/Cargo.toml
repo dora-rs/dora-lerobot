@@ -8,6 +8,6 @@ edition = "2021"
 [dependencies]
 
 serialport = "4.2.0"
-rustypot = { path = "../rustypot" }
+rustypot = { git = "https://github.com/haixuanTao/rustypot" }
 tokio = { version = "1.37.0", features = ["full"] }
 eyre = "0.6.12"

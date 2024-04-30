@@ -1,2 +1,2 @@
 [workspace]
-members = ["benchmark/rust/aloha-teleop", "benchmark/rust/rustypot"]
+members = ["benchmark/rust/aloha-teleop"]
