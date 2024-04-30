@@ -11,7 +11,7 @@ groups:
 singles:
   gripper:
     operating_mode: linear_position
-    profile_type: time
-    profile_velocity: 200
-    profile_acceleration: 300
+    profile_type: velocity
+    profile_velocity: 0
+    profile_acceleration: 0
     torque_enable: true

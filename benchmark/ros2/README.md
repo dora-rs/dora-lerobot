@@ -1,12 +1,53 @@
 # `dora-rs` powered ALOHA
 
-## Teleop Getting started
+## Getting started
 
 ```bash
-cargo run -p aloha-teleop --release
+docker run --privileged --name ros2-aloha --network=host -e DISPLAY=${DISPLAY} -v /dev:/dev -v $(pwd):/dora-aloha -it osrf/ros:humble-desktop
+
+
+## In the container
+./dora-aloha/setup_ros2.sh # Run it once
 ```
 
-### Hardware Installation
+## To activate the controller, just do:
+
+```bash
+## In the container
+ros2 launch ~/interbotix_ws/src/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_control/launch/xsarm_control.launch.py robot_name:=robot_model_master robot_model:=aloha_wx250s mode_configs:=/dora-aloha/benchmark/ros2/config/master_modes_right.yaml &
+ros2 launch ~/interbotix_ws/src/interbotix_ros_manipulators/interbotix_ros_xsarms/interbotix_xsarm_control/launch/xsarm_control.launch.py robot_name:=robot_model_puppet robot_model:=vx300s mode_configs:=/dora-aloha/benchmark/ros2/config/puppet_modes_right.yaml &
+
+## In case you want to restart the controller, just do:
+pkill -f robot
+```
+
+## To run dora
+
+Outside of the controller docker:
+
+### Setup
+
+```bash
+## Setup
+git clone https://github.com/haixuanTao/ament_prefix_path.git $HOME/ros2-ament-prefix-path
+export AMENT_PREFIX_PATH=$HOME/ros2-ament-prefix-path # <- holding ros2 message deserialization
+```
+
+### Start
+
+```bash
+## Start
+dora up
+dora start dataflow.yml --attach
+```
+
+## Result
+
+I'm able to get about 100 Hz for teleoperation.
+
+The improvement probably comes from the ros2 read/write written in C++.
+
+## Hardware Installation
 
 - To check if the robot is connected, install dynamixel wizard [here](https://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_wizard2/)
 - Dynamixel wizard is a very helpful debugging tool that connects to individual motors of the robot. It allows
