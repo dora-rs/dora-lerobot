@@ -8,7 +8,8 @@ examples/**/*.txt
 # Remove arrow file from dora-record
 **/*.arrow
 *.pt
-
+*.parquet
+*.wav
 # Removing images.
 *.jpg
 *.png
