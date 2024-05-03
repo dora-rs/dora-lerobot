@@ -1,6 +1,5 @@
 import pyarrow as pa
 from dora import DoraStatus
-from time import sleep
 
 
 class Operator:

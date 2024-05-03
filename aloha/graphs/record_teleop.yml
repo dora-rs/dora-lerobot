@@ -22,3 +22,11 @@ nodes:
       envs:
         IMAGE_WIDTH: 1280
         IMAGE_HEIGHT: 720
+  
+  - id: webcam
+    custom:
+      source: ../nodes/realsense_node.py
+      inputs:
+        tick: dora/timer/millis/20
+      outputs:
+        - image
