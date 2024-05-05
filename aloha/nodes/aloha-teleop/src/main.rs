@@ -4,6 +4,7 @@ use rustypot::{device::xm, DynamixelSerialIO};
 use serialport::SerialPort;
 use std::{
     sync::mpsc,
+    thread::sleep,
     time::{Duration, Instant},
 };
 
@@ -40,6 +41,7 @@ fn main_multithreaded(
     let (tx_dora, rx_dora) = mpsc::channel();
     std::thread::spawn(move || loop {
         let now = Instant::now();
+        sleep(Duration::from_millis(5)); // TODO: Fix weird behavior when refresh rate is too high
         let pos = xm::sync_read_present_position(
             &io,
             master_serial_port.as_mut(),
