@@ -41,7 +41,6 @@ fn main_multithreaded(
     let (tx_dora, rx_dora) = mpsc::channel();
     std::thread::spawn(move || loop {
         let now = Instant::now();
-        sleep(Duration::from_millis(5)); // TODO: Fix weird behavior when refresh rate is too high
         let pos = xm::sync_read_present_position(
             &io,
             master_serial_port.as_mut(),
@@ -87,11 +86,11 @@ fn main_multithreaded(
 fn main() -> Result<()> {
     let args = Args::parse();
     let master_serial_port = serialport::new(args.master_path, args.master_baudrate)
-        .timeout(Duration::from_millis(200))
+        .timeout(Duration::from_millis(2))
         .open()
         .expect("Failed to open port");
     let mut puppet_serial_port = serialport::new(args.puppet_path, args.puppet_baudrate)
-        .timeout(Duration::from_millis(200))
+        .timeout(Duration::from_millis(2))
         .open()
         .expect("Failed to open port");
     let io = DynamixelSerialIO::v2();
