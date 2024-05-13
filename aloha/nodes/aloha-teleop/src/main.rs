@@ -1,10 +1,9 @@
 use dora_node_api::{dora_core::config::DataId, DoraNode, IntoArrow, MetadataParameters};
-use eyre::Result;
+use eyre::{Context, Result};
 use rustypot::{device::xm, DynamixelSerialIO};
 use serialport::SerialPort;
 use std::{
     sync::mpsc,
-    thread::sleep,
     time::{Duration, Instant},
 };
 
@@ -46,13 +45,13 @@ fn main_multithreaded(
             master_serial_port.as_mut(),
             &[1, 2, 3, 4, 5, 6, 7, 8, 9],
         )
-        .expect("Communication error");
+        .expect("Read Communication error");
         tx.send((now, pos)).unwrap();
     });
     let io = DynamixelSerialIO::v2();
 
     let join = std::thread::spawn(move || {
-        while let Ok((now, pos)) = rx.recv() {
+        while let Ok((_now, pos)) = rx.recv() {
             // Compute linear interpolation for gripper as input and output range missmatch
             let gripper = (pos[8] - MIN_MASTER_GRIPER) * (MAX_PUPPET_GRIPER - MIN_PUPPET_GRIPER)
                 / (MAX_MASTER_GRIPER - MIN_MASTER_GRIPER)
@@ -65,8 +64,8 @@ fn main_multithreaded(
                 &[1, 2, 3, 4, 5, 6, 7, 8, 9],
                 &target,
             )
-            .expect("Communication error");
-            println!("elapsed time: {:?}", now.elapsed());
+            .expect("Write Communication error");
+            // println!("elapsed time: {:?}", now.elapsed());
             tx_dora.send(target).unwrap();
         }
     });
@@ -88,11 +87,11 @@ fn main() -> Result<()> {
     let master_serial_port = serialport::new(args.master_path, args.master_baudrate)
         .timeout(Duration::from_millis(2))
         .open()
-        .expect("Failed to open port");
+        .context("Failed to open port")?;
     let mut puppet_serial_port = serialport::new(args.puppet_path, args.puppet_baudrate)
         .timeout(Duration::from_millis(2))
         .open()
-        .expect("Failed to open port");
+        .context("Failed to open port")?;
     let io = DynamixelSerialIO::v2();
     xm::sync_write_torque_enable(
         &io,
