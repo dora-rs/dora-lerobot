@@ -1,4 +1,4 @@
-use dora_node_api::{dora_core::config::DataId, DoraNode, MetadataParameters};
+use dora_node_api::{dora_core::config::DataId, DoraNode, IntoArrow, MetadataParameters};
 use eyre::Result;
 use rustypot::{device::xl330, DynamixelSerialIO};
 use serialport::SerialPort;
