@@ -41,7 +41,7 @@ fn main_multithreaded(
     std::thread::spawn(move || loop {
         let now = Instant::now();
         let pos =
-            xm::sync_read_present_position(&io, master_serial_port.as_mut(), &[1, 2, 3, 4, 6])
+            xl330::sync_read_present_position(&io, master_serial_port.as_mut(), &[1, 2, 3, 4, 6])
                 .expect("Communication error");
         tx.send((now, pos)).unwrap();
     });
@@ -55,8 +55,13 @@ fn main_multithreaded(
             // + MIN_PUPPET_GRIPER;
             // let mut target = pos;
             // target[8] = gripper;
-            xm::sync_write_goal_position(&io, puppet_serial_port.as_mut(), &[1, 2, 3, 4, 6], &pos)
-                .expect("Communication error");
+            xl330::sync_write_goal_position(
+                &io,
+                puppet_serial_port.as_mut(),
+                &[1, 2, 3, 4, 6],
+                &pos,
+            )
+            .expect("Communication error");
             // println!("elapsed time: {:?}", now.elapsed());
             tx_dora.send(pos).unwrap();
         }
@@ -85,7 +90,7 @@ fn main() -> Result<()> {
         .open()
         .expect("Failed to open port");
     let io = DynamixelSerialIO::v2();
-    xm::sync_write_torque_enable(&io, puppet_serial_port.as_mut(), &[1, 2, 3, 4, 6], &[1; 5])
+    xl330::sync_write_torque_enable(&io, puppet_serial_port.as_mut(), &[1, 2, 3, 4, 6], &[1; 5])
         .expect("Communication error");
 
     main_multithreaded(io, master_serial_port, puppet_serial_port)?;
