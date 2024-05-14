@@ -55,7 +55,7 @@ version = "0.1.0"
 dependencies = [
  "dora-node-api",
  "eyre",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot)",
+ "rustypot",
  "serialport",
  "tokio",
 ]
@@ -67,7 +67,7 @@ dependencies = [
  "clap",
  "dora-node-api",
  "eyre",
- "rustypot 0.4.2",
+ "rustypot",
  "serialport",
  "tokio",
 ]
@@ -1065,7 +1065,7 @@ version = "0.1.0"
 dependencies = [
  "dora-node-api",
  "eyre",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot)",
+ "rustypot",
  "serialport",
  "tokio",
 ]
@@ -1077,7 +1077,7 @@ dependencies = [
  "clap",
  "dora-node-api",
  "eyre",
- "rustypot 0.4.2",
+ "rustypot",
  "serialport",
  "tokio",
 ]
@@ -1744,16 +1744,6 @@ dependencies = [
  "libc",
  "linux-raw-sys",
  "windows-sys 0.52.0",
-]
-
-[[package]]
-name = "rustypot"
-version = "0.4.2"
-dependencies = [
- "clap",
- "log",
- "paste",
- "serialport",
 ]
 
 [[package]]
