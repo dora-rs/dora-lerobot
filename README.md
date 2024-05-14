@@ -18,10 +18,10 @@ cargo run -p aloha-teleop --release
 ### Teleop Getting started
 
 ```bash
-cargo run -p aloha-teleop --release
+cargo run -p lcr-teleop --release
 
 ## For configuration
-# cargo run -p aloha-teleop -- --help
+cargo run -p lcr-teleop -- --help
 ```
 
 ## License
