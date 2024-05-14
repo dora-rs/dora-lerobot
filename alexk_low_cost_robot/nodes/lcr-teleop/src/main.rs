@@ -18,10 +18,10 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(short, long, default_value = "/dev/tty.usbmodem57380045631")]
+    #[arg(short, long, default_value = "/dev/tty.usbmodem578E0211641")]
     master_path: String,
 
-    #[arg(short, long, default_value = "/dev/tty.usbserial-FT8ISNO8")]
+    #[arg(short, long, default_value = "/dev/tty.usbmodem578E0210601")]
     puppet_path: String,
 
     #[arg(long, default_value = "1000000")]
@@ -41,7 +41,7 @@ fn main_multithreaded(
     std::thread::spawn(move || loop {
         let now = Instant::now();
         let pos =
-            xl330::sync_read_present_position(&io, master_serial_port.as_mut(), &[1, 2, 3, 4, 6])
+            xl330::sync_read_present_position(&io, master_serial_port.as_mut(), &[1, 2, 3, 4, 5, 6])
                 .expect("Communication error");
         tx.send((now, pos)).unwrap();
     });
@@ -58,7 +58,7 @@ fn main_multithreaded(
             xl330::sync_write_goal_position(
                 &io,
                 puppet_serial_port.as_mut(),
-                &[1, 2, 3, 4, 6],
+                &[1, 2, 3, 4, 5, 6],
                 &pos,
             )
             .expect("Communication error");
@@ -81,7 +81,7 @@ fn main_multithreaded(
 
 fn main() -> Result<()> {
     let args = Args::parse();
-    let master_serial_port = serialport::new(args.master_path, args.master_baudrate)
+    let mut master_serial_port = serialport::new(args.master_path, args.master_baudrate)
         .timeout(Duration::from_millis(2))
         .open()
         .expect("Failed to open port");
@@ -90,8 +90,15 @@ fn main() -> Result<()> {
         .open()
         .expect("Failed to open port");
     let io = DynamixelSerialIO::v2();
-    xl330::sync_write_torque_enable(&io, puppet_serial_port.as_mut(), &[1, 2, 3, 4, 6], &[1; 5])
+    xl330::sync_write_torque_enable(&io, puppet_serial_port.as_mut(), &[1, 2, 3, 4, 5, 6], &[1; 6])
         .expect("Communication error");
+
+
+    xl330::sync_write_operating_mode(&io, master_serial_port.as_mut(), &[6], &[16]).expect("Communication error");
+    xl330::sync_write_torque_enable(&io, master_serial_port.as_mut(), &[6], &[1])
+        .expect("Communication error");
+
+    xl330::sync_write_goal_pwm(&io, master_serial_port.as_mut(), &[6], &[100]).expect("Communication error");
 
     main_multithreaded(io, master_serial_port, puppet_serial_port)?;
     Ok(())
