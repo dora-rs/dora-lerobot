@@ -31,6 +31,11 @@ struct Args {
     puppet_baudrate: u32,
 }
 
+enum State {
+    Position(Vec<u32>),
+    GoalPosition(Vec<u32>),
+}
+
 fn main_multithreaded(
     io: DynamixelSerialIO,
     mut master_serial_port: Box<dyn SerialPort>,
@@ -38,6 +43,7 @@ fn main_multithreaded(
 ) -> Result<()> {
     let (tx, rx) = mpsc::channel();
     let (tx_dora, rx_dora) = mpsc::channel();
+    let tx_dora_read = tx_dora.clone();
     std::thread::spawn(move || loop {
         let now = Instant::now();
         let pos = xm::sync_read_present_position(
@@ -46,10 +52,11 @@ fn main_multithreaded(
             &[1, 2, 3, 4, 5, 6, 7, 8, 9],
         )
         .expect("Read Communication error");
-        tx.send((now, pos)).unwrap();
+        tx.send((now, pos.clone())).unwrap();
+        tx_dora_read.send(State::Position(pos)).unwrap();
     });
-    let io = DynamixelSerialIO::v2();
 
+    let io = DynamixelSerialIO::v2();
     let join = std::thread::spawn(move || {
         while let Ok((_now, pos)) = rx.recv() {
             // Compute linear interpolation for gripper as input and output range missmatch
@@ -66,19 +73,31 @@ fn main_multithreaded(
             )
             .expect("Write Communication error");
             // println!("elapsed time: {:?}", now.elapsed());
-            tx_dora.send(target).unwrap();
+            tx_dora.send(State::GoalPosition(target)).unwrap();
         }
     });
 
     if std::env::var("DORA_NODE_CONFIG").is_ok() {
-        let (mut node, mut _events) = DoraNode::init_from_env()?;
+        let (mut node, mut events) = DoraNode::init_from_env()?;
         while let Ok(target) = rx_dora.recv() {
-            let output = DataId::from("puppet_goal_position".to_owned());
             let parameters = MetadataParameters::default();
-            node.send_output(output.clone(), parameters, target.into_arrow())?;
+            match target {
+                State::Position(pos) => {
+                    let output = DataId::from("puppet_goal_position".to_owned());
+                    node.send_output(output.clone(), parameters, pos.into_arrow())?;
+                }
+                State::GoalPosition(pos) => {
+                    let output = DataId::from("puppet_state".to_owned());
+                    node.send_output(output.clone(), parameters, pos.into_arrow())?;
+                }
+            }
+            if events.recv_timeout(Duration::from_nanos(100)).is_none() {
+                break;
+            }
         }
+    } else {
+        join.join().unwrap();
     };
-    join.join().unwrap();
     Ok(())
 }
 
