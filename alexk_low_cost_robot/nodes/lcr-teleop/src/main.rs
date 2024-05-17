@@ -18,10 +18,10 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(short, long, default_value = "/dev/tty.usbmodem578E0211641")]
+    #[arg(short, long, default_value = "/dev/ttyACM1")]
     master_path: String,
 
-    #[arg(short, long, default_value = "/dev/tty.usbmodem578E0210601")]
+    #[arg(short, long, default_value = "/dev/ttyACM0")]
     puppet_path: String,
 
     #[arg(long, default_value = "1000000")]
@@ -95,7 +95,7 @@ fn main() -> Result<()> {
 
 
     xl330::sync_write_operating_mode(&io, master_serial_port.as_mut(), &[6], &[16]).expect("Communication error");
-    xl330::sync_write_torque_enable(&io, master_serial_port.as_mut(), &[6], &[1])
+    xl330::sync_write_torque_enable(&io, master_serial_port.as_mut(), &[1, 2, 3, 4, 5, 6], &[0, 0, 0, 0, 0, 1])
         .expect("Communication error");
 
     xl330::sync_write_goal_pwm(&io, master_serial_port.as_mut(), &[6], &[100]).expect("Communication error");
