@@ -1,0 +1,167 @@
+nodes:
+  # - id: teleop_left
+    # custom:
+      # source: cargo
+      # args: run --release -p aloha-teleop  -- --master-path /dev/ttyDXL_master_left --puppet-path /dev/ttyDXL_puppet_left
+      # outputs:
+        # - puppet_goal_position
+        # - puppet_state
+  
+  - id: teleop_right
+    custom:
+      source: cargo
+      args: run --release -p aloha-teleop  -- --master-path /dev/ttyDXL_master_right --puppet-path /dev/ttyDXL_puppet_right
+      inputs:
+        heartbeat: dora/timer/millis/20
+      outputs:
+        - puppet_goal_position
+        - puppet_state
+
+  - id: dora-record
+    custom:
+      build: cargo install --git https://github.com/dora-rs/dora dora-record
+      source: dora-record
+      inputs:
+        # puppet_left_goal_position: teleop_left/puppet_goal_position
+        action: teleop_right/puppet_goal_position
+        # puppet_left_state: teleop_left/puppet_state
+        state: teleop_right/puppet_state
+        episode_index: keyboard/space
+        cam_left_wrist: cam_saver_left_wrist/saved_image
+        cam_right_wrist: cam_saver_right_wrist/saved_image
+        cam_bottom: cam_saver_bottom/saved_image
+        cam_high_leader: cam_saver_high/saved_image
+
+  - id: cam_left_wrist
+    custom:
+      source: ../nodes/webcam.py
+      inputs:
+        tick: dora/timer/millis/33
+      outputs:
+        - image
+      envs:
+        CAMERA_ID: 22
+
+  - id: cam_right_wrist
+    custom:
+      source: ../nodes/webcam.py
+      inputs:
+        tick: dora/timer/millis/33
+      outputs:
+        - image
+      envs:
+        CAMERA_ID: 14
+  
+  - id: cam_bottom
+    custom:
+      source: ../nodes/webcam.py
+      inputs:
+        tick: dora/timer/millis/33
+      outputs:
+        - image
+      envs:
+        CAMERA_ID: 8
+  
+  - id: cam_high
+    custom:
+      source: ../nodes/webcam.py
+      inputs:
+        tick: dora/timer/millis/33
+      outputs:
+        - image
+      envs:
+        CAMERA_ID: 2
+  
+  - id: keyboard
+    custom: 
+      source: ../nodes/keyboard_node.py
+      inputs:
+        heartbeat: dora/timer/millis/20
+      outputs:
+        - space
+
+  - id: cam_saver_left_wrist
+    custom:
+      source: ../nodes/lerobot_webcam_saver.py
+      inputs:
+        image: cam_left_wrist/image
+        record_episode: keyboard/space
+      outputs:
+        - saved_image
+      envs:
+        CAMERA_NAME: cam_left_wrist
+
+  - id: cam_saver_right_wrist
+    custom:
+      source: ../nodes/lerobot_webcam_saver.py
+      inputs:
+        image: cam_right_wrist/image
+        record_episode: keyboard/space
+      outputs:
+        - saved_image
+      envs:
+        CAMERA_NAME: cam_right_wrist
+
+  - id: cam_saver_bottom
+    custom:
+      source: ../nodes/lerobot_webcam_saver.py
+      inputs:
+        image: cam_bottom/image
+        record_episode: keyboard/space
+      outputs:
+        - saved_image
+      envs:
+        CAMERA_NAME: cam_bottom
+
+  - id: cam_saver_high
+    custom:
+      source: ../nodes/lerobot_webcam_saver.py
+      inputs:
+        image: cam_high/image
+        record_episode: keyboard/space
+      outputs:
+        - saved_image
+      envs:
+        CAMERA_NAME: cam_high
+
+  # Realsense seems to require specific power that makes it unreliable in our current setup
+  # - id: cam_left_wrist
+    # custom:
+      # source: ../nodes/realsense_node.py
+      # inputs:
+        # tick: dora/timer/millis/2
+      # outputs:
+        # - image
+      # envs:
+        # CAMERA_ID: 128422271614
+
+  # - id: cam_right_wrist
+    # custom:
+      # source: ../nodes/realsense_node.py
+      # inputs:
+        # tick: dora/timer/millis/2
+      # outputs:
+        # - image
+      # envs:
+        # CAMERA_ID: 128422270109
+  
+  # - id: cam_bottom
+    # custom:
+      # source: ../nodes/realsense_node.py
+      # inputs:
+        # tick: dora/timer/millis/2
+      # outputs:
+        # - image
+      # envs:
+        # CAMERA_ID: 128422271393
+  
+  # - id: cam_high
+    # custom:
+      # source: ../nodes/realsense_node.py
+      # inputs:
+        # tick: dora/timer/millis/2
+      # outputs:
+        # - image
+      # envs:
+        # CAMERA_ID: 128422271609
+  
