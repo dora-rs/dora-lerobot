@@ -1,5 +1,5 @@
 [package]
-name = "aloha-teleop"
+name = "lcr-client"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,5 +10,4 @@ edition = "2021"
 serialport = "4.2.0"
 rustypot = { git = "https://github.com/haixuanTao/rustypot" }
 eyre = "0.6.12"
-clap = { version = "4.5.4", features = ["derive"] }
 dora-node-api = "0.3.3"
