@@ -17,7 +17,7 @@ nodes:
         - puppet_goal_position
         - puppet_position
         - puppet_velocity
-        - puppet_load
+        - puppet_current
 
   - id: dora-record
     custom:
@@ -29,7 +29,7 @@ nodes:
         # puppet_left_state: teleop_left/puppet_state
         observation.state: teleop_right/puppet_position
         observation.velocity: teleop_right/puppet_velocity
-        observation.effort: teleop_right/puppet_load
+        observation.effort: teleop_right/puppet_current
         episode_index: keyboard/space
         observation.images.cam_left_wrist: cam_saver_left_wrist/saved_image
         observation.images.cam_right_wrist: cam_saver_right_wrist/saved_image
@@ -44,7 +44,7 @@ nodes:
       outputs:
         - image
       envs:
-        CAMERA_ID: 22
+        CAMERA_ID: 2
 
   - id: cam_right_wrist
     custom:
@@ -54,7 +54,7 @@ nodes:
       outputs:
         - image
       envs:
-        CAMERA_ID: 14
+        CAMERA_ID: 22
   
   - id: cam_bottom
     custom:
@@ -64,7 +64,7 @@ nodes:
       outputs:
         - image
       envs:
-        CAMERA_ID: 8
+        CAMERA_ID: 14
   
   - id: cam_high
     custom:
@@ -74,7 +74,7 @@ nodes:
       outputs:
         - image
       envs:
-        CAMERA_ID: 2
+        CAMERA_ID: 8
   
   - id: keyboard
     custom: 
