@@ -32,8 +32,10 @@ struct Args {
 }
 
 enum State {
-    Position(Vec<u32>),
-    GoalPosition(Vec<u32>),
+    Position(Vec<f64>),
+    Velocity(Vec<f64>),
+    Load(Vec<u16>),
+    GoalPosition(Vec<f64>),
 }
 
 fn main_multithreaded(
@@ -52,8 +54,27 @@ fn main_multithreaded(
             &[1, 2, 3, 4, 5, 6, 7, 8, 9],
         )
         .expect("Read Communication error");
-        tx.send((now, pos.clone())).unwrap();
-        tx_dora_read.send(State::Position(pos)).unwrap();
+        let radians: Vec<f64> = pos.iter().map(|x| xm::conv::pos_to_radians(*x)).collect();
+        tx.send((now, pos)).unwrap();
+        tx_dora_read.send(State::Position(radians)).unwrap();
+        let vel = xm::sync_read_present_velocity(
+            &io,
+            master_serial_port.as_mut(),
+            &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+        )
+        .expect("Read Communication error");
+        let rad_per_sec: Vec<f64> = vel
+            .iter()
+            .map(|x| xm::conv::abs_speed_to_rad_per_sec(*x))
+            .collect();
+        tx_dora_read.send(State::Velocity(rad_per_sec)).unwrap();
+        let load = xm::sync_read_present_current(
+            &io,
+            master_serial_port.as_mut(),
+            &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+        )
+        .expect("Read Communication error");
+        tx_dora_read.send(State::Load(load)).unwrap();
     });
 
     let io = DynamixelSerialIO::v2();
@@ -72,8 +93,12 @@ fn main_multithreaded(
                 &target,
             )
             .expect("Write Communication error");
+            let radians: Vec<f64> = target
+                .iter()
+                .map(|x| xm::conv::pos_to_radians(*x))
+                .collect();
             // println!("elapsed time: {:?}", now.elapsed());
-            tx_dora.send(State::GoalPosition(target)).unwrap();
+            tx_dora.send(State::GoalPosition(radians)).unwrap();
         }
     });
 
@@ -86,12 +111,21 @@ fn main_multithreaded(
                     let output = DataId::from("puppet_goal_position".to_owned());
                     node.send_output(output.clone(), parameters, pos.into_arrow())?;
                 }
+                State::Velocity(vel) => {
+                    let output = DataId::from("puppet_velocity".to_owned());
+                    node.send_output(output.clone(), parameters, vel.into_arrow())?;
+                }
+                State::Load(load) => {
+                    let output = DataId::from("puppet_load".to_owned());
+                    node.send_output(output.clone(), parameters, load.into_arrow())?;
+                }
                 State::GoalPosition(pos) => {
-                    let output = DataId::from("puppet_state".to_owned());
+                    let output = DataId::from("puppet_position".to_owned());
                     node.send_output(output.clone(), parameters, pos.into_arrow())?;
                 }
             }
             if events.recv_timeout(Duration::from_nanos(100)).is_none() {
+                println!("Events channel finished");
                 break;
             }
         }
