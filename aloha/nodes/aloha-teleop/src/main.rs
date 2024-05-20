@@ -34,7 +34,7 @@ struct Args {
 enum State {
     Position(Vec<f64>),
     Velocity(Vec<f64>),
-    Load(Vec<u16>),
+    Current(Vec<u16>),
     GoalPosition(Vec<f64>),
 }
 
@@ -74,7 +74,7 @@ fn main_multithreaded(
             &[1, 2, 3, 4, 5, 6, 7, 8, 9],
         )
         .expect("Read Communication error");
-        tx_dora_read.send(State::Load(load)).unwrap();
+        tx_dora_read.send(State::Current(load)).unwrap();
     });
 
     let io = DynamixelSerialIO::v2();
@@ -115,8 +115,8 @@ fn main_multithreaded(
                     let output = DataId::from("puppet_velocity".to_owned());
                     node.send_output(output.clone(), parameters, vel.into_arrow())?;
                 }
-                State::Load(load) => {
-                    let output = DataId::from("puppet_load".to_owned());
+                State::Current(load) => {
+                    let output = DataId::from("puppet_current".to_owned());
                     node.send_output(output.clone(), parameters, load.into_arrow())?;
                 }
                 State::GoalPosition(pos) => {
