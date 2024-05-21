@@ -8,7 +8,8 @@ edition = "2021"
 [dependencies]
 
 serialport = "4.2.0"
-rustypot = { git = "https://github.com/haixuanTao/rustypot" }
+rustypot = { path = "/home/rcadene/rustypot" }      # git = "https://github.com/haixuanTao/rustypot" }
 eyre = "0.6.12"
 clap = { version = "4.5.4", features = ["derive"] }
-dora-node-api = "0.3.3"
+dora-node-api = "0.3.4"
+lazy_static = "1.4.0"
