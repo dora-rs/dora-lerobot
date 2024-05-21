@@ -1,14 +1,14 @@
 use dora_node_api::{
-    arrow::array::UInt32Array, dora_core::config::DataId, DoraNode, Event, IntoArrow,
+    arrow::array::Float64Array, dora_core::config::DataId, DoraNode, Event, IntoArrow,
 };
-use eyre::Result;
+use eyre::{Context, Result};
 use rustypot::{device::xm, DynamixelSerialIO};
 use std::time::Duration;
 
 fn main() -> Result<()> {
     let (mut node, mut events) = DoraNode::init_from_env()?;
     let mut puppet_serial_port = serialport::new("/dev/ttyDXL_puppet_right", 1_000_000)
-        .timeout(Duration::from_millis(20))
+        .timeout(Duration::from_millis(2))
         .open()
         .expect("Failed to open port");
     let io = DynamixelSerialIO::v2();
@@ -28,13 +28,22 @@ fn main() -> Result<()> {
     {
         match id.as_str() {
             "puppet_goal_position" => {
-                let buffer: UInt32Array = data.to_data().into();
-                let target: &[u32] = buffer.values();
+                let buffer: Float64Array = data
+                    .to_data()
+                    .try_into()
+                    .context("Could not parse `puppet_goal_position` as float64")?;
+                let target: &[f64] = buffer.values();
+                let mut angular = target
+                    .iter()
+                    .map(|&x| xm::conv::radians_to_pos(x))
+                    .collect::<Vec<_>>();
+                angular.insert(2, angular[1]);
+                angular.insert(4, angular[3]);
                 xm::sync_write_goal_position(
                     &io,
                     puppet_serial_port.as_mut(),
                     &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-                    &target,
+                    &angular,
                 )
                 .expect("Communication error");
             }
@@ -42,7 +51,7 @@ fn main() -> Result<()> {
                 let pos = xm::sync_read_present_position(
                     &io,
                     puppet_serial_port.as_mut(),
-                    &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    &[1, 2, 4, 6, 7, 8, 9],
                 )
                 .expect("Communication error");
                 node.send_output(

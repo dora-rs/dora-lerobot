@@ -6,12 +6,12 @@ use std::{
     sync::mpsc,
     time::{Duration, Instant},
 };
+const MAX_MASTER_GRIPER: f64 = 0.7761942786701344;
+const MAX_PUPPET_GRIPER: f64 = 1.6827769243105486;
 
-static MAX_MASTER_GRIPER: u32 = 2554;
-static MAX_PUPPET_GRIPER: u32 = 3145;
+const MIN_MASTER_GRIPER: f64 = -0.12732040539450828;
+const MIN_PUPPET_GRIPER: f64 = 0.6933593161243099;
 
-static MIN_MASTER_GRIPER: u32 = 1965;
-static MIN_PUPPET_GRIPER: u32 = 2500;
 use clap::Parser;
 
 /// Simple aloha teleop program for recording data
@@ -51,54 +51,48 @@ fn main_multithreaded(
         let pos = xm::sync_read_present_position(
             &io,
             master_serial_port.as_mut(),
-            &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+            &[1, 2, 4, 6, 7, 8, 9], // 3 and 5 are skipped as thery share the same position as 2 and 4
         )
         .expect("Read Communication error");
-        let radians: Vec<f64> = pos.iter().map(|x| xm::conv::pos_to_radians(*x)).collect();
-        tx.send((now, pos)).unwrap();
+        let radians: Vec<f64> = pos.iter().map(|&x| xm::conv::pos_to_radians(x)).collect();
+        tx.send((now, radians.clone())).unwrap();
         tx_dora_read.send(State::Position(radians)).unwrap();
         let vel = xm::sync_read_present_velocity(
             &io,
             master_serial_port.as_mut(),
-            &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+            &[1, 2, 4, 6, 7, 8, 9], // 3 and 5 are skipped as thery share the same position as 2 and 4
         )
         .expect("Read Communication error");
         let rad_per_sec: Vec<f64> = vel
             .iter()
-            .map(|x| xm::conv::abs_speed_to_rad_per_sec(*x))
+            .map(|&x| xm::conv::abs_speed_to_rad_per_sec(x))
             .collect();
         tx_dora_read.send(State::Velocity(rad_per_sec)).unwrap();
-        let load = xm::sync_read_present_current(
-            &io,
-            master_serial_port.as_mut(),
-            &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-        )
-        .expect("Read Communication error");
+        let load =
+            xm::sync_read_present_current(&io, master_serial_port.as_mut(), &[1, 2, 4, 6, 7, 8, 9]) // 3 and 5 are skipped as thery share the same position as 2 and 4
+                .expect("Read Communication error");
         tx_dora_read.send(State::Current(load)).unwrap();
     });
 
     let io = DynamixelSerialIO::v2();
     let join = std::thread::spawn(move || {
-        while let Ok((_now, pos)) = rx.recv() {
-            // Compute linear interpolation for gripper as input and output range missmatch
-            let gripper = (pos[8] - MIN_MASTER_GRIPER) * (MAX_PUPPET_GRIPER - MIN_PUPPET_GRIPER)
+        while let Ok((_now, mut pos)) = rx.recv() {
+            pos[6] = (pos[6] - MIN_MASTER_GRIPER) * (MAX_PUPPET_GRIPER - MIN_PUPPET_GRIPER)
                 / (MAX_MASTER_GRIPER - MIN_MASTER_GRIPER)
                 + MIN_PUPPET_GRIPER;
-            let mut target = pos;
-            target[8] = gripper;
+            tx_dora.send(State::GoalPosition(pos.clone())).unwrap();
+            pos.insert(2, pos[1]);
+            pos.insert(4, pos[3]);
+            let pos: Vec<u32> = pos.iter().map(|&x| xm::conv::radians_to_pos(x)).collect();
+            // Compute linear interpolation for gripper as input and output range missmatch
             xm::sync_write_goal_position(
                 &io,
                 puppet_serial_port.as_mut(),
                 &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-                &target,
+                &pos,
             )
             .expect("Write Communication error");
-            let radians: Vec<f64> = target
-                .iter()
-                .map(|x| xm::conv::pos_to_radians(*x))
-                .collect();
             // println!("elapsed time: {:?}", now.elapsed());
-            tx_dora.send(State::GoalPosition(radians)).unwrap();
         }
     });
 
@@ -108,7 +102,7 @@ fn main_multithreaded(
             let parameters = MetadataParameters::default();
             match target {
                 State::Position(pos) => {
-                    let output = DataId::from("puppet_goal_position".to_owned());
+                    let output = DataId::from("puppet_position".to_owned());
                     node.send_output(output.clone(), parameters, pos.into_arrow())?;
                 }
                 State::Velocity(vel) => {
@@ -120,7 +114,7 @@ fn main_multithreaded(
                     node.send_output(output.clone(), parameters, load.into_arrow())?;
                 }
                 State::GoalPosition(pos) => {
-                    let output = DataId::from("puppet_position".to_owned());
+                    let output = DataId::from("puppet_goal_position".to_owned());
                     node.send_output(output.clone(), parameters, pos.into_arrow())?;
                 }
             }
