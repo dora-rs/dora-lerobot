@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 
 serialport = "4.2.0"
-rustypot = { path = "/home/rcadene/rustypot" }      # git = "https://github.com/haixuanTao/rustypot" }
+rustypot = { git = "https://github.com/haixuanTao/rustypot", branch = "angular-conversion" }
 eyre = "0.6.12"
 clap = { version = "4.5.4", features = ["derive"] }
 dora-node-api = "0.3.4"
