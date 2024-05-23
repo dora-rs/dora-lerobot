@@ -6,13 +6,13 @@ import time
 from pathlib import Path
 
 env = gym.make(
-    "gym_dora/DoraAloha-v0", disable_env_checker=True, max_episode_steps=5000
+    "gym_dora/DoraAloha-v0", disable_env_checker=True, max_episode_steps=10000
 )
 observation = env.reset()
 
 
 class ReplayPolicy:
-    def __init__(self, example_path, epidode=1):
+    def __init__(self, example_path, epidode=0):
         df_action = pd.read_parquet(example_path / "action.parquet")
         df_episode_index = pd.read_parquet(example_path / "episode_index.parquet")
         self.df = pd.merge_asof(
@@ -41,11 +41,19 @@ class ReplayPolicy:
         return row[self.topic], self.finished
 
 
+# policy = ReplayPolicy(
+    # Path(
+        # "/home/rcadene/dora-aloha/aloha/graphs/out/018fa076-ad19-7c77-afa4-49f7f072e86f"
+    # )
+# )
+
 policy = ReplayPolicy(
     Path(
-        "/home/rcadene/dora-aloha/aloha/graphs/out/018f9b3d-d821-7ea5-9cf0-f6ea8aa7f8f9"
+        "/home/rcadene/dora-aloha/aloha/graphs/out/018fa4ad-5942-7235-93d3-3efebe9b8a12"
     )
 )
+
+
 done = False
 while not done:
     actions, finished = policy.select_action(observation)

@@ -18,11 +18,11 @@ CAMERA_HEIGHT = 480
 FPS = 30
 
 i = 0
-episode = 0
+episode = -1
 dataflow_id = node.dataflow_id()
 
 BASE = Path("out") / dataflow_id / "videos"
-out_dir = BASE / f"cam_{CAMERA_NAME}_episode_{episode}"
+out_dir = BASE / f"{CAMERA_NAME}_episode_{episode:06d}"
 
 for event in node:
     event_type = event["type"]
@@ -31,9 +31,9 @@ for event in node:
             record_episode = event["value"].to_numpy()[0]
             print(f"Recording episode {record_episode}", flush=True)
             # Save Episode Video
-            if episode != 0 and record_episode == 0:
-                out_dir = BASE / f"{CAMERA_NAME}_episode_{episode}"
-                fname = f"{CAMERA_NAME}_episode_{episode}.mp4"
+            if episode != -1 and record_episode == -1:
+                out_dir = BASE / f"{CAMERA_NAME}_episode_{episode:06d}"
+                fname = f"{CAMERA_NAME}_episode_{episode:06d}.mp4"
                 video_path = BASE / fname
                 # Save video
                 ffmpeg_cmd = (
@@ -52,9 +52,9 @@ for event in node:
                 episode = record_episode
 
             # Make new directory and start saving images
-            elif episode == 0 and record_episode != 0:
+            elif episode == -1 and record_episode != -1:
                 episode = record_episode
-                out_dir = BASE / f"{CAMERA_NAME}_episode_{episode}"
+                out_dir = BASE / f"{CAMERA_NAME}_episode_{episode:06d}"
                 out_dir.mkdir(parents=True, exist_ok=True)
                 i = 0
             else:
@@ -63,10 +63,10 @@ for event in node:
         elif event["id"] == "image":
             # Only record image when in episode.
             # Episode 0 is for not recording periods.
-            if episode == 0:
+            if episode == -1:
                 continue
 
-            fname = f"{CAMERA_NAME}_episode_{episode}.mp4"
+            fname = f"{CAMERA_NAME}_episode_{episode:06d}.mp4"
             node.send_output(
                 "saved_image",
                 pa.array([{"path": f"videos/{fname}", "timestamp": i / FPS}]),
