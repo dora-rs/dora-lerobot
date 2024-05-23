@@ -1,16 +1,10 @@
 nodes:
-  # - id: teleop_left
-    # custom:
-      # source: cargo
-      # args: run --release -p aloha-teleop  -- --master-path /dev/ttyDXL_master_left --puppet-path /dev/ttyDXL_puppet_left
-      # outputs:
-        # - puppet_goal_position
-        # - puppet_state
+
   
   - id: teleop_right
     custom:
       source: cargo
-      args: run --release -p aloha-teleop  -- --master-path /dev/ttyDXL_master_right --puppet-path /dev/ttyDXL_puppet_right
+      args: run --release -p aloha-teleop  
       inputs:
         heartbeat: dora/timer/millis/20
       outputs:
@@ -24,13 +18,12 @@ nodes:
       build: cargo install --git https://github.com/dora-rs/dora dora-record
       source: dora-record
       inputs:
-        # puppet_left_goal_position: teleop_left/puppet_goal_position
         action: teleop_right/puppet_goal_position
-        # puppet_left_state: teleop_left/puppet_state
         observation.state: teleop_right/puppet_position
         observation.velocity: teleop_right/puppet_velocity
         observation.effort: teleop_right/puppet_current
         episode_index: keyboard/space
+        failed_episode_index: keyboard/failed
         observation.images.cam_left_wrist: cam_saver_left_wrist/saved_image
         observation.images.cam_right_wrist: cam_saver_right_wrist/saved_image
         observation.images.cam_low: cam_saver_low/saved_image
@@ -83,6 +76,7 @@ nodes:
         heartbeat: dora/timer/millis/20
       outputs:
         - space
+        - failed
 
   - id: cam_saver_left_wrist
     custom:
@@ -93,7 +87,7 @@ nodes:
       outputs:
         - saved_image
       envs:
-        CAMERA_NAME: cam_left_wrist
+        CAMERA_NAME: observation.images.cam_left_wrist
 
   - id: cam_saver_right_wrist
     custom:
@@ -104,7 +98,7 @@ nodes:
       outputs:
         - saved_image
       envs:
-        CAMERA_NAME: cam_right_wrist
+        CAMERA_NAME: observation.images.cam_right_wrist
 
   - id: cam_saver_low
     custom:
@@ -115,7 +109,7 @@ nodes:
       outputs:
         - saved_image
       envs:
-        CAMERA_NAME: cam_low
+        CAMERA_NAME: observation.images.cam_low
 
   - id: cam_saver_high
     custom:
@@ -126,7 +120,7 @@ nodes:
       outputs:
         - saved_image
       envs:
-        CAMERA_NAME: cam_high
+        CAMERA_NAME: observation.images.cam_high
 
   # Realsense seems to require specific power that makes it unreliable in our current setup
   # - id: cam_left_wrist
