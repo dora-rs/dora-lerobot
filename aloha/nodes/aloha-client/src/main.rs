@@ -7,14 +7,25 @@ use std::time::Duration;
 
 fn main() -> Result<()> {
     let (mut node, mut events) = DoraNode::init_from_env()?;
-    let mut puppet_serial_port = serialport::new("/dev/ttyDXL_puppet_right", 1_000_000)
+    let mut puppet_left_serial_port = serialport::new("/dev/ttyDXL_puppet_left", 1_000_000)
+        .timeout(Duration::from_millis(2))
+        .open()
+        .expect("Failed to open port");
+    let mut puppet_right_serial_port = serialport::new("/dev/ttyDXL_puppet_right", 1_000_000)
         .timeout(Duration::from_millis(2))
         .open()
         .expect("Failed to open port");
     let io = DynamixelSerialIO::v2();
     xm::sync_write_torque_enable(
         &io,
-        puppet_serial_port.as_mut(),
+        puppet_left_serial_port.as_mut(),
+        &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+        &[1; 9],
+    )
+    .expect("Communication error");
+    xm::sync_write_torque_enable(
+        &io,
+        puppet_right_serial_port.as_mut(),
         &[1, 2, 3, 4, 5, 6, 7, 8, 9],
         &[1; 9],
     )
@@ -39,25 +50,41 @@ fn main() -> Result<()> {
                     .collect::<Vec<_>>();
                 angular.insert(2, angular[1]);
                 angular.insert(4, angular[3]);
+                angular.insert(11, angular[10]);
+                angular.insert(13, angular[12]);
                 xm::sync_write_goal_position(
                     &io,
-                    puppet_serial_port.as_mut(),
+                    puppet_left_serial_port.as_mut(),
                     &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-                    &angular,
+                    &angular[..9],
+                )
+                .expect("Communication error");
+                xm::sync_write_goal_position(
+                    &io,
+                    puppet_right_serial_port.as_mut(),
+                    &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    &angular[9..18],
                 )
                 .expect("Communication error");
             }
             "tick" => {
-                let pos = xm::sync_read_present_position(
+                let mut pos_left = xm::sync_read_present_position(
                     &io,
-                    puppet_serial_port.as_mut(),
+                    puppet_left_serial_port.as_mut(),
                     &[1, 2, 4, 6, 7, 8, 9],
                 )
                 .expect("Communication error");
+                let pos_right = xm::sync_read_present_position(
+                    &io,
+                    puppet_right_serial_port.as_mut(),
+                    &[1, 2, 4, 6, 7, 8, 9],
+                )
+                .expect("Communication error");
+                pos_left.extend_from_slice(&pos_right);
                 node.send_output(
                     DataId::from("puppet_position".to_owned()),
                     Default::default(),
-                    pos.into_arrow(),
+                    pos_left.into_arrow(),
                 )?;
             }
             _ => todo!(),
