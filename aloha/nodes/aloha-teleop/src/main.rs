@@ -132,13 +132,9 @@ fn main() -> Result<()> {
             &[1; 9],
         )
         .expect("Communication error");
-        xm::sync_write_operating_mode(
-            &io,
-            puppet_right_serial_port.as_mut(),
-            &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-            &[5; 9],
-        )
-        .expect("Communication error");
+        // Set operating mode to current based position control to not overload the gripper
+        xm::sync_write_operating_mode(&io, puppet_right_serial_port.as_mut(), &[9], &[5])
+            .expect("Communication error");
         Some(main_multithreaded(
             io,
             master_right_serial_port,
@@ -168,14 +164,9 @@ fn main() -> Result<()> {
     )
     .expect("Communication error");
 
-    // Set operating mode to current based position control
-    xm::sync_write_operating_mode(
-        &io,
-        puppet_left_serial_port.as_mut(),
-        &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-        &[5; 9],
-    )
-    .expect("Communication error");
+    // Set operating mode to current based position control to not overload the gripper
+    xm::sync_write_operating_mode(&io, puppet_left_serial_port.as_mut(), &[9], &[5])
+        .expect("Communication error");
 
     let join_left = main_multithreaded(
         io,
