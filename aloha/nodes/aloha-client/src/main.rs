@@ -30,6 +30,20 @@ fn main() -> Result<()> {
         &[1; 9],
     )
     .expect("Communication error");
+    xm::sync_write_operating_mode(
+        &io,
+        puppet_left_serial_port.as_mut(),
+        &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+        &[5; 9],
+    )
+    .expect("Communication error");
+    xm::sync_write_operating_mode(
+        &io,
+        puppet_right_serial_port.as_mut(),
+        &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+        &[5; 9],
+    )
+    .expect("Communication error");
 
     while let Some(Event::Input {
         id,
