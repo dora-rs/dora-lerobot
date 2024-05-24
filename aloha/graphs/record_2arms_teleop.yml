@@ -1,6 +1,4 @@
-nodes:
-
-  
+nodes: 
   - id: teleop_right
     custom:
       source: cargo

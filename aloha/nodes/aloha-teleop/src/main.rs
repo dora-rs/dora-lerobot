@@ -7,6 +7,7 @@ use std::{
     thread::JoinHandle,
     time::{Duration, Instant},
 };
+use trajectory::CubicSpline;
 const MAX_MASTER_GRIPER: f64 = 0.7761942786701344;
 const MAX_PUPPET_GRIPER: f64 = 1.6827769243105486;
 
@@ -53,6 +54,12 @@ fn main_multithreaded(
 ) -> Result<JoinHandle<()>> {
     let (tx, rx) = mpsc::channel();
     let tx_dora_read = tx_dora.clone();
+    let initial_pose = xm::sync_read_present_position(
+        &io,
+        master_serial_port.as_mut(),
+        &[1, 2, 4, 6, 7, 8, 9], // 3 and 5 are skipped as thery share the same position as 2 and 4
+    )
+    .expect("Read Communication error");
     std::thread::spawn(move || loop {
         let now = Instant::now();
         let pos = xm::sync_read_present_position(
@@ -82,6 +89,7 @@ fn main_multithreaded(
     });
 
     let io = DynamixelSerialIO::v2();
+    let mut init = false;
     let join = std::thread::spawn(move || {
         while let Ok((_now, mut pos)) = rx.recv() {
             pos[6] = (pos[6] - MIN_MASTER_GRIPER) * (MAX_PUPPET_GRIPER - MIN_PUPPET_GRIPER)
@@ -92,15 +100,25 @@ fn main_multithreaded(
                 .unwrap();
             pos.insert(2, pos[1]);
             pos.insert(4, pos[3]);
-            let pos: Vec<u32> = pos.iter().map(|&x| xm::conv::radians_to_pos(x)).collect();
             // Compute linear interpolation for gripper as input and output range missmatch
-            xm::sync_write_goal_position(
-                &io,
-                puppet_serial_port.as_mut(),
-                &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-                &pos,
-            )
-            .expect("Write Communication error");
+            if !init {
+                let times = vec![0_u32, 200];
+                let points = vec![initial_pose.clone(), pos.clone()];
+                init = true;
+                for i in 0..100 {
+                    let t = i as u32;
+                    let ip = CubicSpline::new(times, points).unwrap();
+                    let p = ip.position(t).unwrap();
+                }
+            } else {
+                xm::sync_write_goal_position(
+                    &io,
+                    puppet_serial_port.as_mut(),
+                    &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    &pos,
+                )
+                .expect("Write Communication error");
+            }
             // println!("elapsed time: {:?}", now.elapsed());
         }
     });
