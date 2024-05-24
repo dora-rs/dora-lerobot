@@ -95,6 +95,11 @@ fn main() -> Result<()> {
                 )
                 .expect("Communication error");
                 pos_left.extend_from_slice(&pos_right);
+
+                let pos: Vec<f64> = pos_left
+                    .iter()
+                    .map(|&x| xm::conv::pos_to_radians(x))
+                    .collect();
                 node.send_output(
                     DataId::from("puppet_position".to_owned()),
                     Default::default(),
