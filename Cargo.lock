@@ -55,7 +55,7 @@ version = "0.1.0"
 dependencies = [
  "dora-node-api",
  "eyre",
- "rustypot",
+ "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot)",
  "serialport",
 ]
 
@@ -66,7 +66,7 @@ dependencies = [
  "clap",
  "dora-node-api",
  "eyre",
- "rustypot",
+ "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot)",
  "serialport",
 ]
 
@@ -611,9 +611,9 @@ dependencies = [
 
 [[package]]
 name = "dora-arrow-convert"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f65aadca952c9f1df1c9b95a87bf74b63add54eaa582d8cc4c8fd6ab37604175"
+checksum = "240774f0044a2919dd6a3dc96669f04cbccf21317b6f44dbe02ab044442f33f9"
 dependencies = [
  "arrow",
  "eyre",
@@ -621,9 +621,9 @@ dependencies = [
 
 [[package]]
 name = "dora-core"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32b5e0a3e9a96cd5772a706dcf11b7d6f1e3eb8c037d369ca39f2b2786c42fb3"
+checksum = "503227d2be74b6e17f834d71f0f26eb8800f367a6b2f7f35fed7b86f104596a1"
 dependencies = [
  "aligned-vec",
  "dora-message",
@@ -640,9 +640,9 @@ dependencies = [
 
 [[package]]
 name = "dora-message"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6969f8e74cec74c7d1bc0aa2ac4b38554aead2cc49631c87ff9565f97b9204b"
+checksum = "ca4f69a3cd20470cea9413b423f311b82d40f226cc9680c1c4e6acb3745a106d"
 dependencies = [
  "arrow-data",
  "arrow-schema",
@@ -653,9 +653,9 @@ dependencies = [
 
 [[package]]
 name = "dora-node-api"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee946ff6c1ec9928e854273246899026b43a87d2b904d576a9821509346ccaca"
+checksum = "7bfeefc63c1b7e7f0534b5dada9d7dcba4c640346dc6f71e902070b48060cc8d"
 dependencies = [
  "aligned-vec",
  "arrow",
@@ -676,9 +676,9 @@ dependencies = [
 
 [[package]]
 name = "dora-tracing"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fdc8ba09c8396ef737cd4da0d4ada1f06bbe76656944f6c701e7b06c8b29340"
+checksum = "c1e21d2f86c81d8d44aad862b45075443768af2d69ced0d78ab3f9ca5c9211ed"
 dependencies = [
  "eyre",
  "opentelemetry",
@@ -1070,7 +1070,7 @@ version = "0.1.0"
 dependencies = [
  "dora-node-api",
  "eyre",
- "rustypot",
+ "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot)",
  "serialport",
 ]
 
@@ -1081,7 +1081,7 @@ dependencies = [
  "clap",
  "dora-node-api",
  "eyre",
- "rustypot",
+ "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
  "serialport",
 ]
 
@@ -1740,6 +1740,17 @@ dependencies = [
 [[package]]
 name = "rustypot"
 version = "0.4.2"
+source = "git+https://github.com/haixuanTao/rustypot?branch=angular-conversion#d35010e73b35decae69efb2f796d31be5b518b11"
+dependencies = [
+ "clap",
+ "log",
+ "paste",
+ "serialport",
+]
+
+[[package]]
+name = "rustypot"
+version = "0.4.2"
 source = "git+https://github.com/haixuanTao/rustypot#50ac05fb9298400c545d2b892b901e1a3930d339"
 dependencies = [
  "clap",
@@ -1862,9 +1873,9 @@ dependencies = [
 
 [[package]]
 name = "shared-memory-server"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9105ab5690bc856ba3492b8c827d550bb8853867add16ac18d7fcd09342afb40"
+checksum = "3866006f4db55d1c1b93bfddb2be1f77eb14b6bbc3fd3d1ce5495e02a57791dd"
 dependencies = [
  "bincode",
  "eyre",
