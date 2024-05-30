@@ -1,16 +1,16 @@
-from gym_dora.robots import aloha2, koch, reachy2
+from gym_dora.gym_dora.robots import aloha, koch, reachy2
 from gymnasium.envs.registration import register
 
 register(
-    id="gym_dora/DoraAloha2-v0",
+    id="gym_dora/DoraAloha-v0",
     entry_point="gym_dora.env:DoraEnv",
     max_episode_steps=300,
     nondeterministic=True,
     kwargs={
-        "fps": aloha2.FPS,
-        "actions": aloha2.ACTIONS,
-        "joints": aloha2.JOINTS,
-        "cameras": aloha2.CAMERAS,
+        "fps": aloha.FPS,
+        "actions": aloha.ACTIONS,
+        "joints": aloha.JOINTS,
+        "cameras": aloha.CAMERAS,
     },
 )
 
