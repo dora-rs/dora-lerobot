@@ -1,5 +1,3 @@
-import os
-
 import gymnasium as gym
 import numpy as np
 import pyarrow as pa
@@ -74,18 +72,19 @@ class DoraEnv(gym.Env):
             if event["type"] == "INPUT":
                 # Map Image input into pixels key within Aloha environment
                 if "cam" in event["id"]:
+                    camera = event["id"]
+                    hwc_shape = self.cameras[camera]
                     self._observation["pixels"][event["id"]] = (
                         event["value"]
                         .to_numpy()
-                        .reshape(self.cameras[event["id"]])
-                        .copy()
+                        .reshape(hwc_shape)
                     )
                 else:
                     # Map other inputs into the observation dictionary using the event id as key
                     self._observation[event["id"]] = event["value"].to_numpy()
 
             # If the event is a timeout error break the update loop.
-            if event["type"] == "ERROR":
+            elif event["type"] == "ERROR":
                 break
 
     def reset(self, seed: int | None = None):
