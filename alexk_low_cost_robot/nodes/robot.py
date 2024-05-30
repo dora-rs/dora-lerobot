@@ -10,6 +10,27 @@ class MotorControlType(Enum):
     DISABLED = auto()
     UNKNOWN = auto()
 
+def pos2pwm(pos:np.ndarray) -> np.ndarray:
+    """
+    :param pos: numpy array of joint positions in range [-pi, pi]
+    :return: numpy array of pwm values in range [0, 4096]
+    """ 
+    return ((pos / 3.14 + 1.) * 2048).astype(int)
+
+def pwm2pos(pwm:np.ndarray) -> np.ndarray:
+    """
+    :param pwm: numpy array of pwm values in range [0, 4096]
+    :return: numpy array of joint positions in range [-pi, pi]
+    """
+    return (pwm / 2048 - 1) * 3.14
+
+def pwm2vel(pwm:np.ndarray) -> np.ndarray:
+    """
+    :param pwm: numpy array of pwm/s joint velocities
+    :return: numpy array of rad/s joint velocities 
+    """
+    return pwm * 3.14 / 2048
+
 class Robot:
     def __init__(self, device_name: str, baudrate=1_000_000, servo_ids=[1, 2, 3, 4, 5, 6]) -> None:
         self.servo_ids = servo_ids

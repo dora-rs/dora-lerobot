@@ -3,27 +3,12 @@ import numpy as np
 from dora import Node
 import pyarrow as pa
 
-from robot import Robot
+from robot import Robot, pwm2pos, pwm2vel
 
 ROBOT_PORTS = {
     'leader': '/dev/ttyACM1',
     'follower': '/dev/ttyACM0'
 }
-
-def pwm2pos(pwm:np.ndarray) -> np.ndarray:
-    """
-    :param pwm: numpy array of pwm values in range [0, 4096]
-    :return: numpy array of joint positions in range [-pi, pi]
-    """
-    return (pwm / 2048 - 1) * 3.14
-
-def pwm2vel(pwm:np.ndarray) -> np.ndarray:
-    """
-    :param pwm: numpy array of pwm/s joint velocities
-    :return: numpy array of rad/s joint velocities 
-    """
-    return pwm * 3.14 / 2048
-
 
 if __name__ == '__main__':
     # init follower
