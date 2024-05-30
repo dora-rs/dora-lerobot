@@ -1,4 +1,4 @@
-from gym_dora.gym_dora.robots import aloha2, koch, reachy2
+from gym_dora.robots import aloha2, koch, reachy2
 from gymnasium.envs.registration import register
 
 register(

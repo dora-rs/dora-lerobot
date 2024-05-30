@@ -34,4 +34,3 @@ CAMERAS = {
     # tested with C922 Pro Stream Webcam
     "cam_low": (480, 640, 3),
 }
-
