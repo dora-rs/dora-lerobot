@@ -1,7 +1,9 @@
 """
-Configurations of Aloha2 duo arms
+Configurations of Aloha/Aloha2 duo arms
 
-From "ALOHA 2: An Enhanced Low-Cost Hardware for Bimanual Teleoperation"
+From "Learning Fine-Grained Bimanual Manipulation with Low-Cost Hardware"
+https://tonyzhaozh.github.io/aloha/
+and "ALOHA 2: An Enhanced Low-Cost Hardware for Bimanual Teleoperation"
 https://aloha-2.github.io
 """
 
@@ -54,3 +56,4 @@ ACTIONS = [
     # normalized gripper position (0: close, 1: open)
     "right_arm_gripper",
 ]
+
