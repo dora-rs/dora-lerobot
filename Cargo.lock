@@ -1082,7 +1082,7 @@ dependencies = [
  "clap",
  "dora-node-api",
  "eyre",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot)",
+ "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
  "serialport",
 ]
 
