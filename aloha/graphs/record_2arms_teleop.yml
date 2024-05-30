@@ -1,10 +1,8 @@
 nodes:
-
-  
   - id: teleop_right
     custom:
       source: cargo
-      args: run --release -p aloha-teleop  
+      args: run --release -p aloha-teleop
       inputs:
         heartbeat: dora/timer/millis/20
       outputs:
@@ -48,7 +46,7 @@ nodes:
         - image
       envs:
         CAMERA_ID: 22
-  
+
   - id: cam_low
     custom:
       source: ../nodes/webcam.py
@@ -58,7 +56,7 @@ nodes:
         - image
       envs:
         CAMERA_ID: 14
-  
+
   - id: cam_high
     custom:
       source: ../nodes/webcam.py
@@ -68,9 +66,9 @@ nodes:
         - image
       envs:
         CAMERA_ID: 8
-  
+
   - id: keyboard
-    custom: 
+    custom:
       source: ../nodes/keyboard_node.py
       inputs:
         heartbeat: dora/timer/millis/20
@@ -124,42 +122,41 @@ nodes:
 
   # Realsense seems to require specific power that makes it unreliable in our current setup
   # - id: cam_left_wrist
-    # custom:
-      # source: ../nodes/realsense_node.py
-      # inputs:
-        # tick: dora/timer/millis/2
-      # outputs:
-        # - image
-      # envs:
-        # CAMERA_ID: 128422271614
+  # custom:
+  # source: ../nodes/realsense_node.py
+  # inputs:
+  # tick: dora/timer/millis/2
+  # outputs:
+  # - image
+  # envs:
+  # CAMERA_ID: 128422271614
 
   # - id: cam_right_wrist
-    # custom:
-      # source: ../nodes/realsense_node.py
-      # inputs:
-        # tick: dora/timer/millis/2
-      # outputs:
-        # - image
-      # envs:
-        # CAMERA_ID: 128422270109
-  
+  # custom:
+  # source: ../nodes/realsense_node.py
+  # inputs:
+  # tick: dora/timer/millis/2
+  # outputs:
+  # - image
+  # envs:
+  # CAMERA_ID: 128422270109
+
   # - id: cam_low
-    # custom:
-      # source: ../nodes/realsense_node.py
-      # inputs:
-        # tick: dora/timer/millis/2
-      # outputs:
-        # - image
-      # envs:
-        # CAMERA_ID: 128422271393
-  
+  # custom:
+  # source: ../nodes/realsense_node.py
+  # inputs:
+  # tick: dora/timer/millis/2
+  # outputs:
+  # - image
+  # envs:
+  # CAMERA_ID: 128422271393
+
   # - id: cam_high
-    # custom:
-      # source: ../nodes/realsense_node.py
-      # inputs:
-        # tick: dora/timer/millis/2
-      # outputs:
-        # - image
-      # envs:
-        # CAMERA_ID: 128422271609
-  
+  # custom:
+  # source: ../nodes/realsense_node.py
+  # inputs:
+  # tick: dora/timer/millis/2
+  # outputs:
+  # - image
+  # envs:
+  # CAMERA_ID: 128422271609

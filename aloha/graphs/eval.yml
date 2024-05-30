@@ -9,18 +9,6 @@ nodes:
       outputs:
         - puppet_position
 
-  # - id: aloha-client
-  # custom:
-  # source: cargo
-  # args: run --release -p aloha-teleop
-  # inputs:
-  # heartbeat: dora/timer/millis/20
-  # outputs:
-  # - puppet_goal_position
-  # - puppet_position
-  # - puppet_velocity
-  # - puppet_current
-
   - id: plot
     custom:
       source: ../nodes/plot_node.py
