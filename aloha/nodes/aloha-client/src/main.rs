@@ -1,5 +1,7 @@
 use dora_node_api::{
-    arrow::array::Float64Array, dora_core::config::DataId, DoraNode, Event, IntoArrow,
+    arrow::array::{Float32Array, Float64Array},
+    dora_core::config::DataId,
+    DoraNode, Event, IntoArrow,
 };
 use eyre::{Context, Result};
 use rustypot::{device::xm, DynamixelSerialIO};
@@ -16,24 +18,14 @@ fn main() -> Result<()> {
         .open()
         .expect("Failed to open port");
     let io = DynamixelSerialIO::v2();
-    xm::sync_write_torque_enable(
-        &io,
-        puppet_left_serial_port.as_mut(),
-        &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-        &[1; 9],
-    )
-    .expect("Communication error");
-    xm::sync_write_torque_enable(
-        &io,
-        puppet_right_serial_port.as_mut(),
-        &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-        &[1; 9],
-    )
-    .expect("Communication error");
+    xm::sync_write_torque_enable(&io, puppet_left_serial_port.as_mut(), &[7, 8, 9], &[1; 3])
+        .expect("Communication error");
+    xm::sync_write_torque_enable(&io, puppet_right_serial_port.as_mut(), &[7, 8, 9], &[1; 3])
+        .expect("Communication error");
     xm::sync_write_operating_mode(&io, puppet_left_serial_port.as_mut(), &[9], &[5])
-    .expect("Communication error");
+        .expect("Communication error");
     xm::sync_write_operating_mode(&io, puppet_right_serial_port.as_mut(), &[9], &[5])
-    .expect("Communication error");
+        .expect("Communication error");
 
     while let Some(Event::Input {
         id,
@@ -50,7 +42,7 @@ fn main() -> Result<()> {
                 let target: &[f64] = buffer.values();
                 let mut angular = target
                     .iter()
-                    .map(|&x| xm::conv::radians_to_pos(x))
+                    .map(|&x| xm::conv::radians_to_pos(x as f64))
                     .collect::<Vec<_>>();
                 angular.insert(2, angular[1]);
                 angular.insert(4, angular[3]);
@@ -59,15 +51,15 @@ fn main() -> Result<()> {
                 xm::sync_write_goal_position(
                     &io,
                     puppet_left_serial_port.as_mut(),
-                    &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-                    &angular[..9],
+                    &[7, 8, 9],
+                    &angular[6..9],
                 )
                 .expect("Communication error");
                 xm::sync_write_goal_position(
                     &io,
                     puppet_right_serial_port.as_mut(),
-                    &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-                    &angular[9..18],
+                    &[7, 8, 9],
+                    &angular[15..18],
                 )
                 .expect("Communication error");
             }
