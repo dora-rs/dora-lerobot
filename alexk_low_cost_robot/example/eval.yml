@@ -11,6 +11,18 @@ nodes:
       envs:
         PUPPET_PATH: /dev/ttyACM0
 
+  - id: eval
+    custom:
+      source: /home/thomwolf/miniconda3/envs/lerobot/bin/python
+      args: -m debugpy --listen 5678 /home/thomwolf/Documents/Github/lerobot/lerobot/scripts/eval.py -p /home/thomwolf/Documents/Github/lerobot/outputs/train/blue_sort/checkpoints/last/pretrained_model eval.n_episodes=1 eval.batch_size=1 env.episode_length=1000
+      inputs:
+        agent_pos: arm_controller/puppet_position
+        cam_low: cam_low/image
+        cam_high: cam_high/image
+      outputs:
+        - action
+        - reset
+
   - id: plot
     custom:
       source: ../nodes/plot_node.py
@@ -43,18 +55,6 @@ nodes:
         - image
       envs:
         CAMERA_ID: /dev/video6
-
-  - id: eval
-    custom:
-      source: /home/thomwolf/miniconda3/envs/lerobot/bin/python
-      args: -m debugpy --listen 5678 /home/thomwolf/Documents/Github/lerobot/lerobot/scripts/eval.py -p /home/thomwolf/Documents/Github/lerobot/outputs/train/2024-05-29/12-45-30_dora_act_default/checkpoints/059000 eval.n_episodes=1 eval.batch_size=1 env.episode_length=1000
-      inputs:
-        agent_pos: arm_controller/puppet_position
-        cam_low: cam_low/image
-        cam_high: cam_high/image
-      outputs:
-        - action
-        - reset
 
   # - id: keyboard
   #   custom:
