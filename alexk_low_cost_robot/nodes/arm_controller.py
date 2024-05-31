@@ -31,6 +31,8 @@ if __name__ == '__main__':
                     "puppet_position",
                     pa.array(pos.ravel()),
                     event["metadata"])
+            elif event["id"] == "terminated":
+                break
 
     # Finished
     follower._disable_torque()

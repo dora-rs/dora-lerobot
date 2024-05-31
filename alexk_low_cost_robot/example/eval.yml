@@ -5,6 +5,7 @@ nodes:
       args: ../nodes/arm_controller.py
       inputs:
         puppet_goal_position: eval/action
+        terminated: eval/terminated
         tick: dora/timer/millis/20
       outputs:
         - puppet_position
@@ -22,6 +23,7 @@ nodes:
       outputs:
         - action
         - reset
+        - terminated
 
   - id: plot
     custom:
