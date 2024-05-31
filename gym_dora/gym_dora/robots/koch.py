@@ -1,5 +1,6 @@
 """
 Configurations of Alexander Koch single arm
+with elbom-wrist extension, i.e. in 5 DoF + gripper setting
 
 From "Low-Cost Robot Arm by Tau Robotics"
 https://github.com/AlexanderKoch-Koch/low_cost_robot
@@ -12,7 +13,8 @@ ACTIONS = [
     "waist",
     "shoulder",
     "elbow",
-    "wrist",
+    "wrist_angle",
+    "wrist_rotate",
     # normalized gripper position (0: close, 1: open)
     "gripper",
 ]
@@ -23,7 +25,8 @@ JOINTS = [
     "waist",
     "shoulder",
     "elbow",
-    "wrist",
+    "wrist_angle",
+    "wrist_rotate",
     # normalized gripper position 0: close, 1: open
     "gripper",
 ]
