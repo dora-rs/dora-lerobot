@@ -18,14 +18,14 @@ CAMERAS = {
 
 JOINTS = [
     # absolute joint position
-    "left_arm_waist",
-    "left_arm_shoulder",
-    "left_arm_elbow",
-    "left_arm_forearm_roll",
-    "left_arm_wrist_angle",
-    "left_arm_wrist_rotate",
-    # normalized gripper position 0: close, 1: open
-    "left_arm_gripper",
+    # "left_arm_waist",
+    # "left_arm_shoulder",
+    # "left_arm_elbow",
+    # "left_arm_forearm_roll",
+    # "left_arm_wrist_angle",
+    # "left_arm_wrist_rotate",
+    # # normalized gripper position 0: close, 1: open
+    # "left_arm_gripper",
     # absolute joint position
     "right_arm_waist",
     "right_arm_shoulder",
@@ -39,14 +39,14 @@ JOINTS = [
 
 ACTIONS = [
     # position and quaternion for end effector
-    "left_arm_waist",
-    "left_arm_shoulder",
-    "left_arm_elbow",
-    "left_arm_forearm_roll",
-    "left_arm_wrist_angle",
-    "left_arm_wrist_rotate",
-    # normalized gripper position (0: close, 1: open)
-    "left_arm_gripper",
+    # "left_arm_waist",
+    # "left_arm_shoulder",
+    # "left_arm_elbow",
+    # "left_arm_forearm_roll",
+    # "left_arm_wrist_angle",
+    # "left_arm_wrist_rotate",
+    # # normalized gripper position (0: close, 1: open)
+    # "left_arm_gripper",
     "right_arm_waist",
     "right_arm_shoulder",
     "right_arm_elbow",

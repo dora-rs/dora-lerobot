@@ -57,6 +57,7 @@ dependencies = [
  "eyre",
  "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
  "serialport",
+ "trajectory",
 ]
 
 [[package]]
@@ -2152,6 +2153,15 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log 0.2.0",
+]
+
+[[package]]
+name = "trajectory"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f3a8197a1a4071f8397686ba13bed1b1145f34beff68f46f9484102069c73a4a"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]

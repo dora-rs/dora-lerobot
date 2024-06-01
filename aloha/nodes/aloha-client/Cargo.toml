@@ -11,3 +11,4 @@ serialport = "4.2.0"
 rustypot = { git = "https://github.com/haixuanTao/rustypot", branch = "angular-conversion" }
 eyre = "0.6.12"
 dora-node-api = "0.3.4"
+trajectory = "0.1.0"
