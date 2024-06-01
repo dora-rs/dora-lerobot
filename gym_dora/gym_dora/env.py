@@ -56,7 +56,7 @@ class DoraEnv(gym.Env):
         self._node = Node()
         self._observation = {"pixels": {}, "agent_pos": None}
         self._terminated = False
-        self._step_time = time.time()
+        self._action_time = time.time()
 
     def _get_obs(self):
         obs_initial_time = time.time()
@@ -98,11 +98,13 @@ class DoraEnv(gym.Env):
 
     def step(self, action: np.ndarray):
         # Send the action to the dataflow as action key.
+
+        # Wait for time to send the action
+        time.sleep(max(0, self.fps - (time.time() - self._action_time)))
+        self._action_time = time.time()
+
         self._node.send_output("action", pa.array(action))
 
-        # Space observation so that they match the dataset
-        time.sleep(max(0, time.time() - self._step_time - 1 / self.fps))
-        self._step_time = time.time()
 
         # Reset the observation
         self._get_obs()
