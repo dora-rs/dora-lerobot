@@ -1,0 +1,21 @@
+nodes:
+  - id: aloha-client
+    custom:
+      source: /home/peter/miniconda3/envs/reachy/bin/python
+      args: ../reachy_client.py
+      inputs:
+        action: eval/action
+        tick: dora/timer/millis/33
+      outputs:
+        - agent_pos
+        - cam_trunk
+
+  - id: eval
+    custom:
+      source: python
+      args: /home/rcadene/lerobot/lerobot/scripts/eval.py -p cadene/aloha_act_no_state_aloha_v2_static_dora_test_wrist_gripper eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000
+      inputs:
+        agent_pos: reachy-client/agent_pos
+        cam_trunk: reachy-client/cam_trunk
+      outputs:
+        - action
