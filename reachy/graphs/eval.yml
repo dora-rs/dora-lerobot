@@ -1,10 +1,20 @@
 nodes:
-  - id: aloha-client
+  - id: reachy-client
     custom:
       source: /home/peter/miniconda3/envs/reachy/bin/python
-      args: ../reachy_client.py
+      args: ../nodes/reachy_client.py
       inputs:
         action: eval/action
+        tick: dora/timer/millis/33
+      outputs:
+        - agent_pos
+        - cam_trunk
+
+  - id: reachy-vision-client
+    custom:
+      source: /home/peter/miniconda3/envs/reachy/bin/python
+      args: ../nodes/reachy_vision_client.py
+      inputs:
         tick: dora/timer/millis/33
       outputs:
         - agent_pos
@@ -13,9 +23,29 @@ nodes:
   - id: eval
     custom:
       source: python
-      args: /home/rcadene/lerobot/lerobot/scripts/eval.py -p cadene/aloha_act_no_state_aloha_v2_static_dora_test_wrist_gripper eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000
+      args: /home/peter/Documents/work/lerobot/lerobot/scripts/eval.py -p cadene/2024_06_04_act_reachy2_teleop_remi_040000 eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000
+      # args: ../nodes/gym_dora_node.py
       inputs:
         agent_pos: reachy-client/agent_pos
-        cam_trunk: reachy-client/cam_trunk
+        cam_trunk: reachy-vision-client/cam_trunk
       outputs:
         - action
+
+  - id: plot
+    custom:
+      source: ../nodes/plot_node.py
+      inputs:
+        image: reachy-vision-client/cam_trunk
+        position: reachy-client/agent_pos
+        text_action: eval/action
+      envs:
+        IMAGE_WIDTH: 1280
+        IMAGE_HEIGHT: 800
+
+  - id: dora-record
+    custom:
+      build: cargo install --git https://github.com/dora-rs/dora dora-record
+      source: dora-record
+      inputs:
+        agent_pos: reachy-client/agent_pos
+        action: eval/action

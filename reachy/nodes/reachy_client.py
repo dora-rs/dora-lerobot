@@ -5,22 +5,58 @@ from pathlib import Path
 
 import h5py
 from reachy2_sdk import ReachySDK
-from pollen_vision.camera_wrappers.depthai import SDKWrapper
-from pollen_vision.camera_wrappers.depthai.utils import get_config_file_path
 import pyarrow as pa
 from dora import Node
 import numpy as np
 
 freq = 30
 
-cam_name = "cam_trunk"
-
-cam = SDKWrapper(get_config_file_path("CONFIG_SR"), fps=freq)
 # ret, image = cap.read()
-reachy = ReachySDK("localhost")
-reachy.turn_on()
-time.sleep(1)
+reachy = ReachySDK("172.16.0.51")
 
+# reachy = ReachySDK("192.168.1.51")
+
+reachy.turn_on()
+
+time.sleep(1)
+action = [
+    -0.11903145498601328,
+    0.11292280260403312,
+    0.48048914307403895,
+    -1.4491468779308918,
+    0.1895427567665842,
+    0.009599310885968814,
+    -0.20141099568014562,
+    2.2656896114349365,
+    -0.13212142437597074,
+    -0.07731808586334879,
+    -0.5141739976375295,
+    -1.512502329778286,
+    0.00034906585039886593,
+    0.3193952531149623,
+    0.40474185353748504,
+    2.2610876560211,
+]
+
+
+reachy.l_arm.shoulder.pitch.goal_position = np.rad2deg(action[0])
+reachy.l_arm.shoulder.roll.goal_position = np.rad2deg(action[1])
+reachy.l_arm.elbow.yaw.goal_position = np.rad2deg(action[2])
+reachy.l_arm.elbow.pitch.goal_position = np.rad2deg(action[3])
+reachy.l_arm.wrist.roll.goal_position = np.rad2deg(action[4])
+reachy.l_arm.wrist.pitch.goal_position = np.rad2deg(action[5])
+reachy.l_arm.wrist.yaw.goal_position = np.rad2deg(action[6])
+reachy.l_arm.gripper.set_opening(min(100, max(0, action[7] * 40)))
+
+reachy.r_arm.shoulder.pitch.goal_position = np.rad2deg(action[8])
+reachy.r_arm.shoulder.roll.goal_position = np.rad2deg(action[9])
+reachy.r_arm.elbow.yaw.goal_position = np.rad2deg(action[10])
+reachy.r_arm.elbow.pitch.goal_position = np.rad2deg(action[11])
+reachy.r_arm.wrist.roll.goal_position = np.rad2deg(action[12])
+reachy.r_arm.wrist.pitch.goal_position = np.rad2deg(action[13])
+reachy.r_arm.wrist.yaw.goal_position = np.rad2deg(action[14])
+reachy.r_arm.gripper.set_opening(min(100, max(0, action[15] / 2.26 * 100)))
+time.sleep(10)
 # start = time.time()
 node = Node()
 
@@ -36,20 +72,17 @@ for event in node:
             reachy.l_arm.wrist.roll.goal_position = np.rad2deg(action[4])
             reachy.l_arm.wrist.pitch.goal_position = np.rad2deg(action[5])
             reachy.l_arm.wrist.yaw.goal_position = np.rad2deg(action[6])
-            reachy.l_arm.gripper.set_opening(action[7])
+            reachy.l_arm.gripper.set_opening(min(100, max(0, action[7] / 2.26 * 100)))
 
-            reachy.r_arm.shoulder.pitch.goal_position = np.deg2rad(action[8])
-            reachy.r_arm.shoulder.roll.goal_position = np.deg2rad(action[9])
-            reachy.r_arm.elbow.yaw.goal_position = np.deg2rad(action[10])
-            reachy.r_arm.elbow.pitch.goal_position = np.deg2rad(action[11])
-            reachy.r_arm.wrist.roll.goal_position = np.deg2rad(action[12])
-            reachy.r_arm.wrist.pitch.goal_position = np.deg2rad(action[13])
-            reachy.r_arm.wrist.yaw.goal_position = np.deg2rad(action[14])
-            reachy.r_arm.gripper.set_opening(action[15])
+            reachy.r_arm.shoulder.pitch.goal_position = np.rad2deg(action[8])
+            reachy.r_arm.shoulder.roll.goal_position = np.rad2deg(action[9])
+            reachy.r_arm.elbow.yaw.goal_position = np.rad2deg(action[10])
+            reachy.r_arm.elbow.pitch.goal_position = np.rad2deg(action[11])
+            reachy.r_arm.wrist.roll.goal_position = np.rad2deg(action[12])
+            reachy.r_arm.wrist.pitch.goal_position = np.rad2deg(action[13])
+            reachy.r_arm.wrist.yaw.goal_position = np.rad2deg(action[14])
+            reachy.r_arm.gripper.set_opening(min(100, max(0, action[15] / 2.26 * 100)))
         case "tick":
-            cam_data, _, _ = cam.get_data()
-
-            left_rgb = cam_data["left"]
 
             qpos = {
                 "l_arm_shoulder_pitch": np.deg2rad(
@@ -90,5 +123,4 @@ for event in node:
                 "r_gripper": reachy.r_arm.gripper._present_position,
             }
 
-            node.send("agent_pos", pa.array(qpos.values()))
-            node.send("cam_trunk", left_rgb)
+            node.send_output("agent_pos", pa.array(qpos.values()))
