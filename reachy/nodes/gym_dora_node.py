@@ -46,10 +46,11 @@ class ReplayLeRobotPolicy:
     def __init__(self, epidode=1):
         self.index = 0
         self.finished = False
-        self.dataset = LeRobotDataset("cadene/reachy2_teleop_remi")
-        from_index = self.dataset.episode_data_index["from"][epidode]
-        to_index = self.dataset.episode_data_index["to"][epidode]
-        self.actions = self.dataset.hf_dataset["action"][from_index:to_index]
+episode = 1
+dataset = LeRobotDataset("cadene/reachy2_teleop_remi")
+from_index = dataset.episode_data_index["from"][episode]
+to_index = dataset.episode_data_index["to"][episode]
+states = dataset.hf_dataset["observation.state"][from_index]
 
     def select_action(self, obs):
         if self.index < len(self.actions):
@@ -68,12 +69,16 @@ class ReplayLeRobotPolicy:
 
 policy = ReplayLeRobotPolicy()
 
+import cv2
 
 done = False
 while not done:
     actions, finished = policy.select_action(observation)
 
     observation, reward, terminated, truncated, info = env.step(actions)
+    # cv2.imshow("frame", observation["pixels"]["cam_trunk"])
+    # if cv2.waitKey(1) & 0xFF == ord("q"):
+    # break
     if terminated:
         print(observation, reward, terminated, truncated, info, flush=True)
     done = terminated | truncated | done | finished

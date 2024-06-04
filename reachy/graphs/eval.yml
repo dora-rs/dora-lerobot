@@ -3,12 +3,12 @@ nodes:
     custom:
       source: /home/peter/miniconda3/envs/reachy/bin/python
       args: ../nodes/reachy_client.py
+      # args: ../nodes/replay_node.py
       inputs:
         action: eval/action
         tick: dora/timer/millis/33
       outputs:
         - agent_pos
-        - cam_trunk
 
   - id: reachy-vision-client
     custom:
@@ -17,13 +17,12 @@ nodes:
       inputs:
         tick: dora/timer/millis/33
       outputs:
-        - agent_pos
         - cam_trunk
 
   - id: eval
     custom:
       source: python
-      args: /home/peter/Documents/work/lerobot/lerobot/scripts/eval.py -p cadene/2024_06_04_act_reachy2_teleop_remi_040000 eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000
+      args: -m debugpy --listen 5678 /home/peter/Documents/work/lerobot/lerobot/scripts/eval.py -p cadene/2024_06_04_act_reachy2_teleop_remi_080000 eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000
       # args: ../nodes/gym_dora_node.py
       inputs:
         agent_pos: reachy-client/agent_pos
@@ -47,5 +46,27 @@ nodes:
       build: cargo install --git https://github.com/dora-rs/dora dora-record
       source: dora-record
       inputs:
-        agent_pos: reachy-client/agent_pos
+        observation.state: reachy-client/agent_pos
         action: eval/action
+        observation.images.cam_trunk: cam_saver_trunk/saved_image
+        episode_index: keyboard/space
+
+  - id: cam_saver_trunk
+    custom:
+      source: ../nodes/lerobot_webcam_saver.py
+      inputs:
+        image: reachy-vision-client/cam_trunk
+        record_episode: keyboard/space
+      outputs:
+        - saved_image
+      envs:
+        CAMERA_NAME: observation.images.cam_trunk
+
+  - id: keyboard
+    custom:
+      source: ../nodes/keyboard_node.py
+      inputs:
+        heartbeat: dora/timer/millis/20
+      outputs:
+        - space
+        - failed
