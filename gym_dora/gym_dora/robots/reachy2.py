@@ -47,5 +47,5 @@ JOINTS = [
 ]
 
 CAMERAS = {
-    "cam_trunk": (1280, 800, 3),
+    "cam_trunk": (800, 1280, 3),
 }
