@@ -50,28 +50,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "aloha-client"
-version = "0.1.0"
-dependencies = [
- "dora-node-api",
- "eyre",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
- "serialport",
-]
-
-[[package]]
-name = "aloha-teleop"
-version = "0.1.0"
-dependencies = [
- "clap",
- "dora-node-api",
- "eyre",
- "lazy_static",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
- "serialport",
-]
-
-[[package]]
 name = "android-tzdata"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -502,6 +480,13 @@ name = "clap_lex"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "98cc8fbded0c607b7ba9dd60cd98df59af97e84d24e49c8557331cfc26d301ce"
+
+[[package]]
+name = "client"
+version = "0.1.0"
+dependencies = [
+ "dora-node-api",
+]
 
 [[package]]
 name = "colorchoice"
@@ -1066,27 +1051,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
-name = "lcr-client"
-version = "0.1.0"
-dependencies = [
- "dora-node-api",
- "eyre",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot)",
- "serialport",
-]
-
-[[package]]
-name = "lcr-teleop"
-version = "0.1.0"
-dependencies = [
- "clap",
- "dora-node-api",
- "eyre",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
- "serialport",
-]
-
-[[package]]
 name = "lexical-core"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1647,6 +1611,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "record"
+version = "0.1.0"
+dependencies = [
+ "dora-node-api",
+ "eyre",
+ "rustypot",
+ "serialport",
+]
+
+[[package]]
 name = "redox_syscall"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1742,17 +1716,6 @@ dependencies = [
 name = "rustypot"
 version = "0.4.2"
 source = "git+https://github.com/haixuanTao/rustypot?branch=angular-conversion#d35010e73b35decae69efb2f796d31be5b518b11"
-dependencies = [
- "clap",
- "log",
- "paste",
- "serialport",
-]
-
-[[package]]
-name = "rustypot"
-version = "0.4.2"
-source = "git+https://github.com/haixuanTao/rustypot#50ac05fb9298400c545d2b892b901e1a3930d339"
 dependencies = [
  "clap",
  "log",
