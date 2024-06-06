@@ -3,21 +3,22 @@ import os
 import time
 from pathlib import Path
 
-import h5py
-from pollen_vision.camera_wrappers.depthai import SDKWrapper
-from pollen_vision.camera_wrappers.depthai.utils import get_config_file_path
-from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
+import numpy as np
 import pyarrow as pa
 from dora import Node
-import numpy as np
+from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
+
+# import h5py
+from pollen_vision.camera_wrappers.depthai import SDKWrapper
+from pollen_vision.camera_wrappers.depthai.utils import get_config_file_path
 
 freq = 30
 
 cam_name = "cam_trunk"
 
+time.sleep(5)
 cam = SDKWrapper(get_config_file_path("CONFIG_SR"), fps=freq)
 # ret, image = cap.read()
-time.sleep(1)
 
 import cv2
 import numpy as np
@@ -68,4 +69,5 @@ for event in node:
     # index += 1
 
     # Convert image to BGR from RGB
+    left_rgb = cv2.cvtColor(left_rgb, cv2.COLOR_BGR2RGB)
     node.send_output("cam_trunk", pa.array(left_rgb.ravel()))

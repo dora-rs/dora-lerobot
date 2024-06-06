@@ -24,6 +24,12 @@ ACTIONS = [
     "r_arm_wrist_pitch",
     "r_arm_wrist_yaw",
     "r_gripper",
+    "mobile_base_vx",
+    "mobile_base_vy",
+    "mobile_base_vtheta",
+    "head_roll",
+    "head_pitch",
+    "head_yaw",
 ]
 
 
@@ -44,6 +50,12 @@ JOINTS = [
     "r_arm_wrist_pitch",
     "r_arm_wrist_yaw",
     "r_gripper",
+    "mobile_base_vx",
+    "mobile_base_vy",
+    "mobile_base_vtheta",
+    "head_roll",
+    "head_pitch",
+    "head_yaw",
 ]
 
 CAMERAS = {

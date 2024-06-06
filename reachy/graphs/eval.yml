@@ -1,9 +1,7 @@
 nodes:
   - id: reachy-client
     custom:
-      source: /home/peter/miniconda3/envs/reachy/bin/python
-      args: ../nodes/reachy_client.py
-      # args: ../nodes/replay_node.py
+      source: ../nodes/reachy_client.py
       inputs:
         action: eval/action
         tick: dora/timer/millis/33
@@ -12,7 +10,7 @@ nodes:
 
   - id: reachy-vision-client
     custom:
-      source: /home/peter/miniconda3/envs/reachy/bin/python
+      source: ../nodes/reachy_vision_client.py
       args: ../nodes/reachy_vision_client.py
       inputs:
         tick: dora/timer/millis/33
@@ -21,9 +19,9 @@ nodes:
 
   - id: eval
     custom:
-      source: python
-      args: -m debugpy --listen 5678 /home/peter/Documents/work/lerobot/lerobot/scripts/eval.py -p cadene/2024_06_04_act_reachy2_teleop_remi_080000 eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000
-      # args: ../nodes/gym_dora_node.py
+      source: /home/antoine/Pollen/lerobot/lerobot/scripts/eval.py
+      args: -p cadene/2024_06_06_act_reachy2_mobile_base_3_030000 eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000
+      # source: ../nodes/gym_dora_node.py
       inputs:
         agent_pos: reachy-client/agent_pos
         cam_trunk: reachy-vision-client/cam_trunk

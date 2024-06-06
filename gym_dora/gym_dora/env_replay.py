@@ -1,11 +1,15 @@
+import time
+
+import cv2
 import gymnasium as gym
 import numpy as np
 import pyarrow as pa
 from dora import Node
 from gymnasium import spaces
-import time
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
-import cv2
+
+EPISODE = 19
+REPO_ID = "cadene/reachy2_mobile_base"
 
 
 class DoraEnv(gym.Env):
@@ -58,49 +62,55 @@ class DoraEnv(gym.Env):
         # that will be stored in `_observation` and `_terminated`
         self._observation = {"pixels": {}, "agent_pos": None}
         self._terminated = False
-        episode = 1
-        dataset = LeRobotDataset("cadene/reachy2_teleop_remi")
-        from_index = dataset.episode_data_index["from"][episode]
-        to_index = dataset.episode_data_index["to"][episode]
-        self.actions = dataset.hf_dataset["action"][from_index:to_index]
-        self.states = dataset.hf_dataset["observation.state"][from_index:to_index]
+        self.dataset = LeRobotDataset(REPO_ID)
+        self.from_index = self.dataset.episode_data_index["from"][EPISODE].item()
+        self.to_index = self.dataset.episode_data_index["to"][EPISODE].item()
 
-        self.images = dataset[from_index:to_index]["observation.images.cam_trunk"]
         self.index = 0
 
-    def reset(self, seed: int | None = None):
+    def reset(self, seed: int | None = None):  # type: ignore
         del seed
         ## TODO(tao): Add reset event to the node
         # self._node.send_output("reset")
         self._terminated = False
         info = {}
-        frame_chw = self.images[self.index]
-        frame_hwc = frame_chw.permute((1, 2, 0)).numpy() * 255
-        assert frame_hwc.shape == (800, 1280, 3), "image not in the right order"
-        frame_hwc = frame_hwc.astype(np.uint8)
-        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        pos = self.states[self.index].numpy()
-        self._observation = {"pixels": {"cam_trunk": frame_hwc}, "agent_pos": pos}
+
+        item = self.dataset[self.from_index + self.index]
+        state = item["observation.state"]
+        image = item["observation.images.cam_trunk"]
+        image = image.permute((1, 2, 0)).numpy() * 255
+        image = image.astype(np.uint8)
+
+        if image.shape != (800, 1280, 3):  # , "image not in the right order"
+            raise ValueError("image not in the right order")
+
+        self._observation = {"pixels": {"cam_trunk": image}, "agent_pos": state.numpy()}
 
         return self._observation, info
 
     def step(self, action: np.ndarray):
+        # if action is not None:
+        # Send the action to the dataflow as action key.
         self._node.send_output("action", pa.array(action))
 
         # Send the action to the dataflow as action key.
         # Space observation so that they match the dataset
         ## Convert image from chw to hwc
 
-        # cv2.imwrite("test.jpg", (images.permute((1, 2, 0)).numpy() * 255).astype(np.uint8))
-        if self.index >= len(self.images):
+        if self.from_index + self.index >= self.to_index:
             self._terminated = True
             return self._observation, 0, True, False, {}
-        image = self.images[self.index]
+
+        item = self.dataset[self.from_index + self.index]
+        state = item["observation.state"]
+        image = item["observation.images.cam_trunk"]
         image = image.permute((1, 2, 0)).numpy() * 255
         image = image.astype(np.uint8)
-        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        pos = self.states[self.index].numpy()
-        self._observation = {"pixels": {"cam_trunk": image}, "agent_pos": pos}
+
+        if image.shape != (800, 1280, 3):  # , "image not in the right order"
+            raise ValueError("image not in the right order")
+
+        self._observation = {"pixels": {"cam_trunk": image}, "agent_pos": state.numpy()}
         # Reset the observation
         reward = 0
         terminated = truncated = self._terminated
@@ -113,4 +123,5 @@ class DoraEnv(gym.Env):
     def close(self):
         # Drop the node
         del self._node
+        pass
         pass

@@ -1,10 +1,11 @@
-import gymnasium as gym
-
-import gym_dora  # noqa: F401
-import pandas as pd
 import time
 from pathlib import Path
+
+import gymnasium as gym
+import pandas as pd
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
+
+import gym_dora  # noqa: F401
 
 env = gym.make(
     "gym_dora/DoraReachy2-v0", disable_env_checker=True, max_episode_steps=10000
@@ -43,14 +44,15 @@ class ReplayPolicy:
 
 
 class ReplayLeRobotPolicy:
-    def __init__(self, epidode=1):
+    def __init__(self, episode=21):
         self.index = 0
         self.finished = False
-episode = 1
-dataset = LeRobotDataset("cadene/reachy2_teleop_remi")
-from_index = dataset.episode_data_index["from"][episode]
-to_index = dataset.episode_data_index["to"][episode]
-states = dataset.hf_dataset["observation.state"][from_index]
+        # episode = 1
+        dataset = LeRobotDataset("cadene/reachy2_mobile_base")
+        from_index = dataset.episode_data_index["from"][episode]
+        to_index = dataset.episode_data_index["to"][episode]
+        self.states = dataset.hf_dataset["observation.state"][from_index:to_index]
+        self.actions = dataset.hf_dataset["action"][from_index:to_index]
 
     def select_action(self, obs):
         if self.index < len(self.actions):
@@ -68,8 +70,6 @@ states = dataset.hf_dataset["observation.state"][from_index]
 # )
 
 policy = ReplayLeRobotPolicy()
-
-import cv2
 
 done = False
 while not done:
