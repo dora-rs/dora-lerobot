@@ -41,23 +41,27 @@ action = [
 ]
 
 
-reachy.l_arm.shoulder.pitch.goal_position = np.rad2deg(action[0])
-reachy.l_arm.shoulder.roll.goal_position = np.rad2deg(action[1])
-reachy.l_arm.elbow.yaw.goal_position = np.rad2deg(action[2])
-reachy.l_arm.elbow.pitch.goal_position = np.rad2deg(action[3])
-reachy.l_arm.wrist.roll.goal_position = np.rad2deg(action[4])
-reachy.l_arm.wrist.pitch.goal_position = np.rad2deg(action[5])
-reachy.l_arm.wrist.yaw.goal_position = np.rad2deg(action[6])
-reachy.l_arm.gripper.set_opening(min(100, max(0, action[7] * 40)))
+# reachy.l_arm.shoulder.pitch.goal_position = np.rad2deg(action[0])
+# reachy.l_arm.shoulder.roll.goal_position = np.rad2deg(action[1])
+# reachy.l_arm.elbow.yaw.goal_position = np.rad2deg(action[2])
+# reachy.l_arm.elbow.pitch.goal_position = np.rad2deg(action[3])
+# reachy.l_arm.wrist.roll.goal_position = np.rad2deg(action[4])
+# reachy.l_arm.wrist.pitch.goal_position = np.rad2deg(action[5])
+# reachy.l_arm.wrist.yaw.goal_position = np.rad2deg(action[6])
+# reachy.l_arm.gripper.set_opening(min(100, max(0, action[7] * 40)))
 
-reachy.r_arm.shoulder.pitch.goal_position = np.rad2deg(action[8])
-reachy.r_arm.shoulder.roll.goal_position = np.rad2deg(action[9])
-reachy.r_arm.elbow.yaw.goal_position = np.rad2deg(action[10])
-reachy.r_arm.elbow.pitch.goal_position = np.rad2deg(action[11])
-reachy.r_arm.wrist.roll.goal_position = np.rad2deg(action[12])
-reachy.r_arm.wrist.pitch.goal_position = np.rad2deg(action[13])
-reachy.r_arm.wrist.yaw.goal_position = np.rad2deg(action[14])
-reachy.r_arm.gripper.set_opening(min(100, max(0, action[15] / 2.26 * 100)))
+# reachy.r_arm.shoulder.pitch.goal_position = np.rad2deg(action[8])
+# reachy.r_arm.shoulder.roll.goal_position = np.rad2deg(action[9])
+# reachy.r_arm.elbow.yaw.goal_position = np.rad2deg(action[10])
+# reachy.r_arm.elbow.pitch.goal_position = np.rad2deg(action[11])
+# reachy.r_arm.wrist.roll.goal_position = np.rad2deg(action[12])
+# reachy.r_arm.wrist.pitch.goal_position = np.rad2deg(action[13])
+# reachy.r_arm.wrist.yaw.goal_position = np.rad2deg(action[14])
+# reachy.r_arm.gripper.set_opening(min(100, max(0, action[15] / 2.26 * 100)))
+
+
+reachy.l_arm.goto_joints(action[0:7], duration=2.0, degrees=False)
+reachy.r_arm.goto_joints(action[8:15], duration=2.0, degrees=False)
 
 time.sleep(5)
 
@@ -67,6 +71,7 @@ for event in node:
     match id:
         case "action":
             action = event["value"].to_numpy()
+
             reachy.l_arm.shoulder.pitch.goal_position = np.rad2deg(action[0])
             reachy.l_arm.shoulder.roll.goal_position = np.rad2deg(action[1])
             reachy.l_arm.elbow.yaw.goal_position = np.rad2deg(action[2])
@@ -78,7 +83,7 @@ for event in node:
             #     min(100, max(0, action[7] / 2.26 * 100))
             # )  # replay true action value
             reachy.l_arm.gripper.set_opening(
-                0 if action[7] < 2 else 100
+                0 if action[7] < 2.0 else 100
             )  # trick to force the gripper to close fully
 
             reachy.r_arm.shoulder.pitch.goal_position = np.rad2deg(action[8])
@@ -92,7 +97,7 @@ for event in node:
             #     min(100, max(0, action[15] / 2.26 * 100))
             # )  # replay true action value
             reachy.r_arm.gripper.set_opening(
-                0 if action[15] < 2 else 100
+                0 if action[15] < 2.0 else 100
             )  # trick to force the gripper to close fully
             reachy.mobile_base.set_speed(action[16], action[17], np.rad2deg(action[18]))
             reachy.head.neck.roll.goal_position = np.rad2deg(action[19])
