@@ -34,6 +34,7 @@ git clone https://github.com/pollen-robotics/reachy2_hdf5_recorder/
 git clone git@github.com:huggingface/lerobot.git
 pip install -e lerobot
 git clone git@github.com:dora-rs/dora-lerobot.git --branch WORKING-REACHY
+pip install -e dora-lerobot/gym_dora
 
 cargo install dora-rs --locked
 pip install dora-rs
