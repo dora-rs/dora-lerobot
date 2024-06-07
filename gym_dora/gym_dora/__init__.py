@@ -1,5 +1,6 @@
-from gym_dora.robots import aloha, koch, reachy2
 from gymnasium.envs.registration import register
+
+from gym_dora.robots import aloha, koch, reachy2
 
 register(
     id="gym_dora/DoraAloha-v0",
