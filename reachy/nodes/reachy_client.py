@@ -1,9 +1,5 @@
-import argparse
-import os
 import time
-from pathlib import Path
 
-# import h5py
 import numpy as np
 import pyarrow as pa
 from dora import Node
@@ -11,12 +7,14 @@ from reachy2_sdk import ReachySDK
 
 freq = 30
 
-ROBOT_IP = "192.168.1.42"
-# ROBOT_IP = "localhost"
-
-reachy = ReachySDK(ROBOT_IP)
 
 SIMULATION = False
+if SIMULATION:
+    ROBOT_IP = "localhost"
+else:
+    ROBOT_IP = "192.168.1.42"
+
+reachy = ReachySDK(ROBOT_IP)
 
 reachy.turn_on()
 
@@ -39,25 +37,6 @@ action = [
     0.40474185353748504,
     2.2610876560211,
 ]
-
-
-# reachy.l_arm.shoulder.pitch.goal_position = np.rad2deg(action[0])
-# reachy.l_arm.shoulder.roll.goal_position = np.rad2deg(action[1])
-# reachy.l_arm.elbow.yaw.goal_position = np.rad2deg(action[2])
-# reachy.l_arm.elbow.pitch.goal_position = np.rad2deg(action[3])
-# reachy.l_arm.wrist.roll.goal_position = np.rad2deg(action[4])
-# reachy.l_arm.wrist.pitch.goal_position = np.rad2deg(action[5])
-# reachy.l_arm.wrist.yaw.goal_position = np.rad2deg(action[6])
-# reachy.l_arm.gripper.set_opening(min(100, max(0, action[7] * 40)))
-
-# reachy.r_arm.shoulder.pitch.goal_position = np.rad2deg(action[8])
-# reachy.r_arm.shoulder.roll.goal_position = np.rad2deg(action[9])
-# reachy.r_arm.elbow.yaw.goal_position = np.rad2deg(action[10])
-# reachy.r_arm.elbow.pitch.goal_position = np.rad2deg(action[11])
-# reachy.r_arm.wrist.roll.goal_position = np.rad2deg(action[12])
-# reachy.r_arm.wrist.pitch.goal_position = np.rad2deg(action[13])
-# reachy.r_arm.wrist.yaw.goal_position = np.rad2deg(action[14])
-# reachy.r_arm.gripper.set_opening(min(100, max(0, action[15] / 2.26 * 100)))
 
 
 reachy.l_arm.goto_joints(action[0:7], duration=2.0, degrees=False)

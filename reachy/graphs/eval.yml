@@ -20,7 +20,7 @@ nodes:
   - id: eval
     custom:
       source: /home/antoine/Pollen/lerobot/lerobot/scripts/eval.py
-      args: -p pollen-robotics/grasp_mug_apple_10K eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000 policy.n_action_steps=100
+      args: -p pollen-robotics/grasp_mug_apple_60K eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000 policy.n_action_steps=100
       # source: ../nodes/gym_dora_node.py
       inputs:
         agent_pos: reachy-client/agent_pos

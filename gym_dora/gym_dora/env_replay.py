@@ -8,7 +8,7 @@ from dora import Node
 from gymnasium import spaces
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 
-EPISODE = 19
+EPISODE = 0
 REPO_ID = "pollen-robotics/grasp_mug"
 
 
@@ -53,17 +53,17 @@ class DoraEnv(gym.Env):
                 )
             observation_space["pixels"] = spaces.Dict(pixels_space)
 
-        self.observation_space = spaces.Dict(observation_space)
-        self.action_space = spaces.Box(
-            low=-1, high=1, shape=(len(self.actions),), dtype=np.float32
-        )
-
         observation_space["dataset_index"] = spaces.Box(
             low=0,
             high=10,
             shape=(1,),
             dtype=np.int32,
             # dtype=np.float64,
+        )
+
+        self.observation_space = spaces.Dict(observation_space)
+        self.action_space = spaces.Box(
+            low=-1, high=1, shape=(len(self.actions),), dtype=np.float32
         )
 
         # Initialize a new Dora node used to get events from the robot
@@ -82,7 +82,7 @@ class DoraEnv(gym.Env):
 
     def reset(self, seed: int | None = None):  # type: ignore
         del seed
-        print("AAAAAAAAA")
+
         ## TODO(tao): Add reset event to the node
         # self._node.send_output("reset")
         self._terminated = False
@@ -144,5 +144,4 @@ class DoraEnv(gym.Env):
     def close(self):
         # Drop the node
         # del self._node
-        pass
         pass

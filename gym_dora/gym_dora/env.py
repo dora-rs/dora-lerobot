@@ -66,7 +66,7 @@ class DoraEnv(gym.Env):
         self._observation = {
             "pixels": {},
             "agent_pos": None,
-            "dataset_index": np.array([np.int32(0)]),
+            "dataset_index": np.array([np.int32(1)]),
         }
         self._terminated = False
         self._step_time = time.time()
