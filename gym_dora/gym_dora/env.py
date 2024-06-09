@@ -1,9 +1,10 @@
+import time
+
 import gymnasium as gym
 import numpy as np
 import pyarrow as pa
 from dora import Node
 from gymnasium import spaces
-import time
 
 
 class DoraEnv(gym.Env):
@@ -33,6 +34,14 @@ class DoraEnv(gym.Env):
                 dtype=np.float64,
             )
 
+        observation_space["dataset_index"] = spaces.Box(
+            low=0,
+            high=10,
+            shape=(1,),
+            dtype=np.int32,
+            # dtype=np.float64,
+        )
+
         if self.cameras:
             pixels_space = {}
             for camera, hwc_shape in cameras.items():
@@ -54,7 +63,11 @@ class DoraEnv(gym.Env):
         # Initialize a new Dora node used to get events from the robot
         # that will be stored in `_observation` and `_terminated`
         self._node = Node()
-        self._observation = {"pixels": {}, "agent_pos": None}
+        self._observation = {
+            "pixels": {},
+            "agent_pos": None,
+            "dataset_index": np.array([np.int32(0)]),
+        }
         self._terminated = False
         self._step_time = time.time()
 

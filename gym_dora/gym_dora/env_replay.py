@@ -9,7 +9,7 @@ from gymnasium import spaces
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 
 EPISODE = 19
-REPO_ID = "cadene/reachy2_mobile_base"
+REPO_ID = "pollen-robotics/grasp_mug"
 
 
 class DoraEnv(gym.Env):
@@ -26,7 +26,7 @@ class DoraEnv(gym.Env):
         self.actions = actions
         self.joints = joints
         self.cameras = cameras
-        self._node = Node()
+        # self._node = Node()
 
         # Specify gym action and observation spaces
 
@@ -58,9 +58,21 @@ class DoraEnv(gym.Env):
             low=-1, high=1, shape=(len(self.actions),), dtype=np.float32
         )
 
+        observation_space["dataset_index"] = spaces.Box(
+            low=0,
+            high=10,
+            shape=(1,),
+            dtype=np.int32,
+            # dtype=np.float64,
+        )
+
         # Initialize a new Dora node used to get events from the robot
         # that will be stored in `_observation` and `_terminated`
-        self._observation = {"pixels": {}, "agent_pos": None}
+        self._observation = {
+            "pixels": {},
+            "agent_pos": None,
+            "dataset_index": np.array([np.int32(0)]),
+        }
         self._terminated = False
         self.dataset = LeRobotDataset(REPO_ID)
         self.from_index = self.dataset.episode_data_index["from"][EPISODE].item()
@@ -70,6 +82,7 @@ class DoraEnv(gym.Env):
 
     def reset(self, seed: int | None = None):  # type: ignore
         del seed
+        print("AAAAAAAAA")
         ## TODO(tao): Add reset event to the node
         # self._node.send_output("reset")
         self._terminated = False
@@ -84,14 +97,18 @@ class DoraEnv(gym.Env):
         if image.shape != (800, 1280, 3):  # , "image not in the right order"
             raise ValueError("image not in the right order")
 
-        self._observation = {"pixels": {"cam_trunk": image}, "agent_pos": state.numpy()}
+        self._observation = {
+            "pixels": {"cam_trunk": image},
+            "agent_pos": state.numpy(),
+            "dataset_index": np.array([np.int32(0)]),
+        }
 
         return self._observation, info
 
     def step(self, action: np.ndarray):
         # if action is not None:
         # Send the action to the dataflow as action key.
-        self._node.send_output("action", pa.array(action))
+        # self._node.send_output("action", pa.array(action))
 
         # Send the action to the dataflow as action key.
         # Space observation so that they match the dataset
@@ -110,7 +127,11 @@ class DoraEnv(gym.Env):
         if image.shape != (800, 1280, 3):  # , "image not in the right order"
             raise ValueError("image not in the right order")
 
-        self._observation = {"pixels": {"cam_trunk": image}, "agent_pos": state.numpy()}
+        self._observation = {
+            "pixels": {"cam_trunk": image},
+            "agent_pos": state.numpy(),
+            "dataset_index": np.array([np.int32(0)]),
+        }
         # Reset the observation
         reward = 0
         terminated = truncated = self._terminated
@@ -122,6 +143,6 @@ class DoraEnv(gym.Env):
 
     def close(self):
         # Drop the node
-        del self._node
+        # del self._node
         pass
         pass
