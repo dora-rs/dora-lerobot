@@ -1,7 +1,10 @@
 [workspace]
 members = [
-    "koch/nodes/client",
-    "koch/nodes/record",
+    "aloha/nodes/aloha-teleop",
+    "aloha/nodes/aloha-client",
+    "alexk_low_cost_robot/wizard",
+    "alexk_low_cost_robot/nodes/lcr-teleop",
+    "alexk_low_cost_robot/nodes/lcr-client"
 ]
 
 resolver = "2"
