@@ -3,8 +3,7 @@ use dora_node_api::{
 };
 use eyre::{Context, Result};
 use rustypot::{device::xm, DynamixelSerialIO};
-use std::{thread::sleep, time::Duration};
-use trajectory::{CubicSpline, Trajectory};
+use std::time::Duration;
 
 fn main() -> Result<()> {
     let (mut node, mut events) = DoraNode::init_from_env()?;
@@ -17,8 +16,13 @@ fn main() -> Result<()> {
         .open()
         .expect("Failed to open port");
     let io = DynamixelSerialIO::v2();
-    xm::sync_write_torque_enable(&io, puppet_left_serial_port.as_mut(), &[7, 8, 9], &[1; 3])
-        .expect("Communication error");
+    xm::sync_write_torque_enable(
+        &io,
+        puppet_left_serial_port.as_mut(),
+        &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+        &[1; 9],
+    )
+    .expect("Communication error");
     xm::sync_write_torque_enable(
         &io,
         puppet_right_serial_port.as_mut(),
@@ -33,7 +37,6 @@ fn main() -> Result<()> {
     xm::sync_write_goal_position(&io, puppet_right_serial_port.as_mut(), &[9], &[3145])
         .expect("Communication error");
     let mut pos_right: Vec<f64> = vec![];
-
     while let Some(Event::Input {
         id,
         metadata: _,
@@ -47,46 +50,19 @@ fn main() -> Result<()> {
                     .try_into()
                     .context("Could not parse `puppet_goal_position` as float64")?;
                 let target: &[f32] = buffer.values();
-                let target = target[..7].iter().map(|&x| x as f64).collect();
-
-                let times = vec![0.0_f64, 0.033];
-                let points = vec![pos_right.clone(), target];
-
-                // angular.insert(11, angular[10]);
-                // angular.insert(13, angular[12]);
-
-                // let ip = CubicSpline::new(times, points).unwrap();
-                // for i in 0..5 {
-                //     let t = i as f64 * 0.006_f64;
-                //     let p = ip.position(t).unwrap();
-                //     let mut angular = p.iter()
-                //         .map(|&x| xm::conv::radians_to_pos(x))
-                //         .collect::<Vec<_>>();
-                //     angular.insert(2, angular[1]);
-                //     angular.insert(4, angular[3]);
-                //     xm::sync_write_goal_position(
-                //         &io,
-                //         puppet_right_serial_port.as_mut(),
-                //         &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-                //         &angular[..9],
-                //     )
-                //     .expect("Communication error");
-                //     sleep(Duration::from_millis(1));
-                // }
-                // xm::sync_write_goal_position(
-                //     &io,
-                //     puppet_right_serial_port.as_mut(),
-                //     &[1, 2, 3, 4, 5, 6, 7, 8, 9],
-                //     &angular[9..18],
-                // )
-                // .expect("Communication error");
-                // xm::sync_write_goal_position(
-                //     &io,
-                //     puppet_right_serial_port.as_mut(),
-                //     &[7, 8, 9],
-                //     &angular[15..18],
-                // )
-                // .expect("Communication error");
+                let mut angular = target
+                    .iter()
+                    .map(|&x| xm::conv::radians_to_pos(x as f64))
+                    .collect::<Vec<_>>();
+                angular.insert(2, angular[1]);
+                angular.insert(4, angular[3]);
+                xm::sync_write_goal_position(
+                    &io,
+                    puppet_left_serial_port.as_mut(),
+                    &[1, 2, 3, 4, 5, 6, 7, 8, 9],
+                    &angular[..9],
+                )
+                .expect("Communication error");
             }
             "tick" => {
                 let mut pos_left = xm::sync_read_present_position(
