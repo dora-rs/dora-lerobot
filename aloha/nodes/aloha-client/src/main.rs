@@ -58,7 +58,7 @@ fn main() -> Result<()> {
                 angular.insert(4, angular[3]);
                 xm::sync_write_goal_position(
                     &io,
-                    puppet_left_serial_port.as_mut(),
+                    puppet_right_serial_port.as_mut(),
                     &[1, 2, 3, 4, 5, 6, 7, 8, 9],
                     &angular[..9],
                 )
