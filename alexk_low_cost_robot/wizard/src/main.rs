@@ -59,9 +59,7 @@ fn get_positions(
         let pos = xl330::sync_read_present_position(&io, serial_port, &[0, 1, 2, 3, 4, 5])
             .expect("Read Communication error");
 
-        pos.iter()
-            .map(|&x| read_i32_angle(x))
-            .collect::<Vec<_>>()
+        pos.iter().map(|&x| read_i32_angle(x)).collect::<Vec<_>>()
     } else {
         // x430 for 2 first and xl330 for the rest
 
