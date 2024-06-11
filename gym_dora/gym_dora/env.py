@@ -34,14 +34,6 @@ class DoraEnv(gym.Env):
                 dtype=np.float64,
             )
 
-        observation_space["dataset_index"] = spaces.Box(
-            low=0,
-            high=10,
-            shape=(1,),
-            dtype=np.int32,
-            # dtype=np.float64,
-        )
-
         if self.cameras:
             pixels_space = {}
             for camera, hwc_shape in cameras.items():
@@ -55,6 +47,13 @@ class DoraEnv(gym.Env):
                 )
             observation_space["pixels"] = spaces.Dict(pixels_space)
 
+        observation_space["dataset_index"] = spaces.Box(
+            low=0,
+            high=10,
+            shape=(1,),
+            dtype=np.int32,
+        )
+
         self.observation_space = spaces.Dict(observation_space)
         self.action_space = spaces.Box(
             low=-1, high=1, shape=(len(self.actions),), dtype=np.float32
@@ -66,7 +65,7 @@ class DoraEnv(gym.Env):
         self._observation = {
             "pixels": {},
             "agent_pos": None,
-            "dataset_index": np.array([np.int32(1)]),
+            "dataset_index": np.array([np.int32(0)]),
         }
         self._terminated = False
         self._step_time = time.time()
@@ -97,6 +96,10 @@ class DoraEnv(gym.Env):
             # If the event is a timeout error break the update loop.
             elif event["type"] == "ERROR":
                 break
+
+            self._observation["dataset_index"] = np.array(
+                [np.int32(0)]
+            )  # TODO added that but maybe useless
 
     def reset(self, seed: int | None = None):
         del seed

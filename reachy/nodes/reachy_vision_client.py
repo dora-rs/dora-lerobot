@@ -11,14 +11,19 @@ from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 # import h5py
 from pollen_vision.camera_wrappers.depthai import SDKWrapper
 from pollen_vision.camera_wrappers.depthai.utils import get_config_file_path
+from reachy2_sdk import ReachySDK
 
 freq = 30
 
+SIMULATION = False
+if SIMULATION:
+    reachy = ReachySDK("localhost")
+else:
+    cam = SDKWrapper(get_config_file_path("CONFIG_SR"), fps=freq)
+
 cam_name = "cam_trunk"
 
-time.sleep(5)
-cam = SDKWrapper(get_config_file_path("CONFIG_SR"), fps=freq)
-# ret, image = cap.read()
+time.sleep(7)
 
 import cv2
 import numpy as np
@@ -51,15 +56,18 @@ import torch
 node = Node()
 index = 0
 
-
 for event in node:
     # import cv2
 
     # while True:
     id = event["id"]
-    cam_data, _, _ = cam.get_data()
+    if SIMULATION:
+        reachy.cameras.SR.capture()
+        left_rgb = reachy.cameras.SR.get_frame()
+    else:
+        cam_data, _, _ = cam.get_data()
+        left_rgb = cam_data["left"]
 
-    left_rgb = cam_data["left"]
     # cv2.imshow("frame", left_rgb)
     # if cv2.waitKey(1) & 0xFF == ord("q"):
     # images = dataset[from_index.item() + index]["observation.images.cam_trunk"]

@@ -8,7 +8,7 @@ from dora import Node
 from gymnasium import spaces
 from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 
-EPISODE = 0
+EPISODE = 20
 REPO_ID = "pollen-robotics/grasp_mug"
 
 
@@ -26,7 +26,7 @@ class DoraEnv(gym.Env):
         self.actions = actions
         self.joints = joints
         self.cameras = cameras
-        # self._node = Node()
+        self._node = Node()
 
         # Specify gym action and observation spaces
 
@@ -58,7 +58,6 @@ class DoraEnv(gym.Env):
             high=10,
             shape=(1,),
             dtype=np.int32,
-            # dtype=np.float64,
         )
 
         self.observation_space = spaces.Dict(observation_space)
@@ -108,7 +107,7 @@ class DoraEnv(gym.Env):
     def step(self, action: np.ndarray):
         # if action is not None:
         # Send the action to the dataflow as action key.
-        # self._node.send_output("action", pa.array(action))
+        self._node.send_output("action", pa.array(action))
 
         # Send the action to the dataflow as action key.
         # Space observation so that they match the dataset
@@ -143,5 +142,5 @@ class DoraEnv(gym.Env):
 
     def close(self):
         # Drop the node
-        # del self._node
+        del self._node
         pass

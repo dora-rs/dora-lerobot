@@ -31,7 +31,7 @@ register(
 
 register(
     id="gym_dora/DoraReachy2-v0",
-    entry_point="gym_dora.env_replay:DoraEnv",
+    entry_point="gym_dora.env:DoraEnv",
     max_episode_steps=300,
     nondeterministic=True,
     kwargs={
