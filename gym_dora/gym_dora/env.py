@@ -96,7 +96,7 @@ class DoraEnv(gym.Env):
 
     def step(self, action: np.ndarray):
         # Send the action to the dataflow as action key.
-        time.sleep(max(0, 1 / self.fps - (time.time() - self._step_time)))
+        time.sleep(max(0, 2 / self.fps - (time.time() - self._step_time)))
         self._node.send_output("action", pa.array(action))
 
         # Space observation so that they match the dataset
