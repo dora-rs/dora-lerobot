@@ -85,7 +85,7 @@ fn set_homing(
     puppet: bool,
     pos: &Vec<i32>,
 ) {
-    if puppet {
+    if !puppet {
         xl330::sync_write_homing_offset(&io, serial_port, &[0, 1, 2, 3, 4, 5], &pos)
             .expect("Communication error");
     } else {
@@ -110,7 +110,7 @@ fn set_drive_mode(
         .map(|&x| if x { 1 } else { 0 })
         .collect::<Vec<_>>();
 
-    if puppet {
+    if !puppet {
         xl330::sync_write_drive_mode(&io, serial_port, &[0, 1, 2, 3, 4, 5], &mode)
             .expect("Communication error");
     } else {
@@ -141,12 +141,12 @@ fn get_correction(pos: &Vec<i32>, inverted: &Vec<bool>) -> Vec<i32> {
 
 // The present position wanted in position 1 for the arm
 fn wanted_pos1() -> Vec<i32> {
-    return vec![0, 0, 1024, 0, 0, -1024];
+    return vec![0, 0, 1024, 0, -1024, 0];
 }
 
 // The present position wanted in position 2 for the arm
 fn wanted_pos2() -> Vec<i32> {
-    return vec![1024, 1024, 0, -1024, 1024, 0];
+    return vec![1024, 1024, 0, -1024, 0, 1024];
 }
 
 fn prepare_configuration(io: &DynamixelSerialIO, serial_port: &mut dyn SerialPort, puppet: bool) {
@@ -160,7 +160,7 @@ fn prepare_configuration(io: &DynamixelSerialIO, serial_port: &mut dyn SerialPor
     xl330::sync_write_operating_mode(&io, serial_port, &[2, 3, 4, 5], &[4; 4])
         .expect("Communication error");
 
-    if !puppet {
+    if puppet {
         xl330::sync_write_torque_enable(&io, serial_port, &[0, 1], &[0; 2])
             .expect("Communication error");
 
@@ -173,6 +173,9 @@ fn prepare_configuration(io: &DynamixelSerialIO, serial_port: &mut dyn SerialPor
         xl430::sync_write_operating_mode(&io, serial_port, &[0, 1], &[4; 2])
             .expect("Communication error");
     }
+
+    set_drive_mode(io, serial_port, puppet, &vec![false; 6]);
+    set_homing(io, serial_port, puppet, &vec![0; 6]);
 }
 
 // To register position during the process we need to know approximately in which position the arm is
@@ -214,8 +217,6 @@ fn configure_homing(
 ) {
     println!("------Configuring homing");
 
-    prepare_configuration(io, serial_port, puppet);
-
     // set homing position to 0 for all servos
     set_homing(io, serial_port, puppet, &vec![0; 6]);
 
@@ -230,6 +231,8 @@ fn configure_homing(
 
     // set homing position
     set_homing(io, serial_port, puppet, &correction);
+
+    let pos = get_positions(io, serial_port, puppet);
 }
 
 fn configure_drive_mode(
@@ -238,8 +241,6 @@ fn configure_drive_mode(
     puppet: bool,
 ) -> Vec<bool> {
     println!("------Configuring drive mode");
-
-    prepare_configuration(io, serial_port, puppet);
 
     // get current positions
     let pos = get_positions(io, serial_port, puppet);
@@ -254,7 +255,6 @@ fn configure_drive_mode(
         .map(|(x, y)| x != y)
         .collect::<Vec<_>>();
 
-    // set drive mode
     set_drive_mode(io, serial_port, puppet, &inverted);
 
     return inverted;
@@ -264,7 +264,7 @@ fn main() {
     let cli = Cli::parse();
 
     let mut serial_port = serialport::new(cli.port, 1_000_000)
-        .timeout(Duration::from_millis(200))
+        .timeout(Duration::from_secs(5))
         .open()
         .expect("Failed to open port");
 
@@ -277,9 +277,13 @@ fn main() {
         if puppet { "puppet" } else { "master" }
     );
 
+    // Reset all parameters to default values
+    prepare_configuration(&io, serial_port.as_mut(), puppet);
+
     println!("Place the arm in position 1, as shown in the README image");
     pause();
 
+    // Configure a first homing try, assuming all servos are in the right direction
     configure_homing(
         &io,
         serial_port.as_mut(),
@@ -287,20 +291,21 @@ fn main() {
         puppet,
     );
 
-    set_drive_mode(&io, serial_port.as_mut(), puppet, &vec![false; 6]);
-
     println!("Place the arm in position 2, as shown in the README image");
     pause();
 
-    let invert = configure_drive_mode(&io, serial_port.as_mut(), puppet);
+    // Check what servos need to be inverted in this configuration
+    let inverted = configure_drive_mode(&io, serial_port.as_mut(), puppet);
 
     println!("Place the arm back in position 1, as shown in the README image");
     pause();
 
-    configure_homing(&io, serial_port.as_mut(), &invert, puppet);
+    // Reconfigure homing with the correct inverted servos
+    configure_homing(&io, serial_port.as_mut(), &inverted, puppet);
 
     println!("Configuration done!");
     println!("Make sure everything is working as expected by moving the arm and checking the position values :");
+    pause();
 
     loop {
         let pos = get_positions(&io, serial_port.as_mut(), puppet);
