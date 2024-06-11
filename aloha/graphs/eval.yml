@@ -63,7 +63,7 @@ nodes:
   - id: eval
     custom:
       source: python
-      args: /home/rcadene/lerobot/lerobot/scripts/eval.py -p cadene/aloha_act_no_state_aloha_v2_static_dora_test_wrist_gripper eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000
+      args: /home/rcadene/code/lerobot/lerobot/scripts/eval.py -p /home/rcadene/code/lerobot/outputs/train/2024_06_01_act_aloha_push_duplo_fix/checkpoints/010000/pretrained_model eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000
       inputs:
         agent_pos: aloha-client/puppet_position
         cam_left_wrist: cam_left_wrist/image

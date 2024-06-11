@@ -29,7 +29,7 @@ for event in node:
     if event_type == "INPUT":
         if event["id"] == "record_episode":
             record_episode = event["value"].to_numpy()[0]
-            print(f"Recording episode {record_episode}", flush=True)
+            print(f"Recording episode {record_episode}")
             # Save Episode Video
             if episode != -1 and record_episode == -1:
                 out_dir = BASE / f"{CAMERA_NAME}_episode_{episode:06d}"
@@ -47,7 +47,7 @@ for event in node:
                     f"{str(video_path)} &&"
                     f"rm -r {str(out_dir)}"
                 )
-                print(ffmpeg_cmd, flush=True)
+                print(ffmpeg_cmd)
                 subprocess.Popen([ffmpeg_cmd], start_new_session=True, shell=True)
                 episode = record_episode
 

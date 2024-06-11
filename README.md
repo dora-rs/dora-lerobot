@@ -13,6 +13,12 @@ cargo run -p aloha-teleop --release
 # cargo run -p aloha-teleop -- --help
 ```
 
+### Data collection
+
+```bash
+dora start aloha/graphs/record_2arms_teleop.yml --attach
+```
+
 ### Model evaluation
 
 To evaluate a model checkpoint you can use:
