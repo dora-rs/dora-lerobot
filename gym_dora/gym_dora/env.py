@@ -60,7 +60,7 @@ class DoraEnv(gym.Env):
 
     def _get_obs(self):
         obs_initial_time = time.time()
-        while time.time() - obs_initial_time < 1/self.fps:
+        while time.time() - obs_initial_time < 1 / self.fps:
             event = self._node.next(timeout=0.001)
 
             ## If event is None, the node event stream is closed and we should terminate the env
@@ -75,9 +75,7 @@ class DoraEnv(gym.Env):
                     camera = event["id"]
                     hwc_shape = self.cameras[camera]
                     self._observation["pixels"][event["id"]] = (
-                        event["value"]
-                        .to_numpy()
-                        .reshape(hwc_shape)
+                        event["value"].to_numpy().reshape(hwc_shape)
                     )
                 else:
                     # Map other inputs into the observation dictionary using the event id as key
@@ -98,10 +96,10 @@ class DoraEnv(gym.Env):
 
     def step(self, action: np.ndarray):
         # Send the action to the dataflow as action key.
+        time.sleep(max(0, 1 / self.fps - (time.time() - self._step_time)))
         self._node.send_output("action", pa.array(action))
 
         # Space observation so that they match the dataset
-        time.sleep(max(0, time.time() - self._step_time - 1 / self.fps))
         self._step_time = time.time()
 
         # Reset the observation
