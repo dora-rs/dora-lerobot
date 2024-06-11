@@ -231,8 +231,6 @@ fn configure_homing(
 
     // set homing position
     set_homing(io, serial_port, puppet, &correction);
-
-    let pos = get_positions(io, serial_port, puppet);
 }
 
 fn configure_drive_mode(
