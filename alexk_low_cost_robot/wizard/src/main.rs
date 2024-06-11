@@ -56,17 +56,17 @@ fn get_positions(
     puppet: bool,
 ) -> Vec<i32> {
     let pos = if !puppet {
-        let pos = xl330::sync_read_present_position(&io, serial_port, &[0, 1, 2, 3, 4, 5])
+        let pos = xl330::sync_read_present_position(&io, serial_port, &[1, 2, 3, 4, 5, 6])
             .expect("Read Communication error");
 
         pos.iter().map(|&x| read_i32_angle(x)).collect::<Vec<_>>()
     } else {
         // x430 for 2 first and xl330 for the rest
 
-        let pos = xl430::sync_read_present_position(&io, serial_port, &[0, 1])
+        let pos = xl430::sync_read_present_position(&io, serial_port, &[1, 2])
             .expect("Read Communication error");
 
-        let pos2 = xl330::sync_read_present_position(&io, serial_port, &[2, 3, 4, 5])
+        let pos2 = xl330::sync_read_present_position(&io, serial_port, &[3, 4, 5, 6])
             .expect("Read Communication error");
 
         pos.iter()
@@ -86,13 +86,13 @@ fn set_homing(
     pos: &Vec<i32>,
 ) {
     if !puppet {
-        xl330::sync_write_homing_offset(&io, serial_port, &[0, 1, 2, 3, 4, 5], &pos)
+        xl330::sync_write_homing_offset(&io, serial_port, &[1, 2, 3, 4, 5, 6], &pos)
             .expect("Communication error");
     } else {
-        xl430::sync_write_homing_offset(&io, serial_port, &[0, 1], &pos[0..2])
+        xl430::sync_write_homing_offset(&io, serial_port, &[1, 2], &pos[0..2])
             .expect("Communication error");
 
-        xl330::sync_write_homing_offset(&io, serial_port, &[2, 3, 4, 5], &pos[2..6])
+        xl330::sync_write_homing_offset(&io, serial_port, &[3, 4, 5, 6], &pos[2..6])
             .expect("Communication error");
     }
 }
@@ -111,13 +111,13 @@ fn set_drive_mode(
         .collect::<Vec<_>>();
 
     if !puppet {
-        xl330::sync_write_drive_mode(&io, serial_port, &[0, 1, 2, 3, 4, 5], &mode)
+        xl330::sync_write_drive_mode(&io, serial_port, &[1, 2, 3, 4, 5, 6], &mode)
             .expect("Communication error");
     } else {
-        xl430::sync_write_drive_mode(&io, serial_port, &[0, 1], &mode[0..2])
+        xl430::sync_write_drive_mode(&io, serial_port, &[1, 2], &mode[0..2])
             .expect("Communication error");
 
-        xl330::sync_write_drive_mode(&io, serial_port, &[2, 3, 4, 5], &mode[2..6])
+        xl330::sync_write_drive_mode(&io, serial_port, &[3, 4, 5, 6], &mode[2..6])
             .expect("Communication error");
     }
 }
@@ -151,26 +151,26 @@ fn wanted_pos2() -> Vec<i32> {
 
 fn prepare_configuration(io: &DynamixelSerialIO, serial_port: &mut dyn SerialPort, puppet: bool) {
     // To be configured, all servos must be in "torque disable" mode
-    xl330::sync_write_torque_enable(&io, serial_port, &[2, 3, 4, 5], &[0; 4])
+    xl330::sync_write_torque_enable(&io, serial_port, &[3, 4, 5, 6], &[0; 4])
         .expect("Communication error");
 
     // We need to work with 'extended position mode' (4) for all servos, because in joint mode (1) the servos can't rotate more than 360 degrees (from 0 to 4095)
     // And some mistake can happen while assembling the arm, you could end up with a servo with a position 0 or 4095 at a crucial point
     // See [https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/#operating-mode11]
-    xl330::sync_write_operating_mode(&io, serial_port, &[2, 3, 4, 5], &[4; 4])
+    xl330::sync_write_operating_mode(&io, serial_port, &[3, 4, 5, 6], &[4; 4])
         .expect("Communication error");
 
     if puppet {
-        xl330::sync_write_torque_enable(&io, serial_port, &[0, 1], &[0; 2])
+        xl330::sync_write_torque_enable(&io, serial_port, &[1, 2], &[0; 2])
             .expect("Communication error");
 
-        xl330::sync_write_operating_mode(&io, serial_port, &[0, 1], &[4; 2])
+        xl330::sync_write_operating_mode(&io, serial_port, &[1, 2], &[4; 2])
             .expect("Communication error");
     } else {
-        xl430::sync_write_torque_enable(&io, serial_port, &[0, 1], &[0; 2])
+        xl430::sync_write_torque_enable(&io, serial_port, &[1, 2], &[0; 2])
             .expect("Communication error");
 
-        xl430::sync_write_operating_mode(&io, serial_port, &[0, 1], &[4; 2])
+        xl430::sync_write_operating_mode(&io, serial_port, &[1, 2], &[4; 2])
             .expect("Communication error");
     }
 
@@ -303,7 +303,6 @@ fn main() {
 
     println!("Configuration done!");
     println!("Make sure everything is working as expected by moving the arm and checking the position values :");
-    pause();
 
     loop {
         let pos = get_positions(&io, serial_port.as_mut(), puppet);
