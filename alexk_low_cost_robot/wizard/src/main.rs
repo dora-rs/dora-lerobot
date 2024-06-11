@@ -122,31 +122,31 @@ fn set_drive_mode(
     }
 }
 
-// The correction function calculates the correction needed to adjust the homing position of the servos regarding suited positions
+// The correction function calculates the correction needed to adjust the homing position of the servos regarding wanted positions
 fn get_correction(pos: &Vec<i32>, inverted: &Vec<bool>) -> Vec<i32> {
-    let suited = suited_pos1();
+    let wanted = wanted_pos1();
 
     let mut correction = invert(pos, inverted);
 
     for i in 0..6 {
         if inverted[i] {
-            correction[i] -= suited[i];
+            correction[i] -= wanted[i];
         } else {
-            correction[i] += suited[i];
+            correction[i] += wanted[i];
         }
     }
 
     return correction;
 }
 
-// The present position suited in position 1 for the arm
-fn suited_pos1() -> Vec<i32> {
-    return vec![0, 0, 1024, 0, 0, 0];
+// The present position wanted in position 1 for the arm
+fn wanted_pos1() -> Vec<i32> {
+    return vec![0, 0, 1024, 0, 0, -1024];
 }
 
-// The present position suited in position 2 for the arm
-fn suited_pos2() -> Vec<i32> {
-    return vec![1024, 1024, 0, -1024, 1024, 1024];
+// The present position wanted in position 2 for the arm
+fn wanted_pos2() -> Vec<i32> {
+    return vec![1024, 1024, 0, -1024, 1024, 0];
 }
 
 fn prepare_configuration(io: &DynamixelSerialIO, serial_port: &mut dyn SerialPort, puppet: bool) {
@@ -156,6 +156,7 @@ fn prepare_configuration(io: &DynamixelSerialIO, serial_port: &mut dyn SerialPor
 
     // We need to work with 'extended position mode' (4) for all servos, because in joint mode (1) the servos can't rotate more than 360 degrees (from 0 to 4095)
     // And some mistake can happen while assembling the arm, you could end up with a servo with a position 0 or 4095 at a crucial point
+    // See [https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/#operating-mode11]
     xl330::sync_write_operating_mode(&io, serial_port, &[2, 3, 4, 5], &[4; 4])
         .expect("Communication error");
 
@@ -246,10 +247,10 @@ fn configure_drive_mode(
     // get nearest rounded positions
     let nearest_rounded = get_nearest_rounded_positions(&pos);
 
-    // if a position of a servo is not exactly the one suited for position2, we need to invert the mode of this servo by setting the drive mode to 1
+    // if a position of a servo is not exactly the one wanted for position2, we need to invert the mode of this servo by setting the drive mode to 1
     let inverted = nearest_rounded
         .iter()
-        .zip(suited_pos2().iter())
+        .zip(wanted_pos2().iter())
         .map(|(x, y)| x != y)
         .collect::<Vec<_>>();
 

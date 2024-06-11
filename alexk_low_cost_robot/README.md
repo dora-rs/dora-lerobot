@@ -1,7 +1,49 @@
-# recording a dataset with A. Koch robot arm
+# How to use A. Koch robot arm to record data set for LeRobot
 
 ## Hardware setup:
+
+### Assembly
+
 Pipeline designed for a teleoperated 5 DoF + gripper arm such as the arm by [A. Koch (build with the extension)](https://github.com/AlexanderKoch-Koch/low_cost_robot) and with 2 cameras to record images.
+
+Don't forget to install the official wizard to connect the servos, set the baud rate to 1M and set the ID of the servos from the base (1) to the gripper (6).
+
+### Configuring
+
+It's important to record the same type of data for every user. So you should manipulate Homing offsets and Drive Mode in order
+to have the same behavior for every user.
+
+We recommend to use our on-board wizard to set all of that automatically. See the guide below.
+
+After following the guide, you should have the following configuration:
+
+![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_wanted_configuration.png)
+
+Start by connecting the puppet arm to your computer, retrieve the device port and run the wizard with the following command:
+
+```bash
+cargo run -p wizard -- --port /dev/ttyUSB0 --puppet
+```
+
+This will disable all torque so you can move the arm freely to the Position 1 :
+
+[image]
+
+Then press enter to save the position and move to the Position 2 :
+
+[image]
+
+Then press enter to save the position and move back to the Position 1 :
+
+[image]
+
+Finally, move the arm and verify that the servos positions are correct.
+
+Then you can configure the master arm with the following command:
+
+```bash
+cargo run -p wizard -- --port /dev/ttyUSB1 --master
+```
 
 ## Install
 
