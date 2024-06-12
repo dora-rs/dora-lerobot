@@ -19,13 +19,15 @@ After following the guide, you should have the following configuration:
 
 ![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_wanted_configuration.png)
 
+The two positions you will be asked to set are:
+
+![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_positions.png)
+
 Start by connecting the puppet arm to your computer, retrieve the device port and run the wizard with the following command:
 
 ```bash
 cargo run -p wizard -- --port /dev/ttyUSB0 --puppet
 ```
-
-![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_positions.png)
 
 - This will disable all torque so you can move the arm freely to the Position 1.
 
