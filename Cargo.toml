@@ -2,7 +2,7 @@
 members = [
     "aloha/nodes/aloha-teleop",
     "aloha/nodes/aloha-client",
-    "alexk_low_cost_robot/wizard",
+    "alexk_low_cost_robot/lcr-auto-configure",
     "alexk_low_cost_robot/nodes/lcr-teleop",
     "alexk_low_cost_robot/nodes/lcr-client"
 ]

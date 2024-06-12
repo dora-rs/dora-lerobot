@@ -50,7 +50,7 @@ fn read_i32_angle(angle: u32) -> i32 {
 
 // The get_positions function is used to retrieve the current position of the servos in the arm, we
 // check if the arm is a puppet or master arm and then read the present position of the servos with appropriate API (XL330 or XL430)
-fn get_positions(
+fn read_positions(
     io: &DynamixelSerialIO,
     serial_port: &mut dyn SerialPort,
     puppet: bool,
@@ -79,7 +79,7 @@ fn get_positions(
 }
 
 // This function is used to set an offset value that lets you manipulate more friendly angles (e.g. 0 to 360 degrees) instead of the raw values
-fn set_homing(
+fn write_homing_offsets(
     io: &DynamixelSerialIO,
     serial_port: &mut dyn SerialPort,
     puppet: bool,
@@ -99,7 +99,7 @@ fn set_homing(
 
 // This function is used to set the drive mode of the servos, which determines how the servos "count" the position values.
 // It is important to set the drive mode correctly to ensure that the servos move correctly and in the desired direction.
-fn set_drive_mode(
+fn write_drive_modes(
     io: &DynamixelSerialIO,
     serial_port: &mut dyn SerialPort,
     puppet: bool,
@@ -123,10 +123,10 @@ fn set_drive_mode(
 }
 
 // The correction function calculates the correction needed to adjust the homing position of the servos regarding wanted positions
-fn get_correction(pos: &Vec<i32>, inverted: &Vec<bool>) -> Vec<i32> {
-    let wanted = wanted_pos1();
+fn calculate_corrections(pos: &Vec<i32>, inverted: &Vec<bool>) -> Vec<i32> {
+    let wanted = wanted_position_1();
 
-    let mut correction = invert(pos, inverted);
+    let mut correction = invert_appropriate_positions(pos, inverted);
 
     for i in 0..6 {
         if inverted[i] {
@@ -140,12 +140,12 @@ fn get_correction(pos: &Vec<i32>, inverted: &Vec<bool>) -> Vec<i32> {
 }
 
 // The present position wanted in position 1 for the arm
-fn wanted_pos1() -> Vec<i32> {
+fn wanted_position_1() -> Vec<i32> {
     return vec![0, 0, 1024, 0, -1024, 0];
 }
 
 // The present position wanted in position 2 for the arm
-fn wanted_pos2() -> Vec<i32> {
+fn wanted_position_2() -> Vec<i32> {
     return vec![1024, 1024, 0, -1024, 0, 1024];
 }
 
@@ -174,12 +174,12 @@ fn prepare_configuration(io: &DynamixelSerialIO, serial_port: &mut dyn SerialPor
             .expect("Communication error");
     }
 
-    set_drive_mode(io, serial_port, puppet, &vec![false; 6]);
-    set_homing(io, serial_port, puppet, &vec![0; 6]);
+    write_drive_modes(io, serial_port, puppet, &vec![false; 6]);
+    write_homing_offsets(io, serial_port, puppet, &vec![0; 6]);
 }
 
 // To register position during the process we need to know approximately in which position the arm is
-fn get_nearest_rounded_positions(pos: &Vec<i32>) -> Vec<i32> {
+fn calculate_nearest_rounded_positions(pos: &Vec<i32>) -> Vec<i32> {
     pos.iter()
         .map(|&x| {
             if x >= 0 {
@@ -201,8 +201,8 @@ fn get_nearest_rounded_positions(pos: &Vec<i32>) -> Vec<i32> {
         .collect::<Vec<_>>()
 }
 
-// useful function to invert the mode of the servos
-fn invert(pos: &Vec<i32>, inverted: &Vec<bool>) -> Vec<i32> {
+// useful function to invert a vector of positions knowing which servos are inverted
+fn invert_appropriate_positions(pos: &Vec<i32>, inverted: &Vec<bool>) -> Vec<i32> {
     pos.iter()
         .enumerate()
         .map(|(i, &x)| if inverted[i] { x } else { -x })
@@ -218,19 +218,19 @@ fn configure_homing(
     println!("------Configuring homing");
 
     // set homing position to 0 for all servos
-    set_homing(io, serial_port, puppet, &vec![0; 6]);
+    write_homing_offsets(io, serial_port, puppet, &vec![0; 6]);
 
     // get current positions
-    let pos = get_positions(io, serial_port, puppet);
+    let pos = read_positions(io, serial_port, puppet);
 
     // get nearest rounded positions
-    let nearest_rounded = get_nearest_rounded_positions(&pos);
+    let nearest_rounded = calculate_nearest_rounded_positions(&pos);
 
     // get correction
-    let correction = get_correction(&nearest_rounded, inverted);
+    let correction = calculate_corrections(&nearest_rounded, inverted);
 
     // set homing position
-    set_homing(io, serial_port, puppet, &correction);
+    write_homing_offsets(io, serial_port, puppet, &correction);
 }
 
 fn configure_drive_mode(
@@ -241,19 +241,19 @@ fn configure_drive_mode(
     println!("------Configuring drive mode");
 
     // get current positions
-    let pos = get_positions(io, serial_port, puppet);
+    let pos = read_positions(io, serial_port, puppet);
 
     // get nearest rounded positions
-    let nearest_rounded = get_nearest_rounded_positions(&pos);
+    let nearest_rounded = calculate_nearest_rounded_positions(&pos);
 
     // if a position of a servo is not exactly the one wanted for position2, we need to invert the mode of this servo by setting the drive mode to 1
     let inverted = nearest_rounded
         .iter()
-        .zip(wanted_pos2().iter())
+        .zip(wanted_position_2().iter())
         .map(|(x, y)| x != y)
         .collect::<Vec<_>>();
 
-    set_drive_mode(io, serial_port, puppet, &inverted);
+    write_drive_modes(io, serial_port, puppet, &inverted);
 
     return inverted;
 }
@@ -305,7 +305,7 @@ fn main() {
     println!("Make sure everything is working as expected by moving the arm and checking the position values :");
 
     loop {
-        let pos = get_positions(&io, serial_port.as_mut(), puppet);
+        let pos = read_positions(&io, serial_port.as_mut(), puppet);
 
         println!("{:?}", pos);
 

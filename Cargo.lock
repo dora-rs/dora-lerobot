@@ -1078,6 +1078,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
+name = "lcr-auto-configure"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
+ "serialport",
+]
+
+[[package]]
 name = "lcr-client"
 version = "0.1.0"
 dependencies = [
@@ -2531,15 +2540,6 @@ name = "windows_x86_64_msvc"
 version = "0.52.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bec47e5bfd1bff0eeaf6d8b485cc1074891a197ab4225d504cb7a1ab88b02bf0"
-
-[[package]]
-name = "wizard"
-version = "0.1.0"
-dependencies = [
- "clap",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
- "serialport",
-]
 
 [[package]]
 name = "wyz"

@@ -26,7 +26,7 @@ The two positions you will be asked to set are:
 Start by connecting the puppet arm to your computer, retrieve the device port and run the wizard with the following command:
 
 ```bash
-cargo run -p wizard -- --port /dev/ttyUSB0 --puppet
+cargo run -p lcr-auto-configure -- --port /dev/ttyUSB0 --puppet
 ```
 
 - This will disable all torque so you can move the arm freely to the Position 1.
@@ -40,7 +40,7 @@ cargo run -p wizard -- --port /dev/ttyUSB0 --puppet
 Then you can configure the master arm with the following command:
 
 ```bash
-cargo run -p wizard -- --port /dev/ttyUSB1 --master
+cargo run -p lcr-auto-configure -- --port /dev/ttyUSB1 --master
 ```
 
 ## Install
