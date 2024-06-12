@@ -25,19 +25,15 @@ Start by connecting the puppet arm to your computer, retrieve the device port an
 cargo run -p wizard -- --port /dev/ttyUSB0 --puppet
 ```
 
-This will disable all torque so you can move the arm freely to the Position 1 :
+![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_positions)
 
-[image]
+- This will disable all torque so you can move the arm freely to the Position 1.
 
-Then press enter to save the position and move to the Position 2 :
+- Then press enter to save the position and move to the Position 2.
 
-[image]
+- Then press enter to save the position and move back to the Position 1.
 
-Then press enter to save the position and move back to the Position 1 :
-
-[image]
-
-Finally, move the arm and verify that the servos positions are correct.
+- Finally, move the arm and verify that the servos positions are correct.
 
 Then you can configure the master arm with the following command:
 
