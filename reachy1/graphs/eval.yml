@@ -18,12 +18,14 @@ nodes:
 
   - id: eval
     custom:
-      source: /home/peter/Documents/work/lerobot/lerobot/scripts/eval.py
-      args: -p/home/peter/Documents/work/lerobot/outputs_fist_bump_2/checkpoints/last/pretrained_model eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000 policy.n_action_steps=100
+      source: dynamic
+      # source: /home/peter/Documents/work/lerobot/lerobot/scripts/eval.py
+      # args: -p /home/peter/Documents/work/lerobot/high_five_sea_3/checkpoints/last/pretrained_model eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000 policy.n_action_steps=100
       # source: ../nodes/gym_dora_node.py
       inputs:
         agent_pos: reachy-client/agent_pos
         cam_trunk: reachy-vision-client/cam_trunk
+        stop: keyboard/stop
       outputs:
         - action
 
@@ -37,15 +39,15 @@ nodes:
         IMAGE_WIDTH: 480
         IMAGE_HEIGHT: 640
 
-  - id: dora-record
-    custom:
-      build: cargo install --git https://github.com/dora-rs/dora dora-record
-      source: dora-record
-      inputs:
-        observation.state: reachy-client/agent_pos
-        action: eval/action
-        observation.images.cam_trunk: cam_saver_trunk/saved_image
-        episode_index: keyboard/space
+  # - id: dora-record
+  # custom:
+  # build: cargo install --git https://github.com/dora-rs/dora dora-record
+  # source: dora-record
+  # inputs:
+  # observation.state: reachy-client/agent_pos
+  # action: eval/action
+  # observation.images.cam_trunk: cam_saver_trunk/saved_image
+  # episode_index: keyboard/space
 
   - id: cam_saver_trunk
     custom:
@@ -66,3 +68,32 @@ nodes:
       outputs:
         - space
         - failed
+        - stop
+
+  # - id: idefics2
+  # operator:
+  # python: ../nodes/idefics2_node_demo.py
+  # inputs:
+  # image:
+  # source: reachy-vision-client/cam_trunk
+  # queue_size: 1
+  # text: whisper/text_llm
+  # outputs:
+  # - speak
+  # - control
+
+  # - id: whisper
+  # custom:
+  # source: ../nodes/whisper_node.py
+  # inputs:
+  # audio: dora/timer/millis/1000
+  # outputs:
+  # - text_llm
+
+  # - id: parler
+  # operator:
+  # python: ../nodes/parler_node.py
+  # inputs:
+  # text:
+  # source: idefics2/speak
+  # queue_size: 1
