@@ -28,6 +28,6 @@ for event in node:
     left_rgb = reachy.right_camera.last_frame
 
     # Convert image to BGR from RGB
-    # left_rgb = cv2.cvtColor(left_rgb, cv2.COLOR_BGR2RGB)
+    left_rgb = cv2.cvtColor(left_rgb, cv2.COLOR_BGR2RGB)
 
     node.send_output("cam_trunk", pa.array(left_rgb.ravel()))

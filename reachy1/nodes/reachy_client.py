@@ -12,6 +12,8 @@ ROBOT_IP = "10.42.0.124"
 # ROBOT_IP = "localhost"
 
 reachy = ReachySDK(ROBOT_IP)
+reachy.turn_off_smoothly("r_arm")
+time.sleep(2)
 reachy.turn_on("r_arm")
 reachy.turn_on("head")
 
