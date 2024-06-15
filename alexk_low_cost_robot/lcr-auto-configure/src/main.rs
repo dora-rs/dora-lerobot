@@ -8,9 +8,7 @@ use serialport::SerialPort;
 
 use eyre::{Context, Report, Result};
 
-// Import necessary traits and macros for command line parsing and debugging
 #[derive(Parser, Debug)]
-// Define the structure for command line arguments with meta information
 #[clap(author, version, about, long_about = None)]
 pub struct Cli {
     // Define a command line argument for 'port'
@@ -32,16 +30,17 @@ pub struct Cli {
 
 // The pause function is used to pause the program and wait for the user to press Enter before continuing
 // This way the user can take the time to place the arm in the correct position before continuing
-fn pause() -> Result<usize, Report> {
+fn pause() -> Result<(), Report> {
     let mut buffer = String::new();
 
     std::io::stdin()
         .read_line(&mut buffer)
         .context("Failed to read line")
+        .map(|_| ())
 }
 
 // The angle retrieved from "ReadPosition' is a 32-bit unsigned integer, but we need to convert it to a 32-bit signed integer to represent positive and negative angle values
-fn read_i32_angle(angle: u32) -> i32 {
+fn convert_i32_angle(angle: u32) -> i32 {
     if angle < i32::MAX as u32 {
         angle as i32
     } else {
@@ -55,28 +54,34 @@ fn read_positions(
     io: &DynamixelSerialIO,
     serial_port: &mut dyn SerialPort,
     puppet: bool,
-) -> Vec<i32> {
-    let pos = if !puppet {
-        let pos = xl330::sync_read_present_position(&io, serial_port, &[1, 2, 3, 4, 5, 6])
-            .expect("Read Communication error");
-
-        pos.iter().map(|&x| read_i32_angle(x)).collect::<Vec<_>>()
+) -> Result<Vec<i32>, Report> {
+    if !puppet {
+        xl330::sync_read_present_position(&io, serial_port, &[1, 2, 3, 4, 5, 6])
+            .map_err(|e| Report::msg(format!("Read Communication error: {:?}", e)))
+            .map(|pos| {
+                pos.iter()
+                    .map(|&x| convert_i32_angle(x))
+                    .collect::<Vec<_>>()
+            })
     } else {
-        // x430 for 2 first and xl330 for the rest
-
         let pos = xl430::sync_read_present_position(&io, serial_port, &[1, 2])
-            .expect("Read Communication error");
+            .map_err(|e| Report::msg(format!("Read Communication error: {:?}", e)))
+            .map(|pos| {
+                pos.iter()
+                    .map(|&x| convert_i32_angle(x))
+                    .collect::<Vec<_>>()
+            })?;
 
         let pos2 = xl330::sync_read_present_position(&io, serial_port, &[3, 4, 5, 6])
-            .expect("Read Communication error");
+            .map_err(|e| Report::msg(format!("Read Communication error: {:?}", e)))
+            .map(|pos| {
+                pos.iter()
+                    .map(|&x| convert_i32_angle(x))
+                    .collect::<Vec<_>>()
+            })?;
 
-        pos.iter()
-            .chain(pos2.iter())
-            .map(|&x| read_i32_angle(x))
-            .collect::<Vec<_>>()
-    };
-
-    pos
+        Ok([pos, pos2].concat())
+    }
 }
 
 // This function is used to set an offset value that lets you manipulate more friendly angles (e.g. 0 to 360 degrees) instead of the raw values
@@ -85,17 +90,19 @@ fn write_homing_offsets(
     serial_port: &mut dyn SerialPort,
     puppet: bool,
     pos: &Vec<i32>,
-) {
+) -> Result<(), Report> {
     if !puppet {
         xl330::sync_write_homing_offset(&io, serial_port, &[1, 2, 3, 4, 5, 6], &pos)
-            .expect("Communication error");
+            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
     } else {
         xl430::sync_write_homing_offset(&io, serial_port, &[1, 2], &pos[0..2])
-            .expect("Communication error");
+            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
 
         xl330::sync_write_homing_offset(&io, serial_port, &[3, 4, 5, 6], &pos[2..6])
-            .expect("Communication error");
+            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
     }
+
+    Ok(())
 }
 
 // This function is used to set the drive mode of the servos, which determines how the servos "count" the position values.
@@ -105,7 +112,7 @@ fn write_drive_modes(
     serial_port: &mut dyn SerialPort,
     puppet: bool,
     mode: &Vec<bool>,
-) {
+) -> Result<(), Report> {
     let mode = mode
         .iter()
         .map(|&x| if x { 1 } else { 0 })
@@ -113,14 +120,16 @@ fn write_drive_modes(
 
     if !puppet {
         xl330::sync_write_drive_mode(&io, serial_port, &[1, 2, 3, 4, 5, 6], &mode)
-            .expect("Communication error");
+            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
     } else {
         xl430::sync_write_drive_mode(&io, serial_port, &[1, 2], &mode[0..2])
-            .expect("Communication error");
+            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
 
         xl330::sync_write_drive_mode(&io, serial_port, &[3, 4, 5, 6], &mode[2..6])
-            .expect("Communication error");
+            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
     }
+
+    Ok(())
 }
 
 // The correction function calculates the correction needed to adjust the homing position of the servos regarding wanted positions
@@ -137,50 +146,56 @@ fn calculate_corrections(pos: &Vec<i32>, inverted: &Vec<bool>) -> Vec<i32> {
         }
     }
 
-    return correction;
+    correction
 }
 
 // The present position wanted in position 1 for the arm
 fn wanted_position_1() -> Vec<i32> {
-    return vec![0, 0, 1024, 0, -1024, 0];
+    vec![0, 0, 1024, 0, -1024, 0]
 }
 
 // The present position wanted in position 2 for the arm
 fn wanted_position_2() -> Vec<i32> {
-    return vec![1024, 1024, 0, -1024, 0, 1024];
+    vec![1024, 1024, 0, -1024, 0, 1024]
 }
 
-fn prepare_configuration(io: &DynamixelSerialIO, serial_port: &mut dyn SerialPort, puppet: bool) {
+fn prepare_configuration(
+    io: &DynamixelSerialIO,
+    serial_port: &mut dyn SerialPort,
+    puppet: bool,
+) -> Result<(), Report> {
     // To be configured, all servos must be in "torque disable" mode
     xl330::sync_write_torque_enable(&io, serial_port, &[3, 4, 5, 6], &[0; 4])
-        .expect("Communication error");
+        .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
 
     // We need to work with 'extended position mode' (4) for all servos, because in joint mode (1) the servos can't rotate more than 360 degrees (from 0 to 4095)
     // And some mistake can happen while assembling the arm, you could end up with a servo with a position 0 or 4095 at a crucial point
     // See [https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/#operating-mode11]
     xl330::sync_write_operating_mode(&io, serial_port, &[3, 4, 5, 6], &[4; 4])
-        .expect("Communication error");
+        .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
 
     if puppet {
         xl330::sync_write_torque_enable(&io, serial_port, &[1, 2], &[0; 2])
-            .expect("Communication error");
+            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
 
         xl330::sync_write_operating_mode(&io, serial_port, &[1, 2], &[4; 2])
-            .expect("Communication error");
+            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
 
         // Actually, the puppet needs to have its gripper in Position mode and Current based control
         xl330::sync_write_operating_mode(&io, serial_port, &[6], &[5])
-            .expect("Communication error");
+            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
     } else {
         xl430::sync_write_torque_enable(&io, serial_port, &[1, 2], &[0; 2])
-            .expect("Communication error");
+            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
 
         xl430::sync_write_operating_mode(&io, serial_port, &[1, 2], &[4; 2])
-            .expect("Communication error");
+            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
     }
 
-    write_drive_modes(io, serial_port, puppet, &vec![false; 6]);
-    write_homing_offsets(io, serial_port, puppet, &vec![0; 6]);
+    write_drive_modes(io, serial_port, puppet, &vec![false; 6])?;
+    write_homing_offsets(io, serial_port, puppet, &vec![0; 6])?;
+
+    Ok(())
 }
 
 // To register position during the process we need to know approximately in which position the arm is
@@ -219,14 +234,14 @@ fn configure_homing(
     serial_port: &mut dyn SerialPort,
     inverted: &Vec<bool>,
     puppet: bool,
-) {
+) -> Result<(), Report> {
     println!("------Configuring homing");
 
     // set homing position to 0 for all servos
-    write_homing_offsets(io, serial_port, puppet, &vec![0; 6]);
+    write_homing_offsets(io, serial_port, puppet, &vec![0; 6])?;
 
     // get current positions
-    let pos = read_positions(io, serial_port, puppet);
+    let pos = read_positions(io, serial_port, puppet).context("Read Communication error")?;
 
     // get nearest rounded positions
     let nearest_rounded = calculate_nearest_rounded_positions(&pos);
@@ -235,18 +250,18 @@ fn configure_homing(
     let correction = calculate_corrections(&nearest_rounded, inverted);
 
     // set homing position
-    write_homing_offsets(io, serial_port, puppet, &correction);
+    write_homing_offsets(io, serial_port, puppet, &correction)
 }
 
 fn configure_drive_mode(
     io: &DynamixelSerialIO,
     serial_port: &mut dyn SerialPort,
     puppet: bool,
-) -> Vec<bool> {
+) -> Result<Vec<bool>, Report> {
     println!("------Configuring drive mode");
 
     // get current positions
-    let pos = read_positions(io, serial_port, puppet);
+    let pos = read_positions(io, serial_port, puppet)?;
 
     // get nearest rounded positions
     let nearest_rounded = calculate_nearest_rounded_positions(&pos);
@@ -258,12 +273,12 @@ fn configure_drive_mode(
         .map(|(x, y)| x != y)
         .collect::<Vec<_>>();
 
-    write_drive_modes(io, serial_port, puppet, &inverted);
+    write_drive_modes(io, serial_port, puppet, &inverted)?;
 
-    return inverted;
+    Ok(inverted)
 }
 
-fn main() -> Result<()> {
+fn main() -> Result<(), Report> {
     let cli = Cli::parse();
 
     let mut serial_port = serialport::new(cli.port, 1_000_000)
@@ -284,7 +299,7 @@ fn main() -> Result<()> {
     );
 
     // Reset all parameters to default values
-    prepare_configuration(&io, serial_port.as_mut(), puppet);
+    prepare_configuration(&io, serial_port.as_mut(), puppet)?;
 
     println!("Place the arm in position 1, as shown in the README image");
     pause()?;
@@ -295,19 +310,19 @@ fn main() -> Result<()> {
         serial_port.as_mut(),
         &vec![false, false, false, false, false, false],
         puppet,
-    );
+    )?;
 
     println!("Place the arm in position 2, as shown in the README image");
     pause()?;
 
     // Check what servos need to be inverted in this configuration
-    let inverted = configure_drive_mode(&io, serial_port.as_mut(), puppet);
+    let inverted = configure_drive_mode(&io, serial_port.as_mut(), puppet)?;
 
     println!("Place the arm back in position 1, as shown in the README image");
     pause()?;
 
     // Reconfigure homing with the correct inverted servos
-    configure_homing(&io, serial_port.as_mut(), &inverted, puppet);
+    configure_homing(&io, serial_port.as_mut(), &inverted, puppet)?;
 
     println!("Configuration done!");
     println!("Make sure everything is working as expected by moving the arm and checking the position values :");
