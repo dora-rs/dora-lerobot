@@ -33,10 +33,11 @@ pub struct Cli {
 // The pause function is used to pause the program and wait for the user to press Enter before continuing
 // This way the user can take the time to place the arm in the correct position before continuing
 fn pause() {
-    let mut stdout = stdout();
-    stdout.write(b"Press Enter to continue...").unwrap();
-    stdout.flush().unwrap();
-    stdin().read(&mut [0]).unwrap();
+    let mut buffer = String::new();
+
+    std::io::stdin()
+        .read_line(&mut buffer)
+        .expect("Failed to read line");
 }
 
 // The angle retrieved from "ReadPosition' is a 32-bit unsigned integer, but we need to convert it to a 32-bit signed integer to represent positive and negative angle values
