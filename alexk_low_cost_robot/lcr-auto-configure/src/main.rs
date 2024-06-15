@@ -174,21 +174,21 @@ fn prepare_configuration(
     xl330::sync_write_operating_mode(&io, serial_port, &[3, 4, 5, 6], &[4; 4])
         .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
 
-    if puppet {
+    if !puppet {
         xl330::sync_write_torque_enable(&io, serial_port, &[1, 2], &[0; 2])
             .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
 
         xl330::sync_write_operating_mode(&io, serial_port, &[1, 2], &[4; 2])
-            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
-
-        // Actually, the puppet needs to have its gripper in Position mode and Current based control
-        xl330::sync_write_operating_mode(&io, serial_port, &[6], &[5])
             .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
     } else {
         xl430::sync_write_torque_enable(&io, serial_port, &[1, 2], &[0; 2])
             .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
 
         xl430::sync_write_operating_mode(&io, serial_port, &[1, 2], &[4; 2])
+            .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
+
+        // Actually, the puppet needs to have its gripper in Position mode and Current based control
+        xl330::sync_write_operating_mode(&io, serial_port, &[6], &[5])
             .map_err(|e| Report::msg(format!("Communication error: {:?}", e)))?;
     }
 
