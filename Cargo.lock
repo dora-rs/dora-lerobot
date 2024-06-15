@@ -1082,6 +1082,7 @@ name = "lcr-auto-configure"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "eyre",
  "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
  "serialport",
 ]

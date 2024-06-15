@@ -6,7 +6,7 @@ use rustypot::DynamixelSerialIO;
 
 use serialport::SerialPort;
 
-use std::io::{stdin, stdout, Read, Write};
+use eyre::{Context, Report, Result};
 
 // Import necessary traits and macros for command line parsing and debugging
 #[derive(Parser, Debug)]
@@ -32,12 +32,12 @@ pub struct Cli {
 
 // The pause function is used to pause the program and wait for the user to press Enter before continuing
 // This way the user can take the time to place the arm in the correct position before continuing
-fn pause() {
+fn pause() -> Result<usize, Report> {
     let mut buffer = String::new();
 
     std::io::stdin()
         .read_line(&mut buffer)
-        .expect("Failed to read line");
+        .context("Failed to read line")
 }
 
 // The angle retrieved from "ReadPosition' is a 32-bit unsigned integer, but we need to convert it to a 32-bit signed integer to represent positive and negative angle values
@@ -259,13 +259,13 @@ fn configure_drive_mode(
     return inverted;
 }
 
-fn main() {
+fn main() -> Result<()> {
     let cli = Cli::parse();
 
     let mut serial_port = serialport::new(cli.port, 1_000_000)
         .timeout(Duration::from_secs(5))
         .open()
-        .expect("Failed to open port");
+        .context("Failed to open port")?;
 
     let io = DynamixelSerialIO::v2();
 
@@ -280,7 +280,7 @@ fn main() {
     prepare_configuration(&io, serial_port.as_mut(), puppet);
 
     println!("Place the arm in position 1, as shown in the README image");
-    pause();
+    pause()?;
 
     // Configure a first homing try, assuming all servos are in the right direction
     configure_homing(
@@ -291,13 +291,13 @@ fn main() {
     );
 
     println!("Place the arm in position 2, as shown in the README image");
-    pause();
+    pause()?;
 
     // Check what servos need to be inverted in this configuration
     let inverted = configure_drive_mode(&io, serial_port.as_mut(), puppet);
 
     println!("Place the arm back in position 1, as shown in the README image");
-    pause();
+    pause()?;
 
     // Reconfigure homing with the correct inverted servos
     configure_homing(&io, serial_port.as_mut(), &inverted, puppet);
@@ -310,6 +310,6 @@ fn main() {
 
         println!("{:?}", pos);
 
-        std::thread::sleep(Duration::from_secs(2));
+        std::thread::sleep(Duration::from_secs(1));
     }
 }

@@ -9,3 +9,4 @@ edition = "2021"
 clap = { version = "4.5.4", features = ["derive"] }
 serialport = "4.2.0"
 rustypot = { git = "https://github.com/haixuanTao/rustypot", branch = "angular-conversion" }
+eyre = "0.6.12"
