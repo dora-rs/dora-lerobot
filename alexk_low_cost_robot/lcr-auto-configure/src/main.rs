@@ -167,6 +167,10 @@ fn prepare_configuration(io: &DynamixelSerialIO, serial_port: &mut dyn SerialPor
 
         xl330::sync_write_operating_mode(&io, serial_port, &[1, 2], &[4; 2])
             .expect("Communication error");
+
+        // Actually, the puppet needs to have its gripper in Position mode and Current based control
+        xl330::sync_write_operating_mode(&io, serial_port, &[6], &[5])
+            .expect("Communication error");
     } else {
         xl430::sync_write_torque_enable(&io, serial_port, &[1, 2], &[0; 2])
             .expect("Communication error");
@@ -265,7 +269,10 @@ fn main() -> Result<()> {
     let mut serial_port = serialport::new(cli.port, 1_000_000)
         .timeout(Duration::from_secs(5))
         .open()
-        .context("Failed to open port")?;
+        .context(
+            "Failed to open port. You must use the official Wizard to set the \
+        baud rate to 1,000,000, avoid conflicts with IDs, and determine which port each arm is on!",
+        )?;
 
     let io = DynamixelSerialIO::v2();
 
