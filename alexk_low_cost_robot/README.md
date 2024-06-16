@@ -1,72 +1,41 @@
-# How to use A. Koch robot arm to record data set for LeRobot
+# Dora pipeline for teleoperated low-cost arm and episode recording for LeRobot
 
-## Hardware setup:
+AlexK Low Cost Robot is a low-cost robotic arm that can be teleoperated using a similar arm. This repository contains
+the Dora pipeline to record episodes for LeRobot.
 
-### Assembly
+## Assembling
 
-Pipeline designed for a teleoperated 5 DoF + gripper arm such as the arm by [A. Koch (build with the extension)](https://github.com/AlexanderKoch-Koch/low_cost_robot) and with 2 cameras to record images.
+Check the [ASSEMBLING.md](ASSEMBLING.md) file for instructions on how to assemble the robot from scratch using the
+provided parts from the [AlexK Low Cost Robot](https://github.com/AlexanderKoch-Koch/low_cost_robot)
 
-Don't forget to install the official wizard to connect the servos, set the baud rate to 1M and set the ID of the servos from the base (1) to the gripper (6).
+## Installations
 
-### Configuring
+Check the [INSTALLATIONS.md](INSTALLATION) file for instructions on how to install the required software and environment
+to run the robot.
 
-It's important to record the same type of data for every user. So you should manipulate Homing offsets and Drive Mode in order
-to have the same behavior for every user.
+## Configuring
 
-We recommend to use our on-board wizard to set all of that automatically. See the guide below.
+Check the [CONFIGURING.md](CONFIGURING.md) file for instructions on how to configure the robot to record episodes for
+LeRobot and teleoperate the robot.
 
-After following the guide, you should have the following configuration:
+## Recording
 
-![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_wanted_configuration.png)
+Check the [RECORDING.md](RECORDING.md) file for instructions on how to record episodes for LeRobot using the robot.
 
-The two positions you will be asked to set are:
+## Examples
 
-![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_positions.png)
+There are also some other example applications in the `graph` folder. Have fun!
 
-Start by connecting the puppet arm to your computer, retrieve the device port and run the wizard with the following command:
+Here is a list of the available examples:
 
-```bash
-cargo run -p lcr-auto-configure -- --port /dev/ttyUSB0 --puppet
-```
-
-- This will disable all torque so you can move the arm freely to the Position 1.
-
-- Then press enter to save the position and move to the Position 2.
-
-- Then press enter to save the position and move back to the Position 1.
-
-- Finally, move the arm and verify that the servos positions are correct.
-
-Then you can configure the master arm with the following command:
+- `simple_teleop_windows.yml`: A simple teleoperation pipeline that allows you to control the robot, without recording the episodes. You can use it to test the robot on Windows:
 
 ```bash
-cargo run -p lcr-auto-configure -- --port /dev/ttyUSB1 --master
+cd dora-lerobot/alexk_low_cost_robot
+dora up
+dora start ./graphs/simple_teleop_windows.yml --attach
 ```
 
-## Install
+## License
 
-Follow dora instructions to install dora.
-
-Git clone this repo.
-
-## Setup the dora graph
-
-The dora graph is at `alexk_low_cost_robot/example/record_teleop.yml`
-
-1. adjust the serial ports for the master and puppet arms as env variables in : `MASTER_PATH`, `PUPPET_PATH`, `CAMERA_ID`
-
-On ubuntu find the path to the arms with the dynamixel wizard for instance and the path to the cameras with `v4l2-ctl --list-devices`.
-
-2. Adjust the `source` to the locations of your python env for each node
-
-## Steps to setup and record
-
-Start dora with ` dora up`
-
-Then do:
-1. Start the graph `dora start ./example/record_teleop.yml`
-2. Press space to move to the next episode and save the previous one
-3. Press esc when finished with all
-4. Pressing backspace will end the current episode, save it and wait until space is pressed to start a new episode
-5. After having pressed esc, type `dora stop` to stop the recording.
-6. Write down the location of the logs (a long hash like `018fc3a8-3b76-70f5-84a2-22b84df24739`), this is where the dataset (and logs) are stored.
+This library is licensed under the [Apache License 2.0](../LICENSE).
