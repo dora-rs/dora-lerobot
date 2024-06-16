@@ -10,7 +10,8 @@ provided parts from the [AlexK Low Cost Robot](https://github.com/AlexanderKoch-
 
 ## Installations
 
-Check the [INSTALLATIONS.md](INSTALLATION.md) file for instructions on how to install the required software and environment
+Check the [INSTALLATIONS.md](INSTALLATION.md) file for instructions on how to install the required software and
+environment
 to run the robot.
 
 ## Configuring
@@ -28,7 +29,8 @@ There are also some other example applications in the `graph` folder. Have fun!
 
 Here is a list of the available examples:
 
-- `simple_teleop_windows.yml`: A simple teleoperation pipeline that allows you to control the robot, without recording the episodes. You can use it to test the robot on Windows:
+- `simple_teleop_windows.yml`: A simple teleoperation pipeline that allows you to control the robot, without recording
+  the episodes. You can use it to test the robot on Windows:
 
 ```bash
 cd dora-lerobot/alexk_low_cost_robot
