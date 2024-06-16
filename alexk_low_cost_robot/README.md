@@ -10,7 +10,7 @@ provided parts from the [AlexK Low Cost Robot](https://github.com/AlexanderKoch-
 
 ## Installations
 
-Check the [INSTALLATIONS.md](INSTALLATION) file for instructions on how to install the required software and environment
+Check the [INSTALLATIONS.md](INSTALLATION.md) file for instructions on how to install the required software and environment
 to run the robot.
 
 ## Configuring
