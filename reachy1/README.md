@@ -15,15 +15,11 @@ pip install -r requirements.txt
 cargo install dora-rs --locked
 pip install dora-rs
 ```
-```bash
-
-```
-
 ### AI Pipeline
 
 ### Robot manipulation
 
-Click on the button on the base to turn on the robot, then click on the button on the shoulder of the robot.
+Click on the button on the base to turn on the robot, then click on the button on the shoulder of the robot.\
 Make sure the emergency button is not pressed in.
 
 ### Data Collection
