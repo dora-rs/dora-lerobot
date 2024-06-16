@@ -51,7 +51,8 @@ nodes:
 
   - id: keyboard
     custom: 
-      source: ../nodes/keyboard_node_basic.py
+      source: /home/thomwolf/miniconda3/envs/dora/bin/python
+      args: ../nodes/keyboard_node_basic.py
       inputs:
         heartbeat: dora/timer/millis/20
       outputs:

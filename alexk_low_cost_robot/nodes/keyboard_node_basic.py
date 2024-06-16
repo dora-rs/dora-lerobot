@@ -20,7 +20,6 @@ with keyboard.Events() as events:
             if event.key == Key.backspace:
                 node.send_output("space", pa.array([-1]))   # Pause with -1
                 os.system('spd-say "paused"')
-                break
             if event.key == Key.esc:
                 finished = True
                 node.send_output("space", pa.array([-1]))   # Finish with -1

@@ -106,6 +106,8 @@ class DoraEnv(gym.Env):
         self._get_obs()
         reward = 0
         terminated = truncated = self._terminated
+        if terminated:
+            self._node.send_output("terminated", pa.array([1]))
         info = {}
         return self._observation, reward, terminated, truncated, info
 

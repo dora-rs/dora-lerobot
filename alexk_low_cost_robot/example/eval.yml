@@ -1,0 +1,102 @@
+nodes:
+  - id: arm_controller
+    custom:
+      source: /home/thomwolf/miniconda3/envs/lerobot/bin/python
+      args: ../nodes/arm_controller.py
+      inputs:
+        puppet_goal_position: eval/action
+        terminated: eval/terminated
+        tick: dora/timer/millis/20
+      outputs:
+        - puppet_position
+      envs:
+        PUPPET_PATH: /dev/ttyACM0
+
+  - id: eval
+    custom:
+      source: /home/thomwolf/miniconda3/envs/lerobot/bin/python
+      args: -m debugpy --listen 5678 /home/thomwolf/Documents/Github/lerobot/lerobot/scripts/eval.py -p /home/thomwolf/Documents/Github/lerobot/outputs/train/blue_sort/checkpoints/last/pretrained_model eval.n_episodes=1 eval.batch_size=1 env.episode_length=1000
+      inputs:
+        agent_pos: arm_controller/puppet_position
+        cam_low: cam_low/image
+        cam_high: cam_high/image
+      outputs:
+        - action
+        - reset
+        - terminated
+
+  - id: plot
+    custom:
+      source: ../nodes/plot_node.py
+      inputs:
+        image: cam_low/image
+        action: eval/action
+        puppet_position: arm_controller/puppet_position
+      envs:
+        IMAGE_WIDTH: 640
+        IMAGE_HEIGHT: 480
+
+  - id: cam_low
+    custom:
+      source: /home/thomwolf/miniconda3/envs/lerobot/bin/python
+      args: ../nodes/webcam.py
+      inputs:
+        tick: dora/timer/millis/20
+      outputs:
+        - image
+      envs:
+        CAMERA_ID: /dev/video0
+
+  - id: cam_high
+    custom:
+      source: /home/thomwolf/miniconda3/envs/lerobot/bin/python
+      args: ../nodes/webcam.py
+      inputs:
+        tick: dora/timer/millis/20
+      outputs:
+        - image
+      envs:
+        CAMERA_ID: /dev/video6
+
+  # - id: keyboard
+  #   custom:
+  #     source: ../nodes/keyboard_node_basic.py
+  #     inputs:
+  #       heartbeat: dora/timer/millis/20
+  #     outputs:
+  #       - space
+  #       - failed
+
+  # - id: cam_saver_low
+  #   custom:
+  #     source: ../nodes/lerobot_webcam_saver_basic.py
+  #     inputs:
+  #       image: cam_low/image
+  #       record_episode: keyboard/space
+  #     outputs:
+  #       - saved_image
+  #     envs:
+  #       CAMERA_NAME: observation.images.cam_low
+
+  # - id: cam_saver_high
+  #   custom:
+  #     source: ../nodes/lerobot_webcam_saver_basic.py
+  #     inputs:
+  #       image: cam_high/image
+  #       record_episode: keyboard/space
+  #     outputs:
+  #       - saved_image
+  #     envs:
+  #       CAMERA_NAME: observation.images.cam_high
+
+  # - id: dora-record
+  #   custom:
+  #     build: cargo install --git https://github.com/dora-rs/dora dora-record
+  #     source: dora-record
+  #     inputs:
+  #       action: eval/action
+  #       observation.state: arm_controller/puppet_position
+  #       episode_index: keyboard/space
+  #       failed_episode_index: keyboard/failed
+  #       observation.images.cam_low: cam_saver_low/saved_image
+  #       observation.images.cam_high: cam_saver_high/saved_image
