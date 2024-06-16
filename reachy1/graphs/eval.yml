@@ -18,9 +18,9 @@ nodes:
 
   - id: eval
     custom:
-      source: dynamic
-      # source: /home/peter/Documents/work/lerobot/lerobot/scripts/eval.py
-      # args: -p /home/peter/Documents/work/lerobot/high_five_sea_3/checkpoints/last/pretrained_model eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000 policy.n_action_steps=100
+      # source: dynamic
+      source: /home/aloha/Documents/lerobot/lerobot/scripts/eval.py
+      args: -p /home/aloha/Documents/lerobot/check_felix/checkpoints/last/pretrained_model eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000 policy.n_action_steps=100 
       # source: ../nodes/gym_dora_node.py
       inputs:
         agent_pos: reachy-client/agent_pos

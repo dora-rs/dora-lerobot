@@ -13,7 +13,7 @@ cam_name = "cam_trunk"
 
 from reachy_sdk import ReachySDK
 
-ROBOT_IP = "10.42.0.124"
+ROBOT_IP = "10.42.0.24"
 reachy = ReachySDK(ROBOT_IP)
 
 

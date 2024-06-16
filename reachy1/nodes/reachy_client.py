@@ -8,7 +8,7 @@ from reachy_sdk import ReachySDK
 
 freq = 30
 
-ROBOT_IP = "10.42.0.124"
+ROBOT_IP = "10.42.0.24"
 # ROBOT_IP = "localhost"
 
 reachy = ReachySDK(ROBOT_IP)

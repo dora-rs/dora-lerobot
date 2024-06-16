@@ -1,84 +1,76 @@
-## Reachy 2
+## Reachy 1
 
-### Installation
-
-#### Installation SDK
+### Teleoperation
 
 ```bash
-### Install the sdk
-git clone https://github.com/pollen-robotics/reachy2-sdk
-cd reachy2-sdk
-pip install -e .
-cd ..
-
-### Connect Camera USB
-echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="03e7", MODE="0666"' | sudo tee /etc/udev/rules.d/80-movidius.rules
-sudo udevadm control --reload-rules && sudo udevadm trigger
-
-### Install Polen vision
-git clone https://github.com/pollen-robotics/pollen-vision.git
-cd pollen-vision
-git checkout lerobot_only_left_camera
-pip install ".[depthai_wrapper]"
-cd ..
-
-### Teleoperation Collector
 git clone https://github.com/pollen-robotics/reachy2_hdf5_recorder/
+cd reachy2_hdf5_recorder
+pip install -r requirements.txt
 ```
-
 #### Installation dora-lerobot
 
 ```bash
 ## Create new python environment
 
-git clone git@github.com:huggingface/lerobot.git
-pip install -e lerobot
-git clone git@github.com:dora-rs/dora-lerobot.git --branch WORKING-REACHY
-pip install -e dora-lerobot/gym_dora
-
 cargo install dora-rs --locked
 pip install dora-rs
 ```
+```bash
+
+```
 
 ### AI Pipeline
+
+### Robot manipulation
+
+Click on the button on the base to turn on the robot, then click on the button on the shoulder of the robot.
+Make sure the emergency button is not pressed in.
 
 ### Data Collection
 
 ```bash
 cd reachy2_hdf5_recorder
-python3 record_episodes_hdf5.py -n <recording_session_name>_raw -l <epiodes_duration in s> -r <framerate> --robot_ip <robot_ip>
+python reachy1_record_episodes_hdf5.py -n <recording_session_name>_raw -l <epiodes_duration in s>
 ```
 
 ```bash
-huggingface-cli upload \
-                <hf-organisation>/<dataset_name> \
-                data/<recording_session_name>_raw/ \
-                --repo-type dataset (--private)
-```
+git clone https://github.com/huggingface/lerobot.git && cd lerobot
+git checkout origin/user/rcadene/2024_06_03_reachy2
+pip install -e .
 
-> ### 06/07/2021
->
-> As of today, we need to use several branches:
->
-> - mobile_base : branch 21 # server side, install manually
-> - reachy-sdk-api : branch 116 # server and client side, install manually
-> - mobile-base-sdk : branch 25 # client side, install manually
-> - reachy2-sdk-server : branch 135 # server side, install mannually
->   Then push to HF hub!
+# Must have a HugginFace token with write permission in https://huggingface.co/settings/tokens
+huggingface-cli login --token ${HUGGINGFACE_TOKEN} --add-to-git-credential
+
+cd ../reachy2_hdf5_recorder
+python ../lerobot/lerobot/scripts/push_dataset_to_hub.py 
+    -data-dir data 
+    --dataset-id <recording_session_name>
+    --raw-format reachy2_hdf5 
+    --community-id <HuggingFace_id>
+
+```
 
 ### Training
 
 ```bash
-python lerobot/scripts/train.py \
-    policy=act_real \
-    env=aloha_real \
-    env.task=Reachy-v0 \
-    dataset_repo_id=<org-id>/<data-id< \
+python lerobot/scripts/train.py 
+    policy=act_reachy2_real 
+    env=dora_reachy2_real 
+    wandb.enable=true 
+    hydra.run.dir=<recording_session_name> 
+    env.state_dim=8 
+    nv.action_dim=8 
+    dataset_repo_id=<HuggingFace_id>/<recording_session_name>
 ```
 
 ### Evaluation
 
+Inside of the file `lerobot/<recording_session_name>/checkpoints/last/pretrained_model/config.yaml` change the env.task from DoraReachy2-v0 to DoraReachy1-v0.
+
+Make sure to get the right path for the source and args of eval in the file eval.yml
+
 ```bash
+
 dora start reachy/graphs/eval.yml --attach
 ```
 
@@ -88,7 +80,7 @@ dora start reachy/graphs/eval.yml --attach
 ssh bedrock@192.168.1.51
 ```
 
-```bash
+```bashH
 cd dev_docker
 sudo service stop
 
