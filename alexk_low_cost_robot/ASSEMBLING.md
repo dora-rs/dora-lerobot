@@ -21,12 +21,12 @@ You then need to print the puppet arm and the master arm. The STL files are:
 
 Some parts **must** be replaced by the ones in this repository:
 
-- [Dora-LeRobot Base Master Low Cost Robot](stl/base_master.stl)
+- [Dora-LeRobot Base Master Low Cost Robot](stl/MASTER_Base.stl)
 
 If you struggle buying XL330 Frame or XL330 Idler Wheel, here are STL files that can be printed instead:
 
-- [XL330 Frame]()
-- [XL330 Idler Wheel]()
+- [XL330 Frame](stl/XL330_Frame.stl)
+- [XL330 Idler Wheel](stl/XL330_Idler_Wheel.stl)
 
 Please then follow the [Youtube Tutorial by Alexander Koch](https://youtu.be/RckrXOEoWrk?si=ZXDnnlF6BQd_o7v8) to
 assemble the arm correctly.
