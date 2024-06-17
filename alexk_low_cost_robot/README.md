@@ -34,8 +34,19 @@ Here is a list of the available examples:
 
 ```bash
 cd dora-lerobot/alexk_low_cost_robot
+
+# On Windows
 dora up
 dora start ./graphs/simple_teleop_windows.yml --attach
+
+# On Unix
+dora up
+dora start ./graphs/simple_teleop_unix.yml --attach
+
+# On Custom ENV
+source [your_custom_env_bin]/activate
+dora up
+dora start ./graphs/simple_teleop_custom_env.yml --attach
 ```
 
 ## License

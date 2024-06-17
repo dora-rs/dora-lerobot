@@ -1,8 +1,8 @@
 nodes:
   - id: lcr_teleoperate
     custom:
-      source: ..\python.sh
-      args: ..\nodes\lcr_teleoperate.py
+      source: python
+      args: ../nodes/lcr_teleoperate.py
       inputs:
         heartbeat: dora/timer/millis/20
       outputs:

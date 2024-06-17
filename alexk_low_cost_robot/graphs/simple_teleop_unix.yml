@@ -1,8 +1,8 @@
 nodes:
   - id: lcr_teleoperate
     custom:
-      source: ..\venv\Scripts\python.exe
-      args: ..\nodes\lcr_teleoperate.py
+      source: ../venv/bin/python
+      args: ../nodes/lcr_teleoperate.py
       inputs:
         heartbeat: dora/timer/millis/20
       outputs:

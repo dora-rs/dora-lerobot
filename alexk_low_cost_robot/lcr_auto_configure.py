@@ -13,3 +13,16 @@ The program will:
 
 It will also enable all appropriate operating modes for the LCR according if the LCR is a puppet or a master.
 """
+
+import argparse
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="LCR Auto Configure: This program is used to automatically configure the Low Cost Robot (LCR) for "
+                    "the user.")
+
+    parser.add_argument("--port", type=str, required=True, help="The port of the LCR.")
+    parser.add_argument("--puppet", action="store_true", help="Set the LCR as a puppet.")
+    parser.add_argument("--master", action="store_true", help="Set the LCR as a master.")
+
+    args = parser.parse_args()
