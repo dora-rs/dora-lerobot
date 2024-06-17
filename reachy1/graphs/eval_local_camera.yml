@@ -1,0 +1,58 @@
+nodes:
+  - id: reachy-vision-client
+    custom:
+      source: ../nodes/webcam.py
+      inputs:
+        tick: dora/timer/millis/33
+      outputs:
+        - cam_trunk
+
+  - id: plot
+    custom:
+      source: ../nodes/plot_node.py
+      inputs:
+        image: reachy-vision-client/cam_trunk
+        #  action: eval/action
+        text_vlm: idefics2/speak
+        text_whisper: whisper/text_llm
+      envs:
+        IMAGE_WIDTH: 480
+        IMAGE_HEIGHT: 640
+
+  - id: keyboard
+    custom:
+      source: ../nodes/keyboard_node.py
+      inputs:
+        heartbeat: dora/timer/millis/20
+      outputs:
+        - space
+        - failed
+        - stop
+
+  - id: idefics2
+    custom:
+      source: ../nodes/idefics2_node_demo.py
+      inputs:
+        image:
+          source: reachy-vision-client/cam_trunk
+          queue_size: 1
+        text: whisper/text_llm
+      outputs:
+        - speak
+        - control
+
+  - id: whisper
+    custom:
+      source: ../nodes/whisper_node.py
+      inputs:
+        audio: dora/timer/millis/1000
+      outputs:
+        - text_llm
+
+  - id: parler
+    custom:
+      source: ../nodes/parler_node.py
+      inputs:
+        text: idefics2/speak
+      outputs:
+        - stop_high_five

@@ -48,3 +48,29 @@ nodes:
         - space
         - failed
         - stop
+
+  - id: idefics2
+    operator:
+    python: ../nodes/idefics2_node_demo.py
+    inputs:
+    image:
+    source: reachy-vision-client/cam_trunk
+    queue_size: 1
+    text: whisper/text_llm
+    outputs:
+      - speak
+      - control
+
+  - id: whisper
+    custom:
+      source: ../nodes/whisper_node.py
+      inputs:
+        audio: dora/timer/millis/1000
+      outputs:
+        - text_llm
+
+  - id: parler
+    custom:
+      source: ../nodes/parler_node.py
+      inputs:
+        text: idefics2/speak
