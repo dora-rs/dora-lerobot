@@ -30,17 +30,12 @@ recommend using our on-board tool to set all of that automatically:
 
 - Connect the puppet arm to your computer.
 - Retrieve the device port from the official wizard.
-- Activate your python environment as described in the [INSTALLATION.md](INSTALLATION.md) file.
 - Run the wizard with the following command and follow the instructions:
 
 ```bash
 cd dora-lerobot/alexk_low_cost_robot
 
-source venv/bin/activate # On Linux
-source venv/Scripts/activate # On Windows bash
-venv\Scripts\activate.bat # On Windows cmd
-
-python lcr_auto_configure.py --port /dev/ttyUSB0 --puppet
+cargo run -p lcr-auto-configure -- --port /dev/ttyUSB0 --puppet
 ```
 
 **Note:** change `/dev/ttyUSB0` to the device port you retrieved from the official wizard (like `COM3` on Windows).
@@ -52,7 +47,7 @@ python lcr_auto_configure.py --port /dev/ttyUSB0 --puppet
 - Repeat the same steps for the master arm:
 
 ```bash
-python lcr_auto_configure.py --port /dev/ttyUSB1 --master
+cargo run -p lcr-auto-configure -- --port /dev/ttyUSB1 --master
 ```
 
 **Note:** change `/dev/ttyUSB1` to the device port you retrieved from the official wizard (like `COM4` on Windows).
