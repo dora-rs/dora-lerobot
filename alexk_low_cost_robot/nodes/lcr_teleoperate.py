@@ -3,20 +3,21 @@ import os
 import numpy as np
 import pyarrow as pa
 
-from dynamixel_sdk import PacketHandler, PortHandler
+from dynamixel_sdk import PacketHandler, PortHandler, COMM_SUCCESS
 from dora import Node
 
 
-def write_goal_current(packet: PacketHandler, serial: PortHandler, id: int, goal_current: int):
+def write_goal_current(packet: PacketHandler, serial: PortHandler, id: int, goal_current):
     """
     Write the goal current to the puppet robot
     :param packet: PacketHandler
     :param serial: PortHandler
     :param id: int
-    :param goal_current: int
+    :param goal_current: current
     """
 
-    packet.write2ByteTxRx(serial, id, 102, goal_current)
+    if goal_current is not None and packet.write2ByteTxRx(serial, id, 102, goal_current) != COMM_SUCCESS:
+        print(f"Failed to write goal current {goal_current} to motor {id}")
 
 
 def read_present_current(packet: PacketHandler, serial: PortHandler, id: int):
@@ -28,19 +29,27 @@ def read_present_current(packet: PacketHandler, serial: PortHandler, id: int):
     :return: int
     """
 
-    return packet.read2ByteTxRx(serial, id, 126)[0]
+    current, comm, error = packet.read2ByteTxRx(serial, id, 126)
+
+    if comm != COMM_SUCCESS:
+        print(f"Failed to communicate with motor {id}")
+    if error != 0:
+        print(f"Failed to read present current from motor {id}")
+
+    return current if comm == COMM_SUCCESS and error == 0 else None
 
 
-def write_goal_position(packet: PacketHandler, serial: PortHandler, id: int, goal_position: int):
+def write_goal_position(packet: PacketHandler, serial: PortHandler, id: int, goal_position):
     """
     Write the goal position to the puppet robot
     :param packet: PacketHandler
     :param serial: PortHandler
     :param id: int
-    :param goal_position: int
+    :param goal_position:
     """
 
-    packet.write4ByteTxRx(serial, id, 116, goal_position)
+    if goal_position is not None and packet.write4ByteTxRx(serial, id, 116, goal_position) != COMM_SUCCESS:
+        print(f"Failed to write goal position {goal_position} to motor {id}")
 
 
 def write_goal_positions(packet: PacketHandler, serial: PortHandler, ids: np.array, goal_positions: np.array):
@@ -53,7 +62,9 @@ def write_goal_positions(packet: PacketHandler, serial: PortHandler, ids: np.arr
     """
 
     for i in range(len(ids)):
-        packet.write4ByteTxRx(serial, ids[i], 116, goal_positions[i])
+        if goal_positions[i] is not None and packet.write4ByteTxRx(serial, ids[i], 116,
+                                                                   goal_positions[i]) != COMM_SUCCESS:
+            print(f"Failed to write goal position {goal_positions[i]} to motor {ids[i]}")
 
 
 def read_present_position(packet: PacketHandler, serial: PortHandler, id: int):
@@ -64,7 +75,15 @@ def read_present_position(packet: PacketHandler, serial: PortHandler, id: int):
     :param id: int
     :return: int
     """
-    return packet.read4ByteTxRx(serial, id, 132)[0]
+
+    position, comm, error = packet.read4ByteTxRx(serial, id, 132)
+
+    if comm != COMM_SUCCESS:
+        print(f"Failed to communicate with motor {id}")
+    if error != 0:
+        print(f"Failed to read present position from motor {id}")
+
+    return position if comm == COMM_SUCCESS and error == 0 else None
 
 
 def read_present_positions(packet: PacketHandler, serial: PortHandler, ids: np.array):
@@ -78,7 +97,14 @@ def read_present_positions(packet: PacketHandler, serial: PortHandler, ids: np.a
     present_positions = []
 
     for id_ in ids:
-        present_positions.append(packet.read4ByteTxRx(serial, id_, 132)[0])
+        position, comm, error = packet.read4ByteTxRx(serial, id_, 132)
+
+        if comm != COMM_SUCCESS:
+            print(f"Failed to communicate with motor {id_}")
+        if error != 0:
+            print(f"Failed to read present position from motor {id_}")
+
+        present_positions.append(position if comm == COMM_SUCCESS and error == 0 else None)
 
     return np.array(present_positions)
 
@@ -92,7 +118,14 @@ def read_present_velocity(packet: PacketHandler, serial: PortHandler, id: int):
     :return: int
     """
 
-    return packet.read4ByteTxRx(serial, id, 128)[0]
+    velocity, comm, error = packet.read4ByteTxRx(serial, id, 128)
+
+    if comm != COMM_SUCCESS:
+        print(f"Failed to communicate with motor {id}")
+    if error != 0:
+        print(f"Failed to read present velocity from motor {id}")
+
+    return velocity if comm == COMM_SUCCESS and error == 0 else None
 
 
 def read_present_velocities(packet: PacketHandler, serial: PortHandler, ids: np.array):
@@ -106,7 +139,14 @@ def read_present_velocities(packet: PacketHandler, serial: PortHandler, ids: np.
     present_velocities = []
 
     for id_ in ids:
-        present_velocities.append(packet.read4ByteTxRx(serial, id_, 128)[0])
+        velocity, comm, error = packet.read4ByteTxRx(serial, id_, 128)
+
+        if comm != COMM_SUCCESS:
+            print(f"Failed to communicate with motor {id_}")
+        if error != 0:
+            print(f"Failed to read present velocity from motor {id_}")
+
+        present_velocities.append(velocity if comm == COMM_SUCCESS and error == 0 else None)
 
     return np.array(present_velocities)
 
@@ -118,7 +158,8 @@ def enable_torque(packet: PacketHandler, serial: PortHandler, id: int):
     :param serial: PortHandler
     :param id: int
     """
-    packet.write1ByteTxRx(serial, id, 64, 1)
+    if packet.write1ByteTxRx(serial, id, 64, 1) != COMM_SUCCESS:
+        print(f"Failed to enable torque for motor {id}")
 
 
 def enable_torques(packet: PacketHandler, serial: PortHandler, ids: np.array):
@@ -129,7 +170,8 @@ def enable_torques(packet: PacketHandler, serial: PortHandler, ids: np.array):
     :param ids: np.array
     """
     for id_ in ids:
-        packet.write1ByteTxRx(serial, id_, 64, 1)
+        if packet.write1ByteTxRx(serial, id_, 64, 1) != COMM_SUCCESS:
+            print(f"Failed to enable torque for motor {id_}")
 
 
 def disable_torque(packet: PacketHandler, serial: PortHandler, id: int):
@@ -139,7 +181,8 @@ def disable_torque(packet: PacketHandler, serial: PortHandler, id: int):
     :param serial: PortHandler
     :param id: int
     """
-    packet.write1ByteTxRx(serial, id, 64, 0)
+    if packet.write1ByteTxRx(serial, id, 64, 0) != COMM_SUCCESS:
+        print(f"Failed to disable torque for motor {id}")
 
 
 def disable_torques(packet: PacketHandler, serial: PortHandler, ids: np.array):
@@ -150,7 +193,8 @@ def disable_torques(packet: PacketHandler, serial: PortHandler, ids: np.array):
     :param ids: np.array
     """
     for id_ in ids:
-        packet.write1ByteTxRx(serial, id_, 64, 0)
+        if packet.write1ByteTxRx(serial, id_, 64, 0) != COMM_SUCCESS:
+            print(f"Failed to disable torque for motor {id_}")
 
 
 def u32_to_i32(value):
