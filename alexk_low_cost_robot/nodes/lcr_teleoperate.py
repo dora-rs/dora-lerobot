@@ -15,9 +15,15 @@ def write_goal_current(packet: PacketHandler, serial: PortHandler, id: int, goal
     :param id: int
     :param goal_current: current
     """
+    comm, error = packet.write2ByteTxRx(serial, id, 102, goal_current)
 
-    if goal_current is not None and packet.write2ByteTxRx(serial, id, 102, goal_current) != COMM_SUCCESS:
-        print(f"Failed to write goal current {goal_current} to motor {id}")
+    if goal_current is not None:
+        if comm != COMM_SUCCESS:
+            print(f"Failed to communicate with motor {id}")
+            print("%s" % packet.getTxRxResult(comm))
+        if error != 0:
+            print(f"Failed to write goal current {goal_current} to motor {id}")
+            print("%s" % packet.getRxPacketError(error))
 
 
 def read_present_current(packet: PacketHandler, serial: PortHandler, id: int):
@@ -33,8 +39,10 @@ def read_present_current(packet: PacketHandler, serial: PortHandler, id: int):
 
     if comm != COMM_SUCCESS:
         print(f"Failed to communicate with motor {id}")
-    if error != 0:
-        print(f"Failed to read present current from motor {id}")
+        print("%s" % packet.getTxRxResult(comm))
+        if error != 0:
+            print(f"Failed to read present current from motor {id}")
+        print("%s" % packet.getRxPacketError(error))
 
     return current if comm == COMM_SUCCESS and error == 0 else None
 
@@ -47,9 +55,15 @@ def write_goal_position(packet: PacketHandler, serial: PortHandler, id: int, goa
     :param id: int
     :param goal_position:
     """
+    comm, error = packet.write4ByteTxRx(serial, id, 116, goal_position)
 
-    if goal_position is not None and packet.write4ByteTxRx(serial, id, 116, goal_position) != COMM_SUCCESS:
-        print(f"Failed to write goal position {goal_position} to motor {id}")
+    if goal_position is not None:
+        if comm != COMM_SUCCESS:
+            print(f"Failed to communicate with motor {id}")
+            print("%s" % packet.getTxRxResult(comm))
+        if error != 0:
+            print(f"Failed to write goal position {goal_position} to motor {id}")
+            print("%s" % packet.getRxPacketError(error))
 
 
 def write_goal_positions(packet: PacketHandler, serial: PortHandler, ids: np.array, goal_positions: np.array):
@@ -62,9 +76,14 @@ def write_goal_positions(packet: PacketHandler, serial: PortHandler, ids: np.arr
     """
 
     for i in range(len(ids)):
-        if goal_positions[i] is not None and packet.write4ByteTxRx(serial, ids[i], 116,
-                                                                   goal_positions[i]) != COMM_SUCCESS:
-            print(f"Failed to write goal position {goal_positions[i]} to motor {ids[i]}")
+        if goal_positions[i] is not None:
+            comm, error = packet.write4ByteTxRx(serial, ids[i], 116, goal_positions[i])
+            if comm != COMM_SUCCESS:
+                print(f"Failed to communicate with motor {ids[i]}")
+                print("%s" % packet.getTxRxResult(comm))
+            if error != 0:
+                print(f"Failed to write goal position {goal_positions[i]} to motor {ids[i]}")
+                print("%s" % packet.getRxPacketError(error))
 
 
 def read_present_position(packet: PacketHandler, serial: PortHandler, id: int):
@@ -80,8 +99,10 @@ def read_present_position(packet: PacketHandler, serial: PortHandler, id: int):
 
     if comm != COMM_SUCCESS:
         print(f"Failed to communicate with motor {id}")
+        print("%s" % packet.getTxRxResult(comm))
     if error != 0:
         print(f"Failed to read present position from motor {id}")
+        print("%s" % packet.getRxPacketError(error))
 
     return position if comm == COMM_SUCCESS and error == 0 else None
 
@@ -101,8 +122,10 @@ def read_present_positions(packet: PacketHandler, serial: PortHandler, ids: np.a
 
         if comm != COMM_SUCCESS:
             print(f"Failed to communicate with motor {id_}")
+            print("%s" % packet.getTxRxResult(comm))
         if error != 0:
             print(f"Failed to read present position from motor {id_}")
+            print("%s" % packet.getRxPacketError(error))
 
         present_positions.append(position if comm == COMM_SUCCESS and error == 0 else None)
 
@@ -122,8 +145,10 @@ def read_present_velocity(packet: PacketHandler, serial: PortHandler, id: int):
 
     if comm != COMM_SUCCESS:
         print(f"Failed to communicate with motor {id}")
+        print("%s" % packet.getTxRxResult(comm))
     if error != 0:
         print(f"Failed to read present velocity from motor {id}")
+        print("%s" % packet.getRxPacketError(error))
 
     return velocity if comm == COMM_SUCCESS and error == 0 else None
 
@@ -143,8 +168,10 @@ def read_present_velocities(packet: PacketHandler, serial: PortHandler, ids: np.
 
         if comm != COMM_SUCCESS:
             print(f"Failed to communicate with motor {id_}")
+            print("%s" % packet.getTxRxResult(comm))
         if error != 0:
             print(f"Failed to read present velocity from motor {id_}")
+            print("%s" % packet.getRxPacketError(error))
 
         present_velocities.append(velocity if comm == COMM_SUCCESS and error == 0 else None)
 
@@ -158,8 +185,14 @@ def enable_torque(packet: PacketHandler, serial: PortHandler, id: int):
     :param serial: PortHandler
     :param id: int
     """
-    if packet.write1ByteTxRx(serial, id, 64, 1) != COMM_SUCCESS:
+    comm, error = packet.write1ByteTxRx(serial, id, 64, 1)
+
+    if comm != COMM_SUCCESS:
+        print(f"Failed to communicate with motor {id}")
+        print("%s" % packet.getTxRxResult(comm))
+    if error != 0:
         print(f"Failed to enable torque for motor {id}")
+        print("%s" % packet.getRxPacketError(error))
 
 
 def enable_torques(packet: PacketHandler, serial: PortHandler, ids: np.array):
@@ -170,8 +203,14 @@ def enable_torques(packet: PacketHandler, serial: PortHandler, ids: np.array):
     :param ids: np.array
     """
     for id_ in ids:
-        if packet.write1ByteTxRx(serial, id_, 64, 1) != COMM_SUCCESS:
+        comm, error = packet.write1ByteTxRx(serial, id_, 64, 1)
+
+        if comm != COMM_SUCCESS:
+            print(f"Failed to communicate with motor {id_}")
+            print("%s" % packet.getTxRxResult(comm))
+        if error != 0:
             print(f"Failed to enable torque for motor {id_}")
+            print("%s" % packet.getRxPacketError(error))
 
 
 def disable_torque(packet: PacketHandler, serial: PortHandler, id: int):
@@ -181,8 +220,14 @@ def disable_torque(packet: PacketHandler, serial: PortHandler, id: int):
     :param serial: PortHandler
     :param id: int
     """
-    if packet.write1ByteTxRx(serial, id, 64, 0) != COMM_SUCCESS:
+    comm, error = packet.write1ByteTxRx(serial, id, 64, 0)
+
+    if comm != COMM_SUCCESS:
         print(f"Failed to disable torque for motor {id}")
+        print("%s" % packet.getTxRxResult(comm))
+    if error != 0:
+        print(f"Failed to disable torque for motor {id}")
+        print("%s" % packet.getRxPacketError(error))
 
 
 def disable_torques(packet: PacketHandler, serial: PortHandler, ids: np.array):
@@ -193,8 +238,14 @@ def disable_torques(packet: PacketHandler, serial: PortHandler, ids: np.array):
     :param ids: np.array
     """
     for id_ in ids:
-        if packet.write1ByteTxRx(serial, id_, 64, 0) != COMM_SUCCESS:
+        comm, error = packet.write1ByteTxRx(serial, id_, 64, 0)
+
+        if comm != COMM_SUCCESS:
             print(f"Failed to disable torque for motor {id_}")
+            print("%s" % packet.getTxRxResult(comm))
+        if error != 0:
+            print(f"Failed to disable torque for motor {id_}")
+            print("%s" % packet.getRxPacketError(error))
 
 
 def u32_to_i32(value):
@@ -278,10 +329,13 @@ def main():
                 puppet_positions = read_present_positions(io, puppet_serial, full_arm)
                 puppet_velocities = read_present_velocities(io, puppet_serial, full_arm)
 
-                # Convert the positions and velocities to radians
-                master_positions = np.array([u32_pos_to_rad(pos) for pos in master_positions])
-                puppet_positions = np.array([u32_pos_to_rad(pos) for pos in puppet_positions])
-                puppet_velocities = np.array([u32_to_i32(vel) for vel in puppet_velocities])
+                # Convert the positions and velocities to radians, prevent if the value is None
+                master_positions = np.array(
+                    [u32_pos_to_rad(pos) if pos is not None else None for pos in master_positions])
+                puppet_positions = np.array(
+                    [u32_pos_to_rad(pos) if pos is not None else None for pos in puppet_positions])
+                puppet_velocities = np.array(
+                    [u32_to_i32(vel) if vel is not None else None for vel in puppet_velocities])
 
                 node.send_output(
                     "puppet_goal_position",
