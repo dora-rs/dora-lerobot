@@ -1,8 +1,8 @@
 nodes:
   - id: teleop
     custom:
-      source: /home/thomwolf/miniconda3/envs/dora/bin/python
-      args: ../nodes/teleop_python.py
+      source: ..\venv\Scripts\python.exe
+      args: ..\nodes\teleop_python.py
       inputs:
         heartbeat: dora/timer/millis/20
       outputs:
@@ -16,8 +16,8 @@ nodes:
 
   - id: cam_low
     custom:
-      source: /home/thomwolf/miniconda3/envs/dora/bin/python
-      args: ../nodes/webcam.py
+      source: ..\venv\Scripts\python.exe
+      args: ..\nodes\webcam.py
       inputs:
         tick: dora/timer/millis/20
       outputs:
@@ -27,8 +27,8 @@ nodes:
 
   - id: cam_high
     custom:
-      source: /home/thomwolf/miniconda3/envs/dora/bin/python
-      args: ../nodes/webcam.py
+      source: ..\venv\Scripts\python.exe
+      args: ..\nodes\webcam.py
       inputs:
         tick: dora/timer/millis/20
       outputs:
@@ -51,7 +51,7 @@ nodes:
 
   - id: keyboard
     custom: 
-      source: ../nodes/keyboard_node_basic.py
+      source: ..\nodes\keyboard_node_basic.py
       inputs:
         heartbeat: dora/timer/millis/20
       outputs:
@@ -60,7 +60,7 @@ nodes:
 
   - id: cam_saver_low
     custom:
-      source: ../nodes/lerobot_webcam_saver_basic.py
+      source: ..\nodes\lerobot_webcam_saver_basic.py
       inputs:
         image: cam_low/image
         record_episode: keyboard/space
@@ -71,7 +71,7 @@ nodes:
 
   - id: cam_saver_high
     custom:
-      source: ../nodes/lerobot_webcam_saver_basic.py
+      source: ..\nodes\lerobot_webcam_saver_basic.py
       inputs:
         image: cam_high/image
         record_episode: keyboard/space

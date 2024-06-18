@@ -1,7 +1,7 @@
 nodes:
   - id: teleop
     custom:
-      source: /home/thomwolf/miniconda3/envs/dora/bin/python
+      source: python
       args: ../nodes/teleop_python.py
       inputs:
         heartbeat: dora/timer/millis/20
@@ -16,7 +16,7 @@ nodes:
 
   - id: cam_low
     custom:
-      source: /home/thomwolf/miniconda3/envs/dora/bin/python
+      source: python
       args: ../nodes/webcam.py
       inputs:
         tick: dora/timer/millis/20
@@ -27,7 +27,7 @@ nodes:
 
   - id: cam_high
     custom:
-      source: /home/thomwolf/miniconda3/envs/dora/bin/python
+      source: python
       args: ../nodes/webcam.py
       inputs:
         tick: dora/timer/millis/20

@@ -27,16 +27,16 @@ cd dora-lerobot/alexk_low_cost_robot
 ```bash
 # On Windows
 dora up
-dora start ./graphs/record_teleop_windows.yml --attach
+dora start ./graphs/record_teleop_windows.yml
 
 # On Unix
 dora up
-dora start ./graphs/record_teleop_unix.yml --attach
+dora start ./graphs/record_teleop_unix.yml
 
 # On Custom ENV
 source [your_custom_env_bin]/activate
 dora up
-dora start ./graphs/record_teleop_custom_env.yml --attach
+dora start ./graphs/record_teleop_custom_env.yml
 ```
 
 Then, you can teleoperate the arm by using the master arm, and record the episodes:
@@ -44,6 +44,6 @@ Then, you can teleoperate the arm by using the master arm, and record the episod
 1. Press space to move to the next episode and save the previous one
 2. Press esc when finished with all
 3. Pressing backspace will end the current episode, save it and wait until space is pressed to start a new episode
-4. After having pressed esc, type `CTRL+C` to stop the recording.
+4. After having pressed esc, type `dora stop` to stop the Dora pipeline.
 5. Write down the location of the logs (e.g `018fc3a8-3b76-70f5-84a2-22b84df24739`), this is where the
    dataset (and logs) are stored.

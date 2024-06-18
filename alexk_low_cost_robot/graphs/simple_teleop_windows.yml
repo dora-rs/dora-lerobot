@@ -5,10 +5,6 @@ nodes:
       args: ..\nodes\lcr_teleoperate.py
       inputs:
         heartbeat: dora/timer/millis/20
-      outputs:
-        - puppet_position
-        - puppet_velocity
-        - puppet_goal_position
       envs:
-        MASTER_PATH: COM3
-        PUPPET_PATH: COM4
+        MASTER_PATH: COM4
+        PUPPET_PATH: COM3
