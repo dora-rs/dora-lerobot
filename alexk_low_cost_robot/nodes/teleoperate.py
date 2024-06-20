@@ -1,3 +1,18 @@
+"""
+LCR teleoperate: this Dora node teleoperates the puppet robot using the master robot.
+
+1. It reads the current positions of the master robot.
+2. It reads the current current of the master robot gripper.
+3. It writes the current positions to the puppet robot.
+4. It writes the current current to the puppet robot gripper.
+
+The node sends the following outputs:
+1. puppet_goal_position: the goal position of the puppet robot.
+2. puppet_position: the current position of the puppet robot.
+3. puppet_velocity: the current velocity of the puppet robot.
+
+"""
+
 import os
 
 import numpy as np
@@ -79,9 +94,11 @@ def main():
 
     for event in node:
         event_type = event["type"]
+
         if event_type == "INPUT":
             event_id = event["id"]
-            if event_id == "heartbeat":
+
+            if event_id == "tick":
                 master_positions = read_present_positions(io, master_serial, full_arm)
                 master_gripper_current = read_present_current(io, master_serial, gripper)
 

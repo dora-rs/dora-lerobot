@@ -3,7 +3,7 @@ import numpy as np
 from dora import Node
 import pyarrow as pa
 
-from robot import Robot
+from alexk_low_cost_robot.nodes.experimental.robot import Robot
 
 ROBOT_PORTS = {
     'leader': '/dev/ttyACM1',
