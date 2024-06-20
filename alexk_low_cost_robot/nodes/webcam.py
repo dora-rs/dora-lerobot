@@ -18,13 +18,12 @@ from dora import Node
 
 
 def main():
-    if not os.getenv("CAMERA_ID"):
-        raise ValueError("Please set the CAMERA_ID environment variable")
+    if not os.getenv("CAMERA_ID") or not os.getenv("CAMERA_WIDTH") or not os.getenv("CAMERA_HEIGHT"):
+        raise ValueError("Please set the CAMERA_ID, CAMERA_WIDTH, and CAMERA_HEIGHT environment variables")
 
     camera_id = os.getenv("CAMERA_ID")
-
-    camera_width = 640
-    camera_height = 480
+    camera_width = os.getenv("CAMERA_WIDTH")
+    camera_height = os.getenv("CAMERA_HEIGHT")
 
     node = Node()
 
@@ -67,9 +66,13 @@ def main():
 
                 cv2.imshow(str(camera_id), frame)
                 if cv2.waitKey(1) & 0xFF == ord("q"):
+                    cv2.destroyWindow(str(camera_id))
+                    node.send_output("close", pa.array([0]))
+
                     break
 
         elif event_type == "STOP":
+            cv2.destroyWindow(str(camera_id))
             break
         elif event_type == "ERROR":
             print("[lcr_webcam] error: ", event["error"])

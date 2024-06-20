@@ -1,0 +1,37 @@
+nodes:
+  - id: my_webcam
+    custom:
+      source: python
+      args: ../nodes/webcam.py
+      inputs:
+        tick: dora/timer/millis/20
+      outputs:
+        - image
+        - close
+      envs:
+        CAMERA_ID: 0
+        CAMERA_WIDTH: 640
+        CAMERA_HEIGHT: 480
+
+  - id: my_keyboard
+    custom:
+      source: ../nodes/keyboard.py
+      inputs:
+        tick: dora/timer/millis/100
+      outputs:
+        - space
+
+  - id: my_record
+    custom:
+      source: ../nodes/record.py
+      inputs:
+        tick: dora/timer/millis/100
+        record: my_webcam/image
+        close: my_webcam/close
+        space: my_keyboard/space
+      outputs:
+        - saved_record
+      envs:
+        RECORD_NAME: observation.images.my_webcam
+        RECORD_WIDTH: 640
+        RECORD_HEIGHT: 480

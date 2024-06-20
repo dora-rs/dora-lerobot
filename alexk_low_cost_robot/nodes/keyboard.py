@@ -62,11 +62,13 @@ def main():
                 with keyboard.lock:
                     if keyboard.space_press:
                         node.send_output("space", pa.array([keyboard.cursor]))
+                        print(f"Recording episode {keyboard.cursor}", flush=True)
 
                         keyboard.space_press = False
 
                     if keyboard.space_release:
                         node.send_output("space", pa.array([-1]))
+                        print(f"Pausing recording episode {keyboard.cursor}", flush=True)
 
                         keyboard.space_release = False
 
