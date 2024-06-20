@@ -62,13 +62,12 @@ def main():
                     video_dir = episodes_out_dir / f"{record_name}_{current_episode}.mp4"
                     (
                         ffmpeg
-                        .input(str(frames_out_dir / 'frame_%06d.png'), format='image2', framerate=30)
+                        .input(str(frames_out_dir / 'frame_%06d.png'), format='image2')
                         .output(str(video_dir), vcodec='libx264', g=2, pix_fmt='yuv444p')
                         .global_args('-loglevel', 'error')
                         .run(overwrite_output=True)
                     )
                     frame_index = 0
-                    pass
 
             elif event_id == "close":
                 break
