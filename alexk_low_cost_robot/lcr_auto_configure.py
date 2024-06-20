@@ -20,6 +20,8 @@ import time
 import numpy as np
 
 from dynamixel_sdk import PortHandler, PacketHandler, COMM_SUCCESS
+from alexk_arm import write_operating_modes, write_operating_mode, write_homing_offsets, write_drive_modes, \
+    disable_torques, read_present_positions
 
 
 def pause():
@@ -40,7 +42,7 @@ def u32_to_i32(u32: int) -> int:
     return u32
 
 
-def read_present_positions(io: PacketHandler, serial: PortHandler, ids: np.array) -> np.array:
+def read_present_positions_i32(io: PacketHandler, serial: PortHandler, ids: np.array) -> np.array:
     """
     Read the present positions of the motors.
     :param io: PacketHandler
@@ -48,99 +50,9 @@ def read_present_positions(io: PacketHandler, serial: PortHandler, ids: np.array
     :param ids: numpy array of motor ids
     :return: numpy array of present positions
     """
-    present_positions = []
+    present_positions = read_present_positions(io, serial, ids)
 
-    for id_ in ids:
-
-        position, comm, error = io.read4ByteTxRx(serial, id_, 132)
-
-        if comm != COMM_SUCCESS:
-            print(f"Error while communicating with motor {id_}: {comm}")
-            print("%s" % io.getTxRxResult(comm))
-        if error != 0:
-            print(f"Error while reading present position for motor {id_}: {error}")
-            print("%s" % io.getRxPacketError(error))
-
-        present_positions.append(u32_to_i32(position) if comm == COMM_SUCCESS and error == 0 else None)
-
-    return np.array(present_positions)
-
-
-def disable_torques(io: PacketHandler, serial: PortHandler, ids: np.array):
-    """
-    Disable the torques of the puppet robot
-    :param io: PacketHandler
-    :param serial: PortHandler
-    :param ids: np.array
-    """
-    for id_ in ids:
-        comm, error = io.write1ByteTxRx(serial, id_, 64, 0)
-        if comm != COMM_SUCCESS:
-            print(f"Error while communicating with motor {id_}")
-            print("%s" % io.getTxRxResult(comm))
-        if error != 0:
-            print(f"Error while disabling torque for motor {id_}")
-            print("%s" % io.getRxPacketError(error))
-
-
-def write_operating_mode(io: PacketHandler, serial: PortHandler, ids: np.array, mode: int):
-    """
-    Write the appropriate operating mode for the LCR.
-    :param io: PacketHandler
-    :param serial: PortHandler
-    :param ids: numpy array of motor ids
-    :param mode: mode to write
-    """
-    for id_ in ids:
-        comm, error = io.write1ByteTxRx(serial, id_, 11, mode)
-
-        if mode is not None:
-            if comm != COMM_SUCCESS:
-                print(f"Error while communicating with motor {id_}")
-                print("%s" % io.getTxRxResult(comm))
-            if error != 0:
-                print(f"Error while writing operating mode for motor {id_}")
-                print("%s" % io.getRxPacketError(error))
-
-
-def write_homing_offsets(io: PacketHandler, serial: PortHandler, ids: np.array, offsets: np.array):
-    """
-    Write the homing offset for the LCR.
-    :param io: PacketHandler
-    :param serial: PortHandler
-    :param ids: numpy array of motor ids
-    :param offsets: numpy array of offsets
-    """
-    for i, id_ in enumerate(ids):
-        comm, error = io.write4ByteTxRx(serial, id_, 20, int(offsets[i]))
-
-        if offsets[i] is not None:
-            if comm != COMM_SUCCESS:
-                print(f"Error while communicating with motor {id_}")
-                print("%s" % io.getTxRxResult(comm))
-            if error != 0:
-                print(f"Error while writing homing offset for motor {id_}")
-                print("%s" % io.getRxPacketError(error))
-
-
-def write_drive_modes(io: PacketHandler, serial: PortHandler, ids: np.array, modes: np.array):
-    """
-    Write the drive mode for the LCR.
-    :param io: PacketHandler
-    :param serial: PortHandler
-    :param ids: numpy array of motor ids
-    :param modes: numpy array of drive modes
-    """
-    for i, id_ in enumerate(ids):
-        comm, error = io.write1ByteTxRx(serial, id_, 10, modes[i])
-
-        if modes[i] is not None:
-            if comm != COMM_SUCCESS:
-                print(f"Error while communicating with motor {id_}")
-                print("%s" % io.getTxRxResult(comm))
-            if error != 0:
-                print(f"Error while writing drive mode for motor {id_}")
-                print("%s" % io.getRxPacketError(error))
+    return np.array([u32_to_i32(present_positions[i]) for i in range(len(present_positions))])
 
 
 def prepare_configuration(io: PacketHandler, serial: PortHandler, puppet: bool):
@@ -158,10 +70,10 @@ def prepare_configuration(io: PacketHandler, serial: PortHandler, puppet: bool):
     # rotate more than 360 degrees (from 0 to 4095) And some mistake can happen while assembling the arm,
     # you could end up with a servo with a position 0 or 4095 at a crucial point See [
     # https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/#operating-mode11]
-    write_operating_mode(io, serial, [1, 2, 3, 4, 5], 4)
+    write_operating_modes(io, serial, [1, 2, 3, 4, 5], 4)
 
     # If puppet, we need to work with 'position control current based' (5) for the servo 6
-    write_operating_mode(io, serial, [6], 5 if puppet else 4)
+    write_operating_mode(io, serial, 6, 5 if puppet else 4)
 
     # We need to reset the homing offset for all servos
     write_homing_offsets(io, serial, [1, 2, 3, 4, 5, 6], np.array([0, 0, 0, 0, 0, 0]))
@@ -229,7 +141,7 @@ def configure_homing(io: PacketHandler, serial: PortHandler, inverted: list[bool
     write_homing_offsets(io, serial, [1, 2, 3, 4, 5, 6], [0, 0, 0, 0, 0, 0])
 
     # Get the present positions of the servos
-    present_positions = read_present_positions(io, serial, [1, 2, 3, 4, 5, 6])
+    present_positions = read_present_positions_i32(io, serial, [1, 2, 3, 4, 5, 6])
 
     nearest_positions = calculate_nearest_rounded_positions(present_positions)
 
@@ -247,7 +159,7 @@ def configure_drive_mode(io: PacketHandler, serial: PortHandler, puppet: bool):
     :param puppet: True if the LCR is a puppet, False otherwise
     """
     # Get current positions
-    present_positions = read_present_positions(io, serial, [1, 2, 3, 4, 5, 6])
+    present_positions = read_present_positions_i32(io, serial, [1, 2, 3, 4, 5, 6])
 
     nearest_positions = calculate_nearest_rounded_positions(present_positions)
 
@@ -324,7 +236,7 @@ if __name__ == "__main__":
     print("Make sure everything is working properly:")
 
     while True:
-        positions = read_present_positions(io, serial, [1, 2, 3, 4, 5, 6])
+        positions = read_present_positions_i32(io, serial, [1, 2, 3, 4, 5, 6])
         print(positions)
 
         time.sleep(1)
