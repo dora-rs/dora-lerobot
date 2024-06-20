@@ -10,6 +10,8 @@ import os
 import cv2
 import ffmpeg
 
+import pyarrow as pa
+
 from pathlib import Path
 
 from dora import Node
@@ -53,6 +55,13 @@ def main():
 
                 cv2.imwrite(str(image_dir), image)
 
+                video_dir = episodes_out_dir / f"{record_name}_{recording_episode}.mp4"
+                node.send_output(
+                    "saved_image",
+                    pa.array([{"path": f"{str(video_dir)}", "timestamp": frame_index / 30}]),
+                    event["metadata"],
+                )
+
             elif event_id == "space":
                 print(f"Recording episode {recording_episode}", flush=True)
                 current_episode = recording_episode
@@ -62,7 +71,7 @@ def main():
                     video_dir = episodes_out_dir / f"{record_name}_{current_episode}.mp4"
                     (
                         ffmpeg
-                        .input(str(frames_out_dir / 'frame_%06d.png'), format='image2')
+                        .input(str(frames_out_dir / 'frame_%06d.png'), format='image2', framerate=30)
                         .output(str(video_dir), vcodec='libx264', g=2, pix_fmt='yuv444p')
                         .global_args('-loglevel', 'error')
                         .run(overwrite_output=True)
