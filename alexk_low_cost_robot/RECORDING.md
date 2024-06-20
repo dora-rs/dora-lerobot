@@ -22,19 +22,17 @@ Those are the the steps to teleoperate the arm and record the episodes:
 cd dora-lerobot/alexk_low_cost_robot
 ```
 
-- Start your Dora application with the following command (Windows or Unix or Custom ENV):
+- Start your Dora application with the following command:
 
 ```bash
-# On Windows
-dora up
-dora start ./graphs/record_teleop_windows.yml
-
-# On Unix
-dora up
-dora start ./graphs/record_teleop_unix.yml
-
-# On Custom ENV
+# If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
+
+# If you followed the installation instructions, you can run the following command
+source venv/bin/activate # On Linux
+source venv/Scripts/activate # On Windows bash
+venv\Scripts\activate.bat # On Windows cmd
+
 dora up
 dora start ./graphs/record_teleop_custom_env.yml
 ```

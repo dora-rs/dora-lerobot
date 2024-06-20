@@ -35,6 +35,10 @@ recommend using our on-board tool to set all of that automatically:
 ```bash
 cd dora-lerobot/alexk_low_cost_robot
 
+# If you are using a custom environment, you will have to activate it before running the command
+source [your_custom_env_bin]/activate
+
+# If you followed the installation instructions, you can run the following command
 source venv/bin/activate # On Linux
 source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
