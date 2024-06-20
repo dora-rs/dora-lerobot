@@ -29,24 +29,22 @@ There are also some other example applications in the `graph` folder. Have fun!
 
 Here is a list of the available examples:
 
-- `simple_teleop_windows.yml`: A simple teleoperation pipeline that allows you to control the robot, without recording
-  the episodes. You can use it to test the robot on Windows:
+- `simple_teleop.yml`: A simple teleoperation pipeline that allows you to control the robot, without recording
+  the episodes. You can use it to test the robot:
 
 ```bash
 cd dora-lerobot/alexk_low_cost_robot
 
-# On Windows
-dora up
-dora start ./graphs/simple_teleop_windows.yml --attach
-
-# On Unix
-dora up
-dora start ./graphs/simple_teleop_unix.yml --attach
-
-# On Custom ENV
+# If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
+
+# If you followed the installation instructions, you can run the following command
+source venv/bin/activate # On Linux
+source venv/Scripts/activate # On Windows bash
+venv\Scripts\activate.bat # On Windows cmd
+
 dora up
-dora start ./graphs/simple_teleop_custom_env.yml --attach
+dora start ./graphs/simple_teleop.yml
 ```
 
 ## License

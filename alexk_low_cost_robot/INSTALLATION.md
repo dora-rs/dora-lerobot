@@ -59,8 +59,6 @@ pip install -r requirements.txt
 **Note**: You're totally free to use your own Python environment, a Conda environment, or whatever you prefer, you will have to activate 
 your custom python environment before running `dora start [graph].yml`.
 
-## Recording
-
 In order to record episodes, you need ffmpeg installed on your system. You can download it from the [official website](https://ffmpeg.org/download.html).
 
 If you're on Windows, you can download the latest build from [here](https://ffmpeg.zeranoe.com/builds/). You can extract the zip file and add the `bin` folder to your PATH.

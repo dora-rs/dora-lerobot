@@ -34,7 +34,7 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 
 dora up
-dora start ./graphs/record_teleop_custom_env.yml
+dora start ./graphs/record_teleop.yml
 ```
 
 Then, you can teleoperate the arm by using the master arm, and record the episodes:
