@@ -1,0 +1,6 @@
+nodes:
+  - id: keyboard
+    custom:
+      source: ../nodes/keyboard.py
+      outputs:
+        - space

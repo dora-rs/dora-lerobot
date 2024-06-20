@@ -27,6 +27,13 @@ def main():
     camera_height = 480
 
     node = Node()
+
+    if os.name == "nt":
+        if not camera_id.isnumeric():
+            raise ValueError("You're using Windows, please set the CAMERA_ID environment variable to an integer")
+
+        camera_id = int(camera_id)
+
     video_capture = cv2.VideoCapture(camera_id)
     font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -43,7 +50,7 @@ def main():
                     frame = np.zeros((camera_height, camera_width, 3), dtype=np.uint8)
                     cv2.putText(
                         frame,
-                        "No Webcam was found at index %d" % camera_id,
+                        "No Webcam was found at index %s" % camera_id,
                         (int(30), int(30)),
                         font,
                         0.75,
@@ -59,6 +66,8 @@ def main():
                 )
 
                 cv2.imshow(str(camera_id), frame)
+                if cv2.waitKey(1) & 0xFF == ord("q"):
+                    break
 
         elif event_type == "STOP":
             break
