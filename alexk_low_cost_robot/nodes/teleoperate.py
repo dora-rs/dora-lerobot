@@ -2,9 +2,9 @@
 LCR teleoperate: this Dora node teleoperates the puppet robot using the master robot.
 
 1. It reads the current positions of the master robot.
-2. It reads the current current of the master robot gripper.
 3. It writes the current positions to the puppet robot.
-4. It writes the current current to the puppet robot gripper.
+4. It sets the goal current of the master robot to 20.
+5. It sets the goal position of the master robot to 500.
 
 The node sends the following outputs:
 1. puppet_goal_position: the goal position of the puppet robot.
@@ -86,9 +86,14 @@ def main():
     enable_torque(io, master_serial, gripper)
     enable_torques(io, puppet_serial, full_arm)
 
-    # Place the master gripper at 300
-    write_goal_position(io, master_serial, gripper, 300)
+    # Place the master gripper at 400
+    write_goal_position(io, master_serial, gripper, 400)
 
+    # Place the master gripper current goal at 20
+    write_goal_current(io, master_serial, gripper, 20)
+
+    # Place the puppet gripper at 500
+    write_goal_current(io, puppet_serial, gripper, 500)
     # Ready to loop and teleoperate the puppet robot
     node = Node()
 
@@ -100,10 +105,8 @@ def main():
 
             if event_id == "tick":
                 master_positions = read_present_positions(io, master_serial, full_arm)
-                master_gripper_current = read_present_current(io, master_serial, gripper)
 
                 write_goal_positions(io, puppet_serial, full_arm, master_positions)
-                write_goal_current(io, puppet_serial, gripper, master_gripper_current)
 
                 puppet_positions = read_present_positions(io, puppet_serial, full_arm)
                 puppet_velocities = read_present_velocities(io, puppet_serial, full_arm)

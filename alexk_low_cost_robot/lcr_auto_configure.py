@@ -21,7 +21,7 @@ import numpy as np
 
 from dynamixel_sdk import PortHandler, PacketHandler, COMM_SUCCESS
 from alexk_arm import write_operating_modes, write_operating_mode, write_homing_offsets, write_drive_modes, \
-    disable_torques, read_present_positions
+    disable_torques, read_present_positions, write_current_limit
 
 
 def pause():
@@ -72,8 +72,10 @@ def prepare_configuration(io: PacketHandler, serial: PortHandler, puppet: bool):
     # https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/#operating-mode11]
     write_operating_modes(io, serial, [1, 2, 3, 4, 5], 4)
 
-    # If puppet, we need to work with 'position control current based' (5) for the servo 6
-    write_operating_mode(io, serial, 6, 5 if puppet else 4)
+    # Gripper is always 'position control current based' (5)
+    write_operating_mode(io, serial, 6, 5)
+
+    write_current_limit(io, serial, 6, 200 if not puppet else 500)
 
     # We need to reset the homing offset for all servos
     write_homing_offsets(io, serial, [1, 2, 3, 4, 5, 6], np.array([0, 0, 0, 0, 0, 0]))

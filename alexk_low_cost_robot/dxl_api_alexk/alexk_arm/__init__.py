@@ -359,3 +359,42 @@ def write_drive_modes(io: PacketHandler, serial: PortHandler, ids: np.array, mod
             if error != 0:
                 print(f"Error while writing drive mode for motor {id_}")
                 print("%s" % io.getRxPacketError(error))
+
+
+def write_current_limit(io: PacketHandler, serial: PortHandler, servo_id: int, limit: int):
+    """
+    Write the current limit for the LCR.
+    :param io: PacketHandler
+    :param serial: PortHandler
+    :param servo_id: int
+    :param limit: int
+    """
+    comm, error = io.write2ByteTxRx(serial, servo_id, 38, limit)
+
+    if limit is not None:
+        if comm != COMM_SUCCESS:
+            print(f"Failed to communicate with motor {servo_id}")
+            print("%s" % io.getTxRxResult(comm))
+        if error != 0:
+            print(f"Error while writing current limit for motor {servo_id}")
+            print("%s" % io.getRxPacketError(error))
+
+
+def write_current_limits(io: PacketHandler, serial: PortHandler, ids: np.array, limits: np.array):
+    """
+    Write the current limit for the LCR.
+    :param io: PacketHandler
+    :param serial: PortHandler
+    :param ids: numpy array of motor ids
+    :param limits: numpy array of current limits
+    """
+    for i, id_ in enumerate(ids):
+        comm, error = io.write2ByteTxRx(serial, id_, 38, limits[i])
+
+        if limits[i] is not None:
+            if comm != COMM_SUCCESS:
+                print(f"Failed to communicate with motor {id_}")
+                print("%s" % io.getTxRxResult(comm))
+            if error != 0:
+                print(f"Error while writing current limit for motor {id_}")
+                print("%s" % io.getRxPacketError(error))
