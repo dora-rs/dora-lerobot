@@ -75,7 +75,7 @@ def prepare_configuration(io: PacketHandler, serial: PortHandler, puppet: bool):
     # Gripper is always 'position control current based' (5)
     write_operating_mode(io, serial, 6, 5)
 
-    write_current_limit(io, serial, 6, 200 if not puppet else 500)
+    write_current_limit(io, serial, 6, 50 if not puppet else 500)
 
     # We need to reset the homing offset for all servos
     write_homing_offsets(io, serial, [1, 2, 3, 4, 5, 6], np.array([0, 0, 0, 0, 0, 0]))
@@ -181,14 +181,14 @@ def wanted_position_1() -> np.array:
     """
     The present position wanted in position 1 for the arm
     """
-    return np.array([0, 0, 1024, 0, -1024, 0])
+    return np.array([0, -1024, 1024, 0, 0, 0])
 
 
 def wanted_position_2() -> np.array:
     """
     The present position wanted in position 2 for the arm
     """
-    return np.array([1024, 1024, 0, -1024, 0, 1024])
+    return np.array([1024, 0, 0, 1024, 1024, -1024])
 
 
 if __name__ == "__main__":

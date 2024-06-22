@@ -3,7 +3,7 @@ LCR teleoperate: this Dora node teleoperates the puppet robot using the master r
 
 1. It reads the current positions of the master robot.
 3. It writes the current positions to the puppet robot.
-4. It sets the goal current of the master robot to 20.
+4. It sets the goal current of the master robot to 40.
 5. It sets the goal position of the master robot to 500.
 
 The node sends the following outputs:
@@ -90,7 +90,7 @@ def main():
     write_goal_position(io, master_serial, gripper, 400)
 
     # Place the master gripper current goal at 20
-    write_goal_current(io, master_serial, gripper, 20)
+    write_goal_current(io, master_serial, gripper, 40)
 
     # Place the puppet gripper at 500
     write_goal_current(io, puppet_serial, gripper, 500)
