@@ -48,6 +48,7 @@ python -m venv venv
 source venv/bin/activate # On Linux
 source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
+venv\Scripts\activate.ps1 # On Windows PowerShell
 ```
 
 Finally, install the required Python packages by running the following command:

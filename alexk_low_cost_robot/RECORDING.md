@@ -32,6 +32,7 @@ source [your_custom_env_bin]/activate
 source venv/bin/activate # On Linux
 source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
+venv\Scripts\activate.ps1 # On Windows PowerShell
 
 dora up
 dora start ./graphs/record_teleop.yml
