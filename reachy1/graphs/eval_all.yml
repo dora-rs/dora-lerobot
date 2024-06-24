@@ -20,12 +20,12 @@ nodes:
     custom:
       # source: dynamic
       source: /home/peter/Documents/work/lerobot/lerobot/scripts/eval.py
-      args: -p /home/peter/Documents/work/lerobot/outputs_fist_bump_3/checkpoints/last/pretrained_model eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000 policy.n_action_steps=100
+      args: -p /home/peter/Documents/work/lerobot/high_five_sea_3/checkpoints/last/pretrained_model eval.n_episodes=1 eval.batch_size=1 env.episode_length=200000 policy.n_action_steps=100
       # source: ../nodes/gym_dora_node.py
       inputs:
         agent_pos: reachy-client/agent_pos
         cam_trunk: reachy-vision-client/cam_trunk
-        stop: keyboard/stop
+        start_high_five: parler/start_high_five
       outputs:
         - action
 
@@ -35,31 +35,23 @@ nodes:
       inputs:
         image: reachy-vision-client/cam_trunk
         action: eval/action
+        text_vlm: idefics2/speak
+        text_whisper: whisper/text_llm
       envs:
         IMAGE_WIDTH: 480
         IMAGE_HEIGHT: 640
 
-  - id: keyboard
-    custom:
-      source: ../nodes/keyboard_node.py
-      inputs:
-        heartbeat: dora/timer/millis/20
-      outputs:
-        - space
-        - failed
-        - stop
-
   - id: idefics2
-    operator:
-    python: ../nodes/idefics2_node_demo.py
-    inputs:
-    image:
-    source: reachy-vision-client/cam_trunk
-    queue_size: 1
-    text: whisper/text_llm
-    outputs:
-      - speak
-      - control
+    custom:
+      source: ../nodes/idefics2_node_demo.py
+      inputs:
+        image:
+          source: reachy-vision-client/cam_trunk
+          queue_size: 1
+        text: whisper/text_llm
+      outputs:
+        - speak
+        - control
 
   - id: whisper
     custom:
@@ -74,3 +66,5 @@ nodes:
       source: ../nodes/parler_node.py
       inputs:
         text: idefics2/speak
+      outputs:
+        - start_high_five

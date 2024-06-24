@@ -17,6 +17,12 @@ input_ids = tokenizer(
     return_tensors="pt",
 ).input_ids.to("cuda:0")
 
+generation = model.generate(
+    input_ids=input_ids,
+    min_new_tokens=100,
+    #   max_length=350,
+    prompt_input_ids=tokenizer(["abc"], return_tensors="pt").input_ids.to("cuda:0"),
+)
 node = Node()
 for event in node:
     if event["type"] == "INPUT":
@@ -25,6 +31,7 @@ for event in node:
         generation = model.generate(
             input_ids=input_ids,
             min_new_tokens=100,
+            #   max_length=350,
             prompt_input_ids=tokenizer(text, return_tensors="pt").input_ids.to(
                 "cuda:0"
             ),
@@ -35,15 +42,15 @@ for event in node:
             model.config.sampling_rate,
         )
 
-        pygame.mixer.music.load(f"parler_tts_out.wav")
+        pygame.mixer.music.load("parler_tts_out.wav")
         pygame.mixer.music.play()
         while pygame.mixer.get_busy():
             pass
 
         text = text.lower()
-        if "yes" in text and "high" in text and "five" in text:
+        if ("yes" in text or "sure" in text) and "high" in text and "five" in text:
             node.send_output(
-                "stop_high_five",
+                "start_high_five",
                 pa.array([False]),
             )
 

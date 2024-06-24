@@ -19,16 +19,6 @@ nodes:
         IMAGE_WIDTH: 480
         IMAGE_HEIGHT: 640
 
-  - id: keyboard
-    custom:
-      source: ../nodes/keyboard_node.py
-      inputs:
-        heartbeat: dora/timer/millis/20
-      outputs:
-        - space
-        - failed
-        - stop
-
   - id: idefics2
     custom:
       source: ../nodes/idefics2_node_demo.py
@@ -55,4 +45,4 @@ nodes:
       inputs:
         text: idefics2/speak
       outputs:
-        - stop_high_five
+        - start_high_five

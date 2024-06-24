@@ -50,6 +50,16 @@ for event in node:
                     (190, 250, 100),
                     2,
                 )
+            if text is not None:
+                cv2.putText(
+                    image,
+                    f"text: {text}",
+                    (20, 60),
+                    FONT,
+                    0.5,
+                    (190, 250, 100),
+                    2,
+                )
 
             cv2.imshow("frame", image)
             if cv2.waitKey(1) & 0xFF == ord("q"):

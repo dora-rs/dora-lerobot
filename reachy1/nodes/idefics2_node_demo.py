@@ -36,7 +36,7 @@ def ask_vlm(image, instruction):
                 {"type": "image"},
                 {
                     "type": "text",
-                    "text": f"You are a humanoid robot named reachy 2. You have two arms. Respond by being very descriptive. {instruction}",
+                    "text": f"You are a humanoid robot named reachy built by pollen robotics. You have two arms with hands. Respond by being very descriptive and positive. {instruction}",
                 },
             ],
         },
