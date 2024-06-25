@@ -34,6 +34,15 @@ def u32_to_i32(value):
     return value if value < 2 ** 31 else value - 2 ** 32
 
 
+def i32_to_u32(value):
+    """
+    Convert a signed 32-bit integer to an unsigned 32-bit integer
+    :param value: int
+    :return: int
+    """
+    return value if value >= 0 else value + 2 ** 32
+
+
 def i32_pos_to_rad(value):
     """
     Convert a signed 32-bit integer to a radian
@@ -87,7 +96,7 @@ def main():
     enable_torques(io, puppet_serial, full_arm)
 
     # Place the master gripper at 400
-    write_goal_position(io, master_serial, gripper, 400)
+    write_goal_position(io, master_serial, gripper, -450)
 
     # Place the master gripper current goal at 20
     write_goal_current(io, master_serial, gripper, 40)
@@ -106,7 +115,51 @@ def main():
             if event_id == "tick":
                 master_positions = read_present_positions(io, master_serial, full_arm)
 
-                write_goal_positions(io, puppet_serial, full_arm, master_positions)
+                master_positions = np.array(
+                    [u32_to_i32(pos) if pos is not None else None for pos in master_positions])
+
+                # Ensure that every joint is within the range of -2048 to 2048 (0 can become 4095 for no reason)
+                for i in [0, 1, 2, 3, 5]:
+                    if master_positions[i] is not None:
+                        if master_positions[i] > 2048:
+                            master_positions[i] = master_positions[i] - 4096
+                        elif master_positions[i] < -2048:
+                            master_positions[i] = master_positions[i] + 4096
+
+                # For this joint, the range may be -1024 to 3072
+                if master_positions[4] is not None:
+                    if master_positions[4] > 3072:
+                        master_positions[4] = master_positions[4] - 4096
+                    elif master_positions[4] < -1024:
+                        master_positions[4] = master_positions[4] + 4096
+
+                command_positions = np.array(
+                    [i32_to_u32(pos) if pos is not None else None for pos in master_positions])
+
+                puppet_positions = read_present_positions(io, puppet_serial, full_arm)
+
+                puppet_positions = np.array(
+                    [u32_to_i32(pos) if pos is not None else None for pos in puppet_positions])
+
+                # Adapt the puppet positions to the master positions, but prevent if the value is None and
+                # prevent the puppet from going beyond the limits :
+
+                for i in [0, 1, 2, 3, 5]:
+                    if puppet_positions[i] is not None:
+                        if command_positions[i] is not None:
+                            if puppet_positions[i] > 2048:
+                                command_positions[i] = command_positions[i] + 4096
+                            if puppet_positions[i] < -2048:
+                                command_positions[i] = command_positions[i] - 4096
+
+                if puppet_positions[4] is not None:
+                    if command_positions[4] is not None:
+                        if puppet_positions[4] > 3072:
+                            command_positions[4] = command_positions[4] + 4096
+                        if puppet_positions[4] < -1024:
+                            command_positions[4] = command_positions[4] - 4096
+
+                write_goal_positions(io, puppet_serial, full_arm, command_positions)
 
                 puppet_positions = read_present_positions(io, puppet_serial, full_arm)
                 puppet_velocities = read_present_velocities(io, puppet_serial, full_arm)
