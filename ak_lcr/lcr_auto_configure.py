@@ -19,9 +19,7 @@ import time
 
 import numpy as np
 
-from dynamixel_sdk import PortHandler, PacketHandler, COMM_SUCCESS
-from alexk_arm import write_operating_modes, write_operating_mode, write_homing_offsets, write_drive_modes, \
-    disable_torques, read_present_positions, write_current_limit
+from dynamixel import DynamixelXLMotorsChain
 
 
 def pause():

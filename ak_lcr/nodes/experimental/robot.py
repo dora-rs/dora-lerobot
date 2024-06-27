@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Union
 from enum import Enum, auto
-from alexk_low_cost_robot.nodes.experimental.dynamixel import Dynamixel, OperatingMode, ReadAttribute
+from ak_lcr.nodes.experimental.dynamixel import Dynamixel, OperatingMode, ReadAttribute
 from dynamixel_sdk import GroupSyncRead, GroupSyncWrite, DXL_LOBYTE, DXL_HIBYTE, DXL_LOWORD, DXL_HIWORD
 
 class MotorControlType(Enum):

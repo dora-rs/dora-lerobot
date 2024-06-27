@@ -47,7 +47,7 @@ def u32_pos_to_rad(value):
 
 def main():
     master_serial = alexk.PortHandler("COM8")
-    puppet_serial = rob.PortHandler("COM7")
+    puppet_serial = rob.PortHandler("COM10")
 
     if not master_serial.openPort():
         raise ValueError(f"Failed to open port COM8")
@@ -88,36 +88,32 @@ def main():
         for i in [0, 1, 2, 3, 5]:
             if master_positions[i] is not None:
                 if master_positions[i] > 2048:
-                    master_positions[i] = master_positions[i] - 4096
+                    master_positions[i] = master_positions[i] % 4096
                 elif master_positions[i] < -2048:
-                    master_positions[i] = master_positions[i] + 4096
+                    master_positions[i] = - (-master_positions[i] % 4096)
 
         # For this joint, the range may be -1024 to 3072
         if master_positions[4] is not None:
-            if master_positions[4] > 3072:
-                master_positions[4] = master_positions[4] - 4096
-            elif master_positions[4] < -1024:
-                master_positions[4] = master_positions[4] + 4096
+            if master_positions[4] > 4096:
+                master_positions[4] = (master_positions[4] % 4096)
+            elif master_positions[4] < -4096:
+                master_positions[4] = -(-master_positions[4] % 4096)
 
         command_positions = np.array([
-            master_positions[0] + 2160 if master_positions[0] is not None else None,
-            2000 - master_positions[1] if master_positions[1] is not None else None,
-            2900 - 1024 - master_positions[2] if master_positions[2] is not None else None,
-            master_positions[3] + 1720 if master_positions[3] is not None else None,
-            master_positions[4] + 20 if master_positions[4] is not None else None,
-            2000 - master_positions[5] if master_positions[5] is not None else None
+            1079,
+            None,
+            None,
+            None,
+            None,
+            None
+            # 1024 - int((2166.0 / 1532.0) * (master_positions[1] - 508)) if master_positions[1] is not None else None,
+            # 853 - int((2137.0 / 2174.0) * (master_positions[2] - 1150)) if master_positions[2] is not None else None,
+            # 3237 + int((2131.0 / 2514.0) * (master_positions[3] - 1265)) if master_positions[3] is not None else None,
+            # 2047 + int((2018.0 / 1889.0) * (master_positions[4] + 2158)) if master_positions[4] is not None else None,
+            # 2885 - int((1246.0 / 690.0) * (master_positions[5] + 601)) if master_positions[5] is not None else None
         ])
 
-        print("COMMAND_POSITION: ", command_positions)
-
-        puppet_positions = rob.read_present_positions(rob_io, puppet_serial, full_arm)
-
-        puppet_positions = np.array(
-            [u32_to_i32(pos) if pos is not None else None for pos in puppet_positions])
-
-        print("PUPPET_POSITION: ", puppet_positions)
-
-        rob.write_goal_positions(rob_io, puppet_serial, full_arm, command_positions)
+        rob.write_goal_position(rob_io, puppet_serial, 1, 1079)
 
 
 if __name__ == "__main__":

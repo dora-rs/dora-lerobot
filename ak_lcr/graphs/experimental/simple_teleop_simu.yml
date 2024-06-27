@@ -1,0 +1,9 @@
+nodes:
+  - id: lcr_teleoperate
+    custom:
+      source: python
+      args: ../nodes/teleoperate_simu.py
+      inputs:
+        tick: dora/timer/millis/20
+      envs:
+        MASTER_PATH: COM8
