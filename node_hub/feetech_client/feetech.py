@@ -2,16 +2,15 @@
 Copy of Lerobot/common files waiting for a release build of this
 """
 
-from copy import deepcopy
 import enum
 import numpy as np
 
-from dynamixel_sdk import PacketHandler, PortHandler, COMM_SUCCESS, GroupSyncRead, GroupSyncWrite
-from dynamixel_sdk import DXL_HIBYTE, DXL_HIWORD, DXL_LOBYTE, DXL_LOWORD
+from scservo_sdk import PacketHandler, PortHandler, COMM_SUCCESS, GroupSyncRead, GroupSyncWrite
+from scservo_sdk import SCS_HIBYTE, SCS_HIBYTE, SCS_LOBYTE, SCS_LOWORD
 
 PROTOCOL_VERSION = 2.0
-BAUDRATE = 1_000_000
-TIMOUT_MS = 1000
+BAUD_RATE = 1_000_000
+TIMEOUT_MS = 1000
 
 
 class TorqueMode(enum.Enum):
@@ -33,14 +32,8 @@ class DriveMode(enum.Enum):
     INVERTED = 1
 
 
-# https://emanual.robotis.com/docs/en/dxl/x/xl330-m077
-# https://emanual.robotis.com/docs/en/dxl/x/xl330-m288
-# https://emanual.robotis.com/docs/en/dxl/x/xl430-w250
-# https://emanual.robotis.com/docs/en/dxl/x/xm430-w350
-# https://emanual.robotis.com/docs/en/dxl/x/xm540-w270
-
 # data_name, address, size (byte)
-X_SERIE_CONTROL_TABLE = [
+SCS_SERIES_CONTROL_TABLE = [
     ("goal_position", 116, 4),
     ("goal_current", 102, 2),
     ("goal_pwm", 100, 2),
@@ -56,30 +49,17 @@ X_SERIE_CONTROL_TABLE = [
     ("current_limit", 38, 2),
 ]
 
-MODEL_CONTROL_TABLE = {
-    "xl330-m077": X_SERIE_CONTROL_TABLE,
-    "xl330-m288": X_SERIE_CONTROL_TABLE,
-    "xl430-w250": X_SERIE_CONTROL_TABLE,
-    "xm430-w350": X_SERIE_CONTROL_TABLE,
-    "xm540-w270": X_SERIE_CONTROL_TABLE,
-}
 
+class FeetechSCSMotorChain:
 
-class DynamixelXLMotorsChain:
-
-    def __init__(self, port: str, motor_models: dict[int, str],
-                 extra_model_control_table: dict[str, list[tuple]] | None = None):
+    def __init__(self, port: str, ids: list[int]):
         self.port = port
-        self.motor_models = motor_models
-
-        self.model_ctrl_table = deepcopy(MODEL_CONTROL_TABLE)
-        if extra_model_control_table:
-            self.model_ctrl_table.update(extra_model_control_table)
+        self.motor_ids = ids
 
         # Find read/write addresses and number of bytes for each motor
         self.motor_ctrl = {}
-        for idx, model in self.motor_models.items():
-            for data_name, addr, bytes in self.model_ctrl_table[model]:
+        for idx in ids:
+            for data_name, addr, bytes in SCS_SERIES_CONTROL_TABLE:
                 if idx not in self.motor_ctrl:
                     self.motor_ctrl[idx] = {}
                 self.motor_ctrl[idx][data_name] = {
@@ -93,18 +73,14 @@ class DynamixelXLMotorsChain:
         if not self.port_handler.openPort():
             raise OSError(f"Failed to open port {self.port}")
 
-        if not self.port_handler.setBaudRate(BAUDRATE):
-            raise OSError(f"Failed to set baudrate to {BAUDRATE}")
-
-        if not self.port_handler.setPacketTimeoutMillis(TIMOUT_MS):
-            raise OSError(f"Failed to set packet timeout to {TIMOUT_MS} (ms)")
+        self.port_handler.setBaudRate(BAUD_RATE)
+        self.port_handler.setPacketTimeoutMillis(TIMEOUT_MS)
 
         self.group_readers = {}
         self.group_writers = {}
 
-    @property
-    def motor_ids(self) -> list[int]:
-        return list(self.motor_models.keys())
+    def close(self):
+        self.port_handler.closePort()
 
     def write(self, data_name, value, motor_idx: int):
 
@@ -215,19 +191,19 @@ class DynamixelXLMotorsChain:
         for idx, value in zip(motor_ids, values):
             if bytes == 1:
                 data = [
-                    DXL_LOBYTE(DXL_LOWORD(value)),
+                    SCS_LOBYTE(SCS_LOWORD(value)),
                 ]
             elif bytes == 2:
                 data = [
-                    DXL_LOBYTE(DXL_LOWORD(value)),
-                    DXL_HIBYTE(DXL_LOWORD(value)),
+                    SCS_LOBYTE(SCS_LOWORD(value)),
+                    SCS_HIBYTE(SCS_LOWORD(value)),
                 ]
             elif bytes == 4:
                 data = [
-                    DXL_LOBYTE(DXL_LOWORD(value)),
-                    DXL_HIBYTE(DXL_LOWORD(value)),
-                    DXL_LOBYTE(DXL_HIWORD(value)),
-                    DXL_HIBYTE(DXL_HIWORD(value)),
+                    SCS_LOBYTE(SCS_LOWORD(value)),
+                    SCS_HIBYTE(SCS_LOWORD(value)),
+                    SCS_LOBYTE(SCS_HIBYTE(value)),
+                    SCS_HIBYTE(SCS_HIBYTE(value)),
                 ]
 
             if init_group:
@@ -235,13 +211,21 @@ class DynamixelXLMotorsChain:
             else:
                 self.group_writers[group_key].changeParam(idx, data)
 
-        self.group_writers[group_key].txPacket()
+        comm = self.group_writers[group_key].txPacket()
+        if comm != COMM_SUCCESS:
+            raise ConnectionError(
+                f"Write failed due to communication error on port {self.port} for group_key {group_key}: "
+                f"{self.packet_handler.getTxRxResult(comm)}"
+            )
 
     def write_torque_enable(self, motor_idx: int):
         self.write("torque", TorqueMode.ENABLED.value, motor_idx)
 
     def write_torque_disable(self, motor_idx: int):
         self.write("torque", TorqueMode.DISABLED.value, motor_idx)
+
+    def write_torque(self, value, motor_idx: int):
+        self.write("torque", value, motor_idx)
 
     def write_operating_mode(self, mode: OperatingMode, motor_idx: int):
         self.write("torque", mode, motor_idx)
@@ -252,16 +236,25 @@ class DynamixelXLMotorsChain:
     def write_goal_position(self, value, motor_idx: int):
         self.write("goal_position", value, motor_idx)
 
-    def sync_torque_enable(self, motor_ids: list[int] | None = None):
+    def write_goal_current(self, value, motor_idx: int):
+        self.write("goal_current", value, motor_idx)
+
+    def sync_write_torque_enable(self, motor_ids: list[int] | None = None):
         if motor_ids is None:
             motor_ids = self.motor_ids
 
         self.sync_write("torque", TorqueMode.ENABLED.value, motor_ids)
 
-    def sync_torque_disable(self, motor_ids: list[int] | None = None):
+    def sync_write_torque_disable(self, motor_ids: list[int] | None = None):
         if motor_ids is None:
             motor_ids = self.motor_ids
         self.sync_write("torque", TorqueMode.DISABLED.value, motor_ids)
+
+    def sync_write_torque(self, values, motor_ids: list[int] | None = None):
+        if motor_ids is None:
+            motor_ids = self.motor_ids
+
+        self.sync_write("torque", values, motor_ids)
 
     def sync_write_operating_mode(self, mode: OperatingMode, motor_ids: list[int] | None = None):
         if motor_ids is None:
@@ -280,3 +273,9 @@ class DynamixelXLMotorsChain:
             motor_ids = self.motor_ids
 
         self.sync_write("goal_position", values, motor_ids)
+
+    def sync_write_goal_current(self, values, motor_ids: list[int] | None = None):
+        if motor_ids is None:
+            motor_ids = self.motor_ids
+
+        self.sync_write("goal_current", values, motor_ids)

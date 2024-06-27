@@ -2,7 +2,6 @@
 Copy of Lerobot/common files waiting for a release build of this
 """
 
-from copy import deepcopy
 import enum
 import numpy as np
 
