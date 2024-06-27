@@ -19,7 +19,7 @@ import time
 
 import numpy as np
 
-from dynamixel import DynamixelXLMotorsChain
+from dynamixel import DynamixelXLMotorsChain, OperatingMode, DriveMode
 
 
 def pause():
@@ -35,51 +35,49 @@ def u32_to_i32(u32: int) -> int:
     :param u32: unsigned 32-bit integer
     :return: signed 32-bit integer
     """
-    if u32 > 2 ** 31:
-        return u32 - 2 ** 32
-    return u32
+    return u32 if u32 < 2147483648 else u32 - 4294967296
 
 
-def read_present_positions_i32(io: PacketHandler, serial: PortHandler, ids: np.array) -> np.array:
+def read_present_positions_i32(arm: DynamixelXLMotorsChain) -> np.array:
     """
     Read the present positions of the motors.
-    :param io: PacketHandler
-    :param serial: PortHandler
-    :param ids: numpy array of motor ids
+    :param arm: DynamixelXLMotorsChain
     :return: numpy array of present positions
     """
-    present_positions = read_present_positions(io, serial, ids)
+    try:
+
+        present_positions = arm.sync_read_position()
+    except Exception as e:
+        print("Error while reading present positions: ", e)
+
+        return np.array([None, None, None, None, None, None])
 
     return np.array([u32_to_i32(present_positions[i]) for i in range(len(present_positions))])
 
 
-def prepare_configuration(io: PacketHandler, serial: PortHandler, puppet: bool):
+def prepare_configuration(arm: DynamixelXLMotorsChain):
     """
     Prepare the configuration for the LCR.
-    :param io: PacketHandler
-    :param serial: PortHandler
-    :param puppet: True if the LCR is a puppet, False otherwise
+    :param arm: DynamixelXLMotorsChain
     """
 
     # To be configured, all servos must be in "torque disable" mode
-    disable_torques(io, serial, [1, 2, 3, 4, 5, 6])
+    arm.sync_write_torque_disable()
 
     # We need to work with 'extended position mode' (4) for all servos, because in joint mode (1) the servos can't
     # rotate more than 360 degrees (from 0 to 4095) And some mistake can happen while assembling the arm,
     # you could end up with a servo with a position 0 or 4095 at a crucial point See [
     # https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/#operating-mode11]
-    write_operating_modes(io, serial, [1, 2, 3, 4, 5], 4)
+    arm.sync_write_operating_mode(OperatingMode.EXTENDED_POSITION, [1, 2, 3, 4, 5])
 
     # Gripper is always 'position control current based' (5)
-    write_operating_mode(io, serial, 6, 5)
-
-    write_current_limit(io, serial, 6, 50 if not puppet else 500)
+    arm.write_operating_mode(OperatingMode.CURRENT_CONTROLLED_POSITION, 6)
 
     # We need to reset the homing offset for all servos
-    write_homing_offsets(io, serial, [1, 2, 3, 4, 5, 6], np.array([0, 0, 0, 0, 0, 0]))
+    arm.sync_write_homing(0, [1, 2, 3, 4, 5, 6])
 
     # We need to work with 'normal drive mode' (0) for all servos
-    write_drive_modes(io, serial, [1, 2, 3, 4, 5, 6], np.array([0, 0, 0, 0, 0, 0]))
+    arm.sync_write_drive_mode(DriveMode.NON_INVERTED, [0, 0, 0, 0, 0, 0])
 
 
 def invert_appropriate_positions(positions: np.array, inverted: list[bool]) -> np.array:
@@ -129,37 +127,33 @@ def calculate_nearest_rounded_positions(positions: np.array) -> np.array:
         [round(positions[i] / 1024) * 1024 if positions[i] is not None else None for i in range(len(positions))])
 
 
-def configure_homing(io: PacketHandler, serial: PortHandler, inverted: list[bool], puppet: bool):
+def configure_homing(arm: DynamixelXLMotorsChain, inverted: list[bool]):
     """
     Configure the homing for the LCR.
-    :param io: PacketHandler
-    :param serial: PortHandler
+    :param arm: DynamixelXLMotorsChain
     :param inverted: list of booleans to determine if the position should be inverted
-    :param puppet: True if the LCR is a puppet, False otherwise
     """
     # Reset homing offset for the servos
-    write_homing_offsets(io, serial, [1, 2, 3, 4, 5, 6], [0, 0, 0, 0, 0, 0])
+    arm.sync_write_homing(0, [1, 2, 3, 4, 5, 6])
 
     # Get the present positions of the servos
-    present_positions = read_present_positions_i32(io, serial, [1, 2, 3, 4, 5, 6])
+    present_positions = read_present_positions_i32(arm)
 
     nearest_positions = calculate_nearest_rounded_positions(present_positions)
 
     correction = calculate_corrections(nearest_positions, inverted)
 
     # Write the homing offset for the servos
-    write_homing_offsets(io, serial, [1, 2, 3, 4, 5, 6], correction)
+    arm.sync_write_homing(correction, [1, 2, 3, 4, 5, 6])
 
 
-def configure_drive_mode(io: PacketHandler, serial: PortHandler, puppet: bool):
+def configure_drive_mode(arm):
     """
     Configure the drive mode for the LCR.
-    :param io: PacketHandler
-    :param serial: PortHandler
-    :param puppet: True if the LCR is a puppet, False otherwise
+    :param arm: DynamixelXLMotorsChain
     """
     # Get current positions
-    present_positions = read_present_positions_i32(io, serial, [1, 2, 3, 4, 5, 6])
+    present_positions = read_present_positions_i32(arm)
 
     nearest_positions = calculate_nearest_rounded_positions(present_positions)
 
@@ -170,7 +164,7 @@ def configure_drive_mode(io: PacketHandler, serial: PortHandler, puppet: bool):
         inverted.append(nearest_positions[i] != wanted_position_2()[i])
 
     # Write the drive mode for the servos
-    write_drive_modes(io, serial, [1, 2, 3, 4, 5, 6], inverted)
+    arm.sync_write_drive_modes([DriveMode.INVERTED if inverted[i] else DriveMode.NON_INVERTED for i in range(6)])
 
     return inverted
 
@@ -179,14 +173,14 @@ def wanted_position_1() -> np.array:
     """
     The present position wanted in position 1 for the arm
     """
-    return np.array([0, -1024, 1024, 0, 0, 0])
+    return np.array([0, -1024, 1024, 0, -1024, 0])
 
 
 def wanted_position_2() -> np.array:
     """
     The present position wanted in position 2 for the arm
     """
-    return np.array([1024, 0, 0, 1024, 1024, -1024])
+    return np.array([1024, 0, 0, 1024, 0, -1024])
 
 
 if __name__ == "__main__":
@@ -195,48 +189,36 @@ if __name__ == "__main__":
                     "the user.")
 
     parser.add_argument("--port", type=str, required=True, help="The port of the LCR.")
-    parser.add_argument("--puppet", action="store_true", help="Set the LCR as a puppet.")
-    parser.add_argument("--master", action="store_true", help="Set the LCR as a master.")
 
     args = parser.parse_args()
 
-    serial = PortHandler(args.port)
-    serial.openPort()
-    serial.setBaudRate(1000000)
-    serial.setPacketTimeoutMillis(1000)
+    arm = DynamixelXLMotorsChain(args.port, [1, 2, 3, 4, 5, 6])
 
-    io = PacketHandler(2.0)
-
-    puppet = args.puppet or not args.master
-
-    # Print configuration "Puppet" if the LCR is a puppet, "Master" otherwise
-    print("Configuration: " + ("Puppet" if puppet else "Master"))
-
-    prepare_configuration(io, serial, puppet)
+    prepare_configuration(arm)
 
     # Ask the user to move the LCR to the position 1
     print("Please move the LCR to the position 1")
     pause()
 
-    configure_homing(io, serial, [False, False, False, False, False, False], puppet)
+    configure_homing(arm, [False, False, False, False, False, False])
 
     # Ask the user to move the LCR to the position 2
     print("Please move the LCR to the position 2")
     pause()
 
-    inverted = configure_drive_mode(io, serial, puppet)
+    inverted = configure_drive_mode(arm)
 
     # Ask the user to move back the LCR to the position 1
     print("Please move back the LCR to the position 1")
     pause()
 
-    configure_homing(io, serial, inverted, puppet)
+    configure_homing(arm, inverted)
 
     print("Configuration done!")
     print("Make sure everything is working properly:")
 
     while True:
-        positions = read_present_positions_i32(io, serial, [1, 2, 3, 4, 5, 6])
+        positions = read_present_positions_i32(arm)
         print(positions)
 
         time.sleep(1)

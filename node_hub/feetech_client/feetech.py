@@ -34,6 +34,9 @@ class DriveMode(enum.Enum):
 
 # data_name, address, size (byte)
 SCS_SERIES_CONTROL_TABLE = [
+    ("operating", 11, 1),
+    ("driving", 10, 1),
+    ("homing", 20, 4),
     ("goal_position", 116, 4),
     ("goal_current", 102, 2),
     ("goal_pwm", 100, 2),
@@ -218,6 +221,9 @@ class FeetechSCSMotorChain:
                 f"{self.packet_handler.getTxRxResult(comm)}"
             )
 
+    def write_homing(self, value, motor_idx: int):
+        self.write("homing", value, motor_idx)
+
     def write_torque_enable(self, motor_idx: int):
         self.write("torque", TorqueMode.ENABLED.value, motor_idx)
 
@@ -228,7 +234,10 @@ class FeetechSCSMotorChain:
         self.write("torque", value, motor_idx)
 
     def write_operating_mode(self, mode: OperatingMode, motor_idx: int):
-        self.write("torque", mode, motor_idx)
+        self.write("operating", mode.value, motor_idx)
+
+    def write_drive_mode(self, mode: DriveMode, motor_idx: int):
+        self.write("driving", mode.value, motor_idx)
 
     def read_position(self, motor_idx: int):
         return self.read("position", motor_idx)
@@ -239,43 +248,38 @@ class FeetechSCSMotorChain:
     def write_goal_current(self, value, motor_idx: int):
         self.write("goal_current", value, motor_idx)
 
-    def sync_write_torque_enable(self, motor_ids: list[int] | None = None):
-        if motor_ids is None:
-            motor_ids = self.motor_ids
+    def write_current_limit(self, value, motor_idx: int):
+        self.write("current_limit", value, motor_idx)
 
+    def sync_write_homing(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("homing", values, motor_ids)
+
+    def sync_write_torque_enable(self, motor_ids: list[int] | None = None):
         self.sync_write("torque", TorqueMode.ENABLED.value, motor_ids)
 
     def sync_write_torque_disable(self, motor_ids: list[int] | None = None):
-        if motor_ids is None:
-            motor_ids = self.motor_ids
         self.sync_write("torque", TorqueMode.DISABLED.value, motor_ids)
 
     def sync_write_torque(self, values, motor_ids: list[int] | None = None):
-        if motor_ids is None:
-            motor_ids = self.motor_ids
-
         self.sync_write("torque", values, motor_ids)
 
     def sync_write_operating_mode(self, mode: OperatingMode, motor_ids: list[int] | None = None):
-        if motor_ids is None:
-            motor_ids = self.motor_ids
+        self.sync_write("operating", mode.value, motor_ids)
 
-        self.sync_write("torque", [mode.value] * len(motor_ids), motor_ids)
+    def sync_write_drive_mode(self, mode: DriveMode, motor_ids: list[int] | None = None):
+        self.sync_write("driving", mode.value, motor_ids)
+
+    def sync_write_drive_modes(self, mode: list[DriveMode], motor_ids: list[int] | None = None):
+        self.sync_write("driving", [mode.value for mode in mode], motor_ids)
 
     def sync_read_position(self, motor_ids: list[int] | None = None):
-        if motor_ids is None:
-            motor_ids = self.motor_ids
-
         return self.sync_read("position", motor_ids)
 
     def sync_write_goal_position(self, values, motor_ids: list[int] | None = None):
-        if motor_ids is None:
-            motor_ids = self.motor_ids
-
         self.sync_write("goal_position", values, motor_ids)
 
     def sync_write_goal_current(self, values, motor_ids: list[int] | None = None):
-        if motor_ids is None:
-            motor_ids = self.motor_ids
-
         self.sync_write("goal_current", values, motor_ids)
+
+    def sync_write_current_limit(self, values, motor_ids: list[int] | None = None):
+        self.sync_write("current_limit", values, motor_ids)
