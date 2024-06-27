@@ -13,23 +13,23 @@ nodes:
       inputs:
         image: reachy-vision-client/cam_trunk
         #  action: eval/action
-        text_vlm: idefics2/speak
+        # text_vlm: idefics2/speak
         text_whisper: whisper/text_llm
       envs:
         IMAGE_WIDTH: 480
         IMAGE_HEIGHT: 640
 
-  - id: idefics2
-    custom:
-      source: ../nodes/idefics2_node_demo.py
-      inputs:
-        image:
-          source: reachy-vision-client/cam_trunk
-          queue_size: 1
-        text: whisper/text_llm
-      outputs:
-        - speak
-        - control
+  # - id: idefics2
+  #   custom:
+  #     source: ../nodes/idefics2_node_demo.py
+  #     inputs:
+  #       image:
+  #         source: reachy-vision-client/cam_trunk
+  #         queue_size: 1
+  #       text: whisper/text_llm
+  #     outputs:
+  #       - speak
+  #       - control
 
   - id: whisper
     custom:
@@ -41,8 +41,15 @@ nodes:
 
   - id: parler
     custom:
-      source: ../nodes/parler_node.py
+      source: ../nodes/speak_node.py
       inputs:
-        text: idefics2/speak
-      outputs:
-        - start_high_five
+        text: whisper/text_llm
+  
+  # - id: parler
+  #   custom:
+  #     source: ../nodes/parler_node.py
+  #     inputs:
+  #       text: idefics2/speak
+  #     outputs:
+  #       - start_high_five
+  
