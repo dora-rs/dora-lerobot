@@ -1,60 +1,96 @@
 nodes:
   - id: lcr_left_leader
-    custom:
-      source: python
-      args: ../../node_hub/dynamixel_client/client.py
-      inputs:
-        tick: dora/timer/millis/20
-      outputs:
-        - position
-      envs:
-        PORT: COM9
-        IDS: 1 2 3 4 5 6
-        TORQUE: 0 0 0 0 0 1
-        POSITION: None None None None None -450
-        CURRENT: None None None None None 40
+    path: python
+    args: ../../node_hub/dynamixel_client/client.py
+    inputs:
+      ping_present_position: dora/timer/millis/2 # ping the position every 10ms
+    outputs:
+      - present_position
+    env:
+      PORT: COM9
+      IDS: 1 2 3 4 5 6
+
+      TORQUE: False False False False False True
+
+      INITIAL_GOAL_POSITION: None None None None None -450
+      INITIAL_GOAL_CURRENT: None None None None None 40
+
+      HOMING_OFFSET:  -2048 2048 2048 -2048 1024 2048
+      INVERTED:  False True True False True True
+
+  - id: lcr_left_interpolate
+    path: python
+    args: ../nodes/interpolate_lcr_to_lcr.py
+    inputs:
+      leader_position: lcr_left_leader/present_position
+      follower_position: lcr_left_follower/present_position
+    outputs:
+      - goal_position
 
   - id: lcr_left_follower
-    custom:
-      source: python
-      args: ../../node_hub/dynamixel_client/client.py
-      inputs:
-        goal_position: lcr_left_leader/position
-      outputs:
-        - position
-      envs:
-        PORT: COM7
-        IDS: 1 2 3 4 5 6
-        TORQUE: 1 1 1 1 1 1
-        POSITION: None None None None None None
-        CURRENT: None None None None None 500
+    path: python
+    args: ../../node_hub/dynamixel_client/client.py
+    inputs:
+      ping_present_position: dora/timer/millis/500 # ping the position every 500ms
+      goal_position: lcr_left_interpolate/goal_position
+    outputs:
+      - present_position
+    env:
+      PORT: COM7
+      IDS: 1 2 3 4 5 6
+
+      TORQUE: True True True True True True
+
+      INITIAL_GOAL_POSITION: None None None None None -450
+      INITIAL_GOAL_CURRENT: None None None None None 500
+
+      HOMING_OFFSET:  -2048 -2048 -1024 -2048 4096 -2048
+      INVERTED:  False False False False True False
 
   - id: lcr_right_leader
-    custom:
-      source: python
-      args: ../../node_hub/dynamixel_client/client.py
-      inputs:
-        tick: dora/timer/millis/10
-      outputs:
-        - position
-      envs:
-        PORT: COM8
-        IDS: 1 2 3 4 5 6
-        TORQUE: 0 0 0 0 0 1
-        POSITION: None None None None None -450
-        CURRENT: None None None None None 40
+    path: python
+    args: ../../node_hub/dynamixel_client/client.py
+    inputs:
+      ping_present_position: dora/timer/millis/2 # ping the position every 10ms
+    outputs:
+      - present_position
+    env:
+      PORT: COM10
+      IDS: 1 2 3 4 5 6
+
+      TORQUE: False False False False False True
+
+      INITIAL_GOAL_POSITION: None None None None None -450
+      INITIAL_GOAL_CURRENT: None None None None None 40
+
+      HOMING_OFFSET:  -2048 2048 2048 -2048 1024 2048
+      INVERTED:  False True True False True True
+
+  - id: lcr_right_interpolate
+    path: python
+    args: ../nodes/interpolate_lcr_to_lcr.py
+    inputs:
+      leader_position: lcr_right_leader/present_position
+      follower_position: lcr_right_follower/present_position
+    outputs:
+      - goal_position
 
   - id: lcr_right_follower
-    custom:
-      source: python
-      args: ../../node_hub/dynamixel_client/client.py
-      inputs:
-        goal_position: lcr_right_leader/position
-      outputs:
-        - position
-      envs:
-        PORT: COM10
-        IDS: 1 2 3 4 5 6
-        TORQUE: 1 1 1 1 1 1
-        POSITION: None None None None None None
-        CURRENT: None None None None None 500
+    path: python
+    args: ../../node_hub/dynamixel_client/client.py
+    inputs:
+      ping_present_position: dora/timer/millis/500 # ping the position every 500ms
+      goal_position: lcr_right_interpolate/goal_position
+    outputs:
+      - present_position
+    env:
+      PORT: COM8
+      IDS: 1 2 3 4 5 6
+
+      TORQUE: True True True True True True
+
+      INITIAL_GOAL_POSITION: None None None None None -450
+      INITIAL_GOAL_CURRENT: None None None None None 500
+
+      HOMING_OFFSET:  -2048 -2048 -1024 -2048 4096 -2048
+      INVERTED:  False False False False True False
