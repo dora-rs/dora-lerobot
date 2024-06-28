@@ -7,11 +7,9 @@ The program will:
 3. Record the position of the LCR.
 4. Ask the user to move the LCR to the position 2 (see CONFIGURING.md for more details).
 5. Record the position of the LCR.
-6. Ask the user to move back the LCR to the position 1.
-7. Record the position of the LCR.
 8. Calculate the offset of the LCR and save it to the configuration file.
 
-It will also enable all appropriate operating modes for the LCR according if the LCR is a puppet or a master.
+It will also enable all appropriate operating modes for the LCR.
 """
 
 import argparse
@@ -29,16 +27,47 @@ def pause():
     input("Press Enter to continue...")
 
 
-def u32_to_i32(u32: int) -> int:
-    """
-    Convert an unsigned 32-bit integer to a signed 32-bit integer.
-    :param u32: unsigned 32-bit integer
-    :return: signed 32-bit integer
-    """
-    return u32 if u32 < 2147483648 else u32 - 4294967296
+def i32_to_u32(value: np.array) -> np.array:
+    for i in range(len(value)):
+        if value[i] is not None and value[i] < 0:
+            value[i] = value[i] + 4294967296
+
+    return value
 
 
-def read_present_positions_i32(arm: DynamixelXLMotorsChain) -> np.array:
+def u32_to_i32(value: np.array) -> np.array:
+    for i in range(len(value)):
+        if value[i] is not None and value[i] > 2147483647:
+            value[i] = value[i] - 4294967296
+
+    return value
+
+
+def apply_homing_offset(values: np.array, homing_offset: np.array) -> np.array:
+    values = u32_to_i32(values)
+
+    for i in range(len(values)):
+        if values[i] is not None:
+            values[i] += homing_offset[i]
+
+    return i32_to_u32(values)
+
+
+def apply_inverted(values: np.array, inverted: np.array) -> np.array:
+    values = u32_to_i32(values)
+
+    for i in range(len(values)):
+        if values[i] is not None and inverted[i]:
+            values[i] = -values[i]
+
+    return i32_to_u32(values)
+
+
+def apply_configuration(values: np.array, homing_offset: np.array, inverted: np.array) -> np.array:
+    return apply_homing_offset(apply_inverted(values, inverted), homing_offset)
+
+
+def read_present_positions(arm: DynamixelXLMotorsChain) -> np.array:
     """
     Read the present positions of the motors.
     :param arm: DynamixelXLMotorsChain
@@ -46,13 +75,13 @@ def read_present_positions_i32(arm: DynamixelXLMotorsChain) -> np.array:
     """
     try:
 
-        present_positions = arm.sync_read_position()
+        present_positions = arm.sync_read_present_position()
     except Exception as e:
         print("Error while reading present positions: ", e)
 
         return np.array([None, None, None, None, None, None])
 
-    return np.array([u32_to_i32(present_positions[i]) for i in range(len(present_positions))])
+    return present_positions
 
 
 def prepare_configuration(arm: DynamixelXLMotorsChain):
@@ -62,22 +91,22 @@ def prepare_configuration(arm: DynamixelXLMotorsChain):
     """
 
     # To be configured, all servos must be in "torque disable" mode
-    arm.sync_write_torque_disable()
+    arm.sync_write_torque_enable(0)
 
     # We need to work with 'extended position mode' (4) for all servos, because in joint mode (1) the servos can't
     # rotate more than 360 degrees (from 0 to 4095) And some mistake can happen while assembling the arm,
     # you could end up with a servo with a position 0 or 4095 at a crucial point See [
     # https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/#operating-mode11]
-    arm.sync_write_operating_mode(OperatingMode.EXTENDED_POSITION, [1, 2, 3, 4, 5])
+    arm.sync_write_operating_mode(OperatingMode.EXTENDED_POSITION.value, [1, 2, 3, 4, 5])
 
     # Gripper is always 'position control current based' (5)
-    arm.write_operating_mode(OperatingMode.CURRENT_CONTROLLED_POSITION, 6)
+    arm.write_operating_mode(OperatingMode.CURRENT_CONTROLLED_POSITION.value, 6)
 
     # We need to reset the homing offset for all servos
-    arm.sync_write_homing(0, [1, 2, 3, 4, 5, 6])
+    arm.sync_write_homing_offset(0)
 
     # We need to work with 'normal drive mode' (0) for all servos
-    arm.sync_write_drive_mode(DriveMode.NON_INVERTED, [0, 0, 0, 0, 0, 0])
+    arm.sync_write_drive_mode(DriveMode.NON_INVERTED.value)
 
 
 def invert_appropriate_positions(positions: np.array, inverted: list[bool]) -> np.array:
@@ -94,15 +123,14 @@ def invert_appropriate_positions(positions: np.array, inverted: list[bool]) -> n
     return positions
 
 
-def calculate_corrections(positions: np.array, inverted: list[bool]) -> np.array:
+def calculate_corrections(positions: np.array, inverted: list[bool], wanted: np.array) -> np.array:
     """
     Calculate the corrections for the positions.
     :param positions: numpy array of positions
     :param inverted: list of booleans to determine if the position should be inverted
+    :param wanted: numpy array of wanted positions
     :return: numpy array of corrections
     """
-
-    wanted = wanted_position_1()
 
     correction = invert_appropriate_positions(positions, inverted)
 
@@ -127,33 +155,33 @@ def calculate_nearest_rounded_positions(positions: np.array) -> np.array:
         [round(positions[i] / 1024) * 1024 if positions[i] is not None else None for i in range(len(positions))])
 
 
-def configure_homing(arm: DynamixelXLMotorsChain, inverted: list[bool]):
+def configure_homing(arm: DynamixelXLMotorsChain, inverted: list[bool], wanted: np.array) -> np.array:
     """
     Configure the homing for the LCR.
     :param arm: DynamixelXLMotorsChain
     :param inverted: list of booleans to determine if the position should be inverted
     """
-    # Reset homing offset for the servos
-    arm.sync_write_homing(0, [1, 2, 3, 4, 5, 6])
 
     # Get the present positions of the servos
-    present_positions = read_present_positions_i32(arm)
+    present_positions = u32_to_i32(
+        apply_configuration(read_present_positions(arm), np.array([0, 0, 0, 0, 0, 0]), inverted))
 
     nearest_positions = calculate_nearest_rounded_positions(present_positions)
 
-    correction = calculate_corrections(nearest_positions, inverted)
+    correction = calculate_corrections(nearest_positions, inverted, wanted)
 
-    # Write the homing offset for the servos
-    arm.sync_write_homing(correction, [1, 2, 3, 4, 5, 6])
+    return correction
 
 
-def configure_drive_mode(arm):
+def configure_drive_mode(arm: DynamixelXLMotorsChain, homing: np.array):
     """
     Configure the drive mode for the LCR.
     :param arm: DynamixelXLMotorsChain
+    :param homing: numpy array of homing
     """
     # Get current positions
-    present_positions = read_present_positions_i32(arm)
+    present_positions = u32_to_i32(
+        apply_configuration(read_present_positions(arm), homing, np.array([False, False, False, False, False, False])))
 
     nearest_positions = calculate_nearest_rounded_positions(present_positions)
 
@@ -163,9 +191,6 @@ def configure_drive_mode(arm):
     for i in range(len(nearest_positions)):
         inverted.append(nearest_positions[i] != wanted_position_2()[i])
 
-    # Write the drive mode for the servos
-    arm.sync_write_drive_modes([DriveMode.INVERTED if inverted[i] else DriveMode.NON_INVERTED for i in range(6)])
-
     return inverted
 
 
@@ -173,14 +198,14 @@ def wanted_position_1() -> np.array:
     """
     The present position wanted in position 1 for the arm
     """
-    return np.array([0, -1024, 1024, 0, -1024, 0])
+    return np.array([0, -1024, 1024, 0, 0, 0])
 
 
 def wanted_position_2() -> np.array:
     """
     The present position wanted in position 2 for the arm
     """
-    return np.array([1024, 0, 0, 1024, 0, -1024])
+    return np.array([1024, 0, 0, 1024, 1024, -1024])
 
 
 if __name__ == "__main__":
@@ -200,25 +225,30 @@ if __name__ == "__main__":
     print("Please move the LCR to the position 1")
     pause()
 
-    configure_homing(arm, [False, False, False, False, False, False])
+    homing = configure_homing(arm, [False, False, False, False, False, False], wanted_position_1())
 
     # Ask the user to move the LCR to the position 2
     print("Please move the LCR to the position 2")
     pause()
 
-    inverted = configure_drive_mode(arm)
+    inverted = configure_drive_mode(arm, homing)
+    homing = configure_homing(arm, inverted, wanted_position_2())
 
-    # Ask the user to move back the LCR to the position 1
-    print("Please move back the LCR to the position 1")
-    pause()
-
-    configure_homing(arm, inverted)
+    for i in range(len(inverted)):
+        if inverted[i]:
+            homing[i] = -homing[i]
 
     print("Configuration done!")
+
+    print("Here is the configuration: ")
+
+    print("HOMING_OFFSET: ", " ".join([str(i) for i in homing]))
+    print("INVERTED: ", " ".join([str(i) for i in inverted]))
+
     print("Make sure everything is working properly:")
 
     while True:
-        positions = read_present_positions_i32(arm)
-        print(positions)
+        positions = apply_configuration(read_present_positions(arm), homing, inverted)
+        print(u32_to_i32(positions))
 
         time.sleep(1)

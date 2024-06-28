@@ -5,54 +5,257 @@ velocities, currents, and set goal positions and currents.
 
 import os
 import argparse
+import time
 
 import numpy as np
 import pyarrow as pa
 
 from dora import Node
 
-from dynamixel import DynamixelXLMotorsChain
+from dynamixel import DynamixelXLMotorsChain, TorqueMode
 
 
-def motor_chain_command(values: np.array) -> (list[int], np.array):
-    # Only retrieve non-None values
+def convert_to_chain_command(values: np.array) -> (list[int], np.array):
+    """
+    Convert the values to a chain command. Skip the None values and return the ids and values.
+    Args:
+        values: np.array
+
+    Returns:
+        (ids, values): list[int], np.array
+    """
+
     non_none_values = np.array([value for value in values if value is not None])
     non_none_values_ids = [i + 1 for i, value in enumerate(values) if value is not None]
 
     return non_none_values_ids, non_none_values
 
 
-def u32_to_i32(value: np.array) -> np.array:
-    for i in range(len(value)):
-        if value[i] >= 2147483648:
-            value[i] = value[i] - 4294967296
-
-    return value
-
-
 def i32_to_u32(value: np.array) -> np.array:
+    """
+    Convert a signed 32-bit integer array to an unsigned 32-bit integer array.
+    Args:
+        value: np.array
+
+    Returns:
+        np.array
+    """
+
     for i in range(len(value)):
-        if value[i] < 0:
+        if value[i] is not None and value[i] < 0:
             value[i] = value[i] + 4294967296
 
     return value
 
 
-def in_range_position(value: np.array) -> np.array:
-    i32_values = u32_to_i32(value)
+def u32_to_i32(value: np.array) -> np.array:
+    """
+    Convert an unsigned 32-bit integer array to a signed 32-bit integer array.
+    Args:
+        value: np.array
 
-    for i in range(len(i32_values)):
-        if i32_values[i] > 4096:
-            i32_values[i] = i32_values[i] % 4096
-        if i32_values[i] < -4096:
-            i32_values[i] = -(-i32_values[i] % 4096)
+    Returns:
+        np.array
+    """
 
-        if i32_values[i] > 2048:
-            i32_values[i] = - 2048 + (i32_values[i] % 2048)
-        elif i32_values[i] < -2048:
-            i32_values[i] = 2048 - (-i32_values[i] % 2048)
+    for i in range(len(value)):
+        if value[i] is not None and value[i] > 2147483647:
+            value[i] = value[i] - 4294967296
 
-    return i32_to_u32(i32_values)
+    return value
+
+
+def apply_homing_offset(values: np.array, homing_offset: np.array) -> np.array:
+    """
+    Apply the homing offset to the values.
+    """
+
+    values = u32_to_i32(values)
+
+    for i in range(len(values)):
+        if values[i] is not None:
+            values[i] += homing_offset[i]
+
+    return i32_to_u32(values)
+
+
+def apply_inverted(values: np.array, inverted: np.array) -> np.array:
+    """
+    Apply the inverted values.
+    """
+
+    values = u32_to_i32(values)
+
+    for i in range(len(values)):
+        if values[i] is not None and inverted[i]:
+            values[i] = -values[i]
+
+    return i32_to_u32(values)
+
+
+def apply_configuration(values: np.array, homing_offset: np.array, inverted: np.array) -> np.array:
+    """
+    Get the working position of the robot
+    Args:
+        values: 
+        homing_offset: 
+        inverted: 
+
+    Returns:
+
+    """
+
+    return apply_homing_offset(apply_inverted(values, inverted), homing_offset)
+
+
+def invert_configuration(values: np.array, homing_offset: np.array, inverted: np.array) -> np.array:
+    """
+    Transform working position into real position for the robot.
+    Args:
+        values: 
+        homing_offset: 
+        inverted: 
+
+    Returns:
+
+    """
+
+    return apply_inverted(apply_homing_offset(values, np.array([
+        -offset if offset is not None else None for offset in homing_offset
+    ])), inverted)
+
+
+class Client:
+
+    def __init__(self, config):
+        self.config = config
+        self.chain = DynamixelXLMotorsChain(config["port"], config["ids"])
+
+        self.homing_offset = config["homing_offset"]
+        self.inverted = config["inverted"]
+
+        # Set initial values
+
+        try:
+            self.chain.sync_write_torque_enable(config["torque"])
+        except Exception as e:
+            print("Error writing torque status:", e)
+
+        try:
+            position = self.chain.sync_read_present_position()
+            positions = invert_configuration(i32_to_u32(config["initial_goal_position"]), self.homing_offset,
+                                             self.inverted)
+
+            ids, positions = convert_to_chain_command(positions)
+
+            self.chain.sync_write_goal_position(positions, ids)
+        except Exception as e:
+            print("Error writing goal position:", e)
+
+        try:
+            ids, currents = convert_to_chain_command(config["initial_goal_current"])
+            self.chain.sync_write_goal_current(currents, ids)
+        except Exception as e:
+            print("Error writing goal current:", e)
+
+        # Create node and connect it to dataflow (if dynamic)
+
+        self.node = Node(config["name"])
+
+        self.ping_present_position(self.node, None)
+
+        self.time = 0
+
+    def run(self):
+        # Run the event loop of Dora and call appropriate functions
+
+        for event in self.node:
+            event_type = event["type"]
+
+            if event_type == "INPUT":
+                event_id = event["id"]
+
+                if event_id == "ping_present_position":
+                    self.ping_present_position(self.node, event["metadata"])
+                elif event_id == "ping_goal_position":
+                    self.ping_goal_position(self.node, event["metadata"])
+                elif event_id == "ping_present_velocity":
+                    self.ping_present_velocity(self.node, event["metadata"])
+                elif event_id == "goal_position":
+                    self.set_goal_position(event["value"])
+
+            elif event_type == "STOP":
+                break
+            elif event_type == "ERROR":
+                raise ValueError("An error occurred in the dataflow: " + event["error"])
+
+    def close(self):
+        self.chain.sync_write_torque_enable(TorqueMode.DISABLED.value)
+        self.chain.close()
+
+    def ping_present_position(self, node, metadata):
+        try:
+            position = apply_configuration(self.chain.sync_read_present_position(),
+                                           self.homing_offset,
+                                           self.inverted)
+
+            node.send_output(
+                "present_position",
+                pa.array(position.ravel()),
+                metadata
+            )
+
+            delta = time.time() - self.time
+            hz = 1 / delta if delta > 0 else 0
+
+            print("Ping present position with frequency: ", hz, " Hz", flush=True)
+
+            self.time = time.time()
+
+        except Exception as e:
+            print("Error reading position:", e)
+
+    def ping_goal_position(self, node, metadata):
+        try:
+            goal_position = apply_configuration(self.chain.sync_read_goal_position(),
+                                                self.homing_offset,
+                                                self.inverted)
+
+            node.send_output(
+                "goal_position",
+                pa.array(goal_position.ravel()),
+                metadata
+            )
+        except Exception as e:
+            print("Error reading goal position:", e)
+
+    def ping_present_velocity(self, node, metadata):
+        try:
+            velocity = self.chain.sync_read_present_velocity()
+
+            node.send_output(
+                "present_velocity",
+                pa.array(velocity.ravel()),
+                metadata
+            )
+        except Exception as e:
+            print("Error reading velocity:", e)
+
+    def set_goal_position(self, goal_position):
+        positions = invert_configuration(goal_position.to_numpy().copy(),
+                                         self.homing_offset,
+                                         self.inverted)
+
+        ids, positions = convert_to_chain_command(positions)
+
+        self.chain.sync_write_goal_position(positions, ids)
+
+        delta_time = time.time() - self.time
+        hz = 1 / delta_time if delta_time > 0 else 0
+
+        print("Set goal with frequency: ", hz, " Hz", flush=True)
+
+        self.time = time.time()
 
 
 def main():
@@ -62,113 +265,38 @@ def main():
                     "It can be used to read "
                     "positions, velocities, currents, and set goal positions and currents.")
 
-    parser.add_argument("--name", type=str, required=False, help="The name of the node.", default="dynamixel_client")
+    parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
+                        default="dynamixel_client")
 
     args = parser.parse_args()
 
-    # Retrieve environment variables
+    # Check if port is set
+    if not os.environ.get("PORT"):
+        raise ValueError("The port is not set. Please set the port of the dynamixel motors.")
 
-    path = os.environ.get("PORT", "COM9")
-    ids = list(map(int, os.environ.get("IDS", "1, 2, 3, 4, 5, 6").split()))
-    torque_status = list(map(int, os.environ.get("TORQUE", "0, 0, 0, 0, 0, 1").split()))
+    # Create configuration
+    config = {
+        "name": args.name,
+        "port": os.environ.get("PORT"),  # (e.g. "/dev/ttyUSB0", "COM3")
+        "ids": list(map(int, os.environ.get("IDS", "1 2 3 4 5 6").split())),
+        "torque": [1 if value == "True" else 0 for value in
+                   list(os.getenv("TORQUE", "True True True True True True").split())],
 
-    print("Path: ", path, flush=True)
-    print("IDS: ", ids, flush=True)
-    print("Torque status: ", torque_status, flush=True)
+        "initial_goal_position": [int(value) if 'None' not in value else None for value in
+                                  list(os.getenv("INITIAL_GOAL_POSITION", "None None None None None None").split())],
+        "initial_goal_current": [int(value) if 'None' not in value else None for value in
+                                 list(os.getenv("INITIAL_GOAL_CURRENT", "None None None None None None").split())],
 
-    position = list(os.getenv("POSITION", "None, None, None, None, None, None").split())
-    position = [int(value) if 'None' not in value else None for value in position]
+        "homing_offset": list(map(int, os.environ.get("HOMING_OFFSET", "0, 0, 0, 0, 0, 0").split())),
+        "inverted": [True if value == "True" else False for value in
+                     list(os.getenv("INVERTED", "False False False False False False").split())]
+    }
 
-    print("Position: ", position, flush=True)
+    print("Dynamixel Client Configuration: ", config, flush=True)
 
-    current = list(os.getenv("CURRENT", "None, None, None, None, None, None").split())
-    current = [int(value) if value != 'None' and value != ' None' else None for value in current]
-
-    print("Current: ", current, flush=True)
-
-    # Create a DynamixelXLMotorsChain object
-    chain = DynamixelXLMotorsChain(path, ids)
-
-    # Initialize values
-
-    try:
-        chain.sync_write_torque(torque_status)
-    except Exception as e:
-        print("Error writing torque status:", e)
-
-    ids, positions = motor_chain_command(position)
-    try:
-        chain.sync_write_goal_position(i32_to_u32(positions), ids)
-    except Exception as e:
-        print("Error writing goal position:", e)
-
-    ids, currents = motor_chain_command(current)
-    try:
-        chain.sync_write_goal_current(currents, ids)
-    except Exception as e:
-        print("Error writing goal current:", e)
-
-    # Create a Dora node
-    node = Node(args.name)
-
-    for event in node:
-        event_type = event["type"]
-
-        if event_type == "INPUT":
-            event_id = event["id"]
-
-            if event_id == "tick":
-                # Read the positions of the chain and send them to the output
-                try:
-                    position = in_range_position(chain.sync_read_position())
-
-                    node.send_output(
-                        "position",
-                        pa.array(position.ravel()),
-                        event["metadata"],
-                    )
-                except Exception as e:
-                    print("Error reading position:", e)
-
-            if event_id == "goal_position":
-                # Set the goal position of the chain
-
-                motor_ids, goal_position = motor_chain_command(event["value"].to_numpy())
-                goal_position = u32_to_i32(goal_position)
-
-                try:
-                    position = u32_to_i32(chain.sync_read_position())
-
-                    for i in range(len(goal_position)):
-                        if position[i] > 0:
-                            goal_position[i] = goal_position[i] + (position[i] // 4096) * 4096
-                        else:
-                            goal_position[i] = goal_position[i] - (-position[i] // 4096) * 4096
-
-                    goal_position = i32_to_u32(goal_position)
-
-                    chain.sync_write_goal_position(goal_position, motor_ids)
-                except Exception as e:
-                    print("Error writing goal position:", e)
-
-            if event_id == "goal_current":
-                # Set the goal current of the chain
-                pass
-            if event_id == "torque_status":
-                # Set the torque status of the chain
-                motor_ids, torque_status = motor_chain_command(event["value"].to_numpy())
-
-                try:
-                    chain.sync_write_torque(torque_status, motor_ids)
-                except Exception as e:
-                    print("Error writing torque status:", e)
-        elif event_type == "STOP":
-            break
-        elif event_type == "ERROR":
-            raise ValueError("An error occurred in the dataflow: " + event["error"])
-
-    chain.sync_write_torque_disable()
-    chain.close()
+    client = Client(config)
+    client.run()
+    client.close()
 
 
 if __name__ == '__main__':

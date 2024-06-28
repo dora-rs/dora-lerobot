@@ -233,11 +233,11 @@ class FeetechSCSMotorChain:
     def write_torque(self, value, motor_idx: int):
         self.write("torque", value, motor_idx)
 
-    def write_operating_mode(self, mode: OperatingMode, motor_idx: int):
-        self.write("operating", mode.value, motor_idx)
+    def write_operating_mode(self, value: int, motor_idx: int):
+        self.write("operating", value, motor_idx)
 
-    def write_drive_mode(self, mode: DriveMode, motor_idx: int):
-        self.write("driving", mode.value, motor_idx)
+    def write_drive_mode(self, value: int, motor_idx: int):
+        self.write("driving", value, motor_idx)
 
     def read_position(self, motor_idx: int):
         return self.read("position", motor_idx)
@@ -263,14 +263,11 @@ class FeetechSCSMotorChain:
     def sync_write_torque(self, values, motor_ids: list[int] | None = None):
         self.sync_write("torque", values, motor_ids)
 
-    def sync_write_operating_mode(self, mode: OperatingMode, motor_ids: list[int] | None = None):
-        self.sync_write("operating", mode.value, motor_ids)
+    def sync_write_operating_mode(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("operating", values, motor_ids)
 
-    def sync_write_drive_mode(self, mode: DriveMode, motor_ids: list[int] | None = None):
-        self.sync_write("driving", mode.value, motor_ids)
-
-    def sync_write_drive_modes(self, mode: list[DriveMode], motor_ids: list[int] | None = None):
-        self.sync_write("driving", [mode.value for mode in mode], motor_ids)
+    def sync_write_drive_mode(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("driving", values, motor_ids)
 
     def sync_read_position(self, motor_ids: list[int] | None = None):
         return self.sync_read("position", motor_ids)

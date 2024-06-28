@@ -4,7 +4,7 @@ nodes:
       source: python
       args: ../../node_hub/dynamixel_client/client.py
       inputs:
-        tick: dora/timer/millis/10
+        tick: dora/timer/millis/20
       outputs:
         - position
       envs:
