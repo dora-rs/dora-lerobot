@@ -45,9 +45,9 @@ def u32_to_i32(value: np.array) -> np.array:
 
 def in_range_position(value: np.array) -> np.array:
     """
-    This function assures that the position values are in the range of the LCR standard [-2048, 2048] for almost all
-    servos and [-1024, 3072] for the last value. This is important because an issue with communication can cause a
-    +- 4095 offset value, so we need to assure that the values are in the range.
+    This function assures that the position values are in the range of the LCR standard [-2048, 2048] all servos.
+    This is important because an issue with communication can cause a +- 4095 offset value, so we need to assure
+    that the values are in the range.
     """
     i32_values = u32_to_i32(value)
 
@@ -57,16 +57,10 @@ def in_range_position(value: np.array) -> np.array:
         if i32_values[i] < -4096:
             i32_values[i] = -(-i32_values[i] % 4096)
 
-        if i != 4:
-            if i32_values[i] > 2048:
-                i32_values[i] = - 2048 + (i32_values[i] % 2048)
-            elif i32_values[i] < -2048:
-                i32_values[i] = 2048 - (-i32_values[i] % 2048)
-        else:
-            if i32_values[i] > 2048:
-                i32_values[i] = -2048 + (i32_values[i] % 2048)
-            elif i32_values[i] < -2048:
-                i32_values[i] = 2048 - (-i32_values[i] % 2048)
+        if i32_values[i] > 2048:
+            i32_values[i] = - 2048 + (i32_values[i] % 2048)
+        elif i32_values[i] < -2048:
+            i32_values[i] = 2048 - (-i32_values[i] % 2048)
 
     return i32_to_u32(i32_values)
 

@@ -5,7 +5,6 @@ velocities, currents, and set goal positions and currents.
 
 import os
 import argparse
-import time
 
 import numpy as np
 import pyarrow as pa
@@ -15,18 +14,19 @@ from dora import Node
 from dynamixel import DynamixelXLMotorsChain, TorqueMode
 
 
-def convert_to_chain_command(values: np.array) -> (list[int], np.array):
+def convert_to_chain_command(values: np.array, ids: np.array) -> (list[int], np.array):
     """
     Convert the values to a chain command. Skip the None values and return the ids and values.
     Args:
         values: np.array
+        ids: np.array
 
     Returns:
         (ids, values): list[int], np.array
     """
 
     non_none_values = np.array([value for value in values if value is not None])
-    non_none_values_ids = [i + 1 for i, value in enumerate(values) if value is not None]
+    non_none_values_ids = [ids[i] for i, value in enumerate(values) if value is not None]
 
     return non_none_values_ids, non_none_values
 
@@ -146,14 +146,14 @@ class Client:
             positions = invert_configuration(i32_to_u32(config["initial_goal_position"]), self.homing_offset,
                                              self.inverted)
 
-            ids, positions = convert_to_chain_command(positions)
+            ids, positions = convert_to_chain_command(positions, self.chain.motor_ids)
 
             self.chain.sync_write_goal_position(positions, ids)
         except Exception as e:
             print("Error writing goal position:", e)
 
         try:
-            ids, currents = convert_to_chain_command(config["initial_goal_current"])
+            ids, currents = convert_to_chain_command(config["initial_goal_current"], self.chain.motor_ids)
             self.chain.sync_write_goal_current(currents, ids)
         except Exception as e:
             print("Error writing goal current:", e)
@@ -163,8 +163,6 @@ class Client:
         self.node = Node(config["name"])
 
         self.ping_present_position(self.node, None)
-
-        self.time = 0
 
     def run(self):
         # Run the event loop of Dora and call appropriate functions
@@ -205,13 +203,6 @@ class Client:
                 metadata
             )
 
-            delta = time.time() - self.time
-            hz = 1 / delta if delta > 0 else 0
-
-            print("Ping present position with frequency: ", hz, " Hz", flush=True)
-
-            self.time = time.time()
-
         except ConnectionError as e:
             print("Error reading position:", e)
 
@@ -247,16 +238,9 @@ class Client:
                                              self.homing_offset,
                                              self.inverted)
 
-            ids, positions = convert_to_chain_command(positions)
+            ids, positions = convert_to_chain_command(positions, self.chain.motor_ids)
 
             self.chain.sync_write_goal_position(positions, ids)
-
-            delta_time = time.time() - self.time
-            hz = 1 / delta_time if delta_time > 0 else 0
-
-            print("Set goal with frequency: ", hz, " Hz", flush=True)
-
-            self.time = time.time()
         except ConnectionError as e:
             print("Error writing goal position:", e)
 
