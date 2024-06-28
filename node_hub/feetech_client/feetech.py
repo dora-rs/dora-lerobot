@@ -32,24 +32,51 @@ class DriveMode(enum.Enum):
     INVERTED = 1
 
 
-# data_name, address, size (byte)
 SCS_SERIES_CONTROL_TABLE = [
-    ("operating", 11, 1),
-    ("driving", 10, 1),
-    ("homing", 20, 4),
-    ("goal_position", 116, 4),
-    ("goal_current", 102, 2),
-    ("goal_pwm", 100, 2),
-    ("goal_velocity", 104, 4),
-    ("position", 132, 4),
-    ("current", 126, 2),
-    ("pwm", 124, 2),
-    ("velocity", 128, 4),
-    ("torque", 64, 1),
-    ("temperature", 146, 1),
-    ("temperature_limit", 31, 1),
-    ("pwm_limit", 36, 2),
-    ("current_limit", 38, 2),
+    ("Model", 3, 2),
+    ("ID", 5, 1),
+    ("Baud_Rate", 6, 1),
+    ("Return_Delay", 7, 1),
+    ("Response_Status_Level", 8, 1),
+    ("Min_Angle_Limit", 9, 2),
+    ("Max_Angle_Limit", 11, 2),
+    ("Max_Temperature_Limit", 13, 1),
+    ("Max_Voltage_Limit", 14, 1),
+    ("Min_Voltage_Limit", 15, 1),
+    ("Max_Torque_Limit", 16, 2),
+    ("Phase", 18, 1),
+    ("Unloading_Condition", 19, 1),
+    ("LED_Alarm_Condition", 20, 1),
+    ("P_Coefficient", 21, 1),
+    ("D_Coefficient", 22, 1),
+    ("I_Coefficient", 23, 1),
+    ("Minimum_Startup_Force", 24, 2),
+    ("CW_Dead_Zone", 26, 1),
+    ("CCW_Dead_Zone", 27, 1),
+    ("Protection_Current", 28, 2),
+    ("Angular_Resolution", 30, 1),
+    ("Offset", 31, 2),
+    ("Mode", 33, 1),
+    ("Protective_Torque", 34, 1),
+    ("Protection_Time", 35, 1),
+    ("Overload_Torque", 36, 1),
+    ("Speed_closed_loop_P_proportional_coefficient", 37, 1),
+    ("Over_Current_Protection_Time", 38, 1),
+    ("Velocity_closed_loop_I_integral_coefficient", 39, 1),
+    ("Torque_Enable", 40, 1),
+    ("Acceleration", 41, 1),
+    ("Goal_Position", 42, 2),
+    ("Goal_Time", 44, 2),
+    ("Goal_Speed", 46, 2),
+    ("Lock", 55, 1),
+    ("Present_Position", 56, 2),
+    ("Present_Speed", 58, 2),
+    ("Present_Load", 60, 2),
+    ("Present_Voltage", 62, 1),
+    ("Present_Temperature", 63, 1),
+    ("Status", 65, 1),
+    ("Moving", 66, 1),
+    ("Present_Current", 69, 2)
 ]
 
 
@@ -221,62 +248,388 @@ class FeetechSCSMotorChain:
                 f"{self.packet_handler.getTxRxResult(comm)}"
             )
 
-    def write_homing(self, value, motor_idx: int):
-        self.write("homing", value, motor_idx)
+    def read_model(self, motor_idx: int):
+        return self.read("Model", motor_idx)
 
-    def write_torque_enable(self, motor_idx: int):
-        self.write("torque", TorqueMode.ENABLED.value, motor_idx)
+    def sync_read_model(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Model", motor_ids)
 
-    def write_torque_disable(self, motor_idx: int):
-        self.write("torque", TorqueMode.DISABLED.value, motor_idx)
+    def write_id(self, value, motor_idx: int):
+        self.write("ID", value, motor_idx)
 
-    def write_torque(self, value, motor_idx: int):
-        self.write("torque", value, motor_idx)
+    def read_id(self, motor_idx: int):
+        return self.read("ID", motor_idx)
 
-    def write_operating_mode(self, value: int, motor_idx: int):
-        self.write("operating", value, motor_idx)
+    def sync_read_id(self, motor_ids: list[int] | None = None):
+        return self.sync_read("ID", motor_ids)
 
-    def write_drive_mode(self, value: int, motor_idx: int):
-        self.write("driving", value, motor_idx)
+    def sync_write_id(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("ID", values, motor_ids)
 
-    def read_position(self, motor_idx: int):
-        return self.read("position", motor_idx)
+    def write_baud_rate(self, value, motor_idx: int):
+        self.write("Baud_Rate", value, motor_idx)
+
+    def read_baud_rate(self, motor_idx: int):
+        return self.read("Baud_Rate", motor_idx)
+
+    def sync_read_baud_rate(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Baud_Rate", motor_ids)
+
+    def sync_write_baud_rate(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Baud_Rate", values, motor_ids)
+
+    def read_return_delay(self, motor_idx: int):
+        return self.read("Return_Delay", motor_idx)
+
+    def sync_read_return_delay(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Return_Delay", motor_ids)
+
+    def read_response_status_level(self, motor_idx: int):
+        return self.read("Response_Status_Level", motor_idx)
+
+    def sync_read_response_status_level(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Response_Status_Level", motor_ids)
+
+    def write_min_angle_limit(self, value, motor_idx: int):
+        self.write("Min_Angle_Limit", value, motor_idx)
+
+    def read_min_angle_limit(self, motor_idx: int):
+        return self.read("Min_Angle_Limit", motor_idx)
+
+    def sync_read_min_angle_limit(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Min_Angle_Limit", motor_ids)
+
+    def sync_write_min_angle_limit(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Min_Angle_Limit", values, motor_ids)
+
+    def write_max_angle_limit(self, value, motor_idx: int):
+        self.write("Max_Angle_Limit", value, motor_idx)
+
+    def read_max_angle_limit(self, motor_idx: int):
+        return self.read("Max_Angle_Limit", motor_idx)
+
+    def sync_read_max_angle_limit(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Max_Angle_Limit", motor_ids)
+
+    def sync_write_max_angle_limit(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Max_Angle_Limit", values, motor_ids)
+
+    def write_max_temperature_limit(self, value, motor_idx: int):
+        self.write("Max_Temperature_Limit", value, motor_idx)
+
+    def read_max_temperature_limit(self, motor_idx: int):
+        return self.read("Max_Temperature_Limit", motor_idx)
+
+    def sync_read_max_temperature_limit(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Max_Temperature_Limit", motor_ids)
+
+    def sync_write_max_temperature_limit(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Max_Temperature_Limit", values, motor_ids)
+
+    def write_max_voltage_limit(self, value, motor_idx: int):
+        self.write("Max_Voltage_Limit", value, motor_idx)
+
+    def read_max_voltage_limit(self, motor_idx: int):
+        return self.read("Max_Voltage_Limit", motor_idx)
+
+    def sync_read_max_voltage_limit(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Max_Voltage_Limit", motor_ids)
+
+    def sync_write_max_voltage_limit(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Max_Voltage_Limit", values, motor_ids)
+
+    def write_min_voltage_limit(self, value, motor_idx: int):
+        self.write("Min_Voltage_Limit", value, motor_idx)
+
+    def read_min_voltage_limit(self, motor_idx: int):
+        return self.read("Min_Voltage_Limit", motor_idx)
+
+    def sync_read_min_voltage_limit(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Min_Voltage_Limit", motor_ids)
+
+    def sync_write_min_voltage_limit(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Min_Voltage_Limit", values, motor_ids)
+
+    def write_max_torque_limit(self, value, motor_idx: int):
+        self.write("Max_Torque_Limit", value, motor_idx)
+
+    def read_max_torque_limit(self, motor_idx: int):
+        return self.read("Max_Torque_Limit", motor_idx)
+
+    def sync_read_max_torque_limit(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Max_Torque_Limit", motor_ids)
+
+    def sync_write_max_torque_limit(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Max_Torque_Limit", values, motor_ids)
+
+    def write_p_coefficient(self, value, motor_idx: int):
+        self.write("P_Coefficient", value, motor_idx)
+
+    def read_p_coefficient(self, motor_idx: int):
+        return self.read("P_Coefficient", motor_idx)
+
+    def sync_read_p_coefficient(self, motor_ids: list[int] | None = None):
+        return self.sync_read("P_Coefficient", motor_ids)
+
+    def sync_write_p_coefficient(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("P_Coefficient", values, motor_ids)
+
+    def write_d_coefficient(self, value, motor_idx: int):
+        self.write("D_Coefficient", value, motor_idx)
+
+    def read_d_coefficient(self, motor_idx: int):
+        return self.read("D_Coefficient", motor_idx)
+
+    def sync_read_d_coefficient(self, motor_ids: list[int] | None = None):
+        return self.sync_read("D_Coefficient", motor_ids)
+
+    def sync_write_d_coefficient(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("D_Coefficient", values, motor_ids)
+
+    def write_i_coefficient(self, value, motor_idx: int):
+        self.write("I_Coefficient", value, motor_idx)
+
+    def read_i_coefficient(self, motor_idx: int):
+        return self.read("I_Coefficient", motor_idx)
+
+    def sync_read_i_coefficient(self, motor_ids: list[int] | None = None):
+        return self.sync_read("I_Coefficient", motor_ids)
+
+    def sync_write_i_coefficient(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("I_Coefficient", values, motor_ids)
+
+    def write_minimum_startup_force(self, value, motor_idx: int):
+        self.write("Minimum_Startup_Force", value, motor_idx)
+
+    def read_minimum_startup_force(self, motor_idx: int):
+        return self.read("Minimum_Startup_Force", motor_idx)
+
+    def sync_read_minimum_startup_force(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Minimum_Startup_Force", motor_ids)
+
+    def sync_write_minimum_startup_force(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Minimum_Startup_Force", values, motor_ids)
+
+    def write_cw_dead_zone(self, value, motor_idx: int):
+        self.write("CW_Dead_Zone", value, motor_idx)
+
+    def read_cw_dead_zone(self, motor_idx: int):
+        return self.read("CW_Dead_Zone", motor_idx)
+
+    def sync_read_cw_dead_zone(self, motor_ids: list[int] | None = None):
+        return self.sync_read("CW_Dead_Zone", motor_ids)
+
+    def sync_write_cw_dead_zone(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("CW_Dead_Zone", values, motor_ids)
+
+    def write_ccw_dead_zone(self, value, motor_idx: int):
+        self.write("CCW_Dead_Zone", value, motor_idx)
+
+    def read_ccw_dead_zone(self, motor_idx: int):
+        return self.read("CCW_Dead_Zone", motor_idx)
+
+    def sync_read_ccw_dead_zone(self, motor_ids: list[int] | None = None):
+        return self.sync_read("CCW_Dead_Zone", motor_ids)
+
+    def sync_write_ccw_dead_zone(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("CCW_Dead_Zone", values, motor_ids)
+
+    def write_protection_current(self, value, motor_idx: int):
+        self.write("Protection_Current", value, motor_idx)
+
+    def read_protection_current(self, motor_idx: int):
+        return self.read("Protection_Current", motor_idx)
+
+    def sync_read_protection_current(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Protection_Current", motor_ids)
+
+    def sync_write_protection_current(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Protection_Current", values, motor_ids)
+
+    def read_angular_resolution(self, motor_idx: int):
+        return self.read("Angular_Resolution", motor_idx)
+
+    def sync_read_angular_resolution(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Angular_Resolution", motor_ids)
+
+    def write_offset(self, value, motor_idx: int):
+        self.write("Offset", value, motor_idx)
+
+    def read_offset(self, motor_idx: int):
+        return self.read("Offset", motor_idx)
+
+    def sync_read_offset(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Offset", motor_ids)
+
+    def sync_write_offset(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Offset", values, motor_ids)
+
+    def write_mode(self, value, motor_idx: int):
+        self.write("Mode", value, motor_idx)
+
+    def read_mode(self, motor_idx: int):
+        return self.read("Mode", motor_idx)
+
+    def sync_read_mode(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Mode", motor_ids)
+
+    def sync_write_mode(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Mode", values, motor_ids)
+
+    def write_protective_torque(self, value, motor_idx: int):
+        self.write("Protective_Torque", value, motor_idx)
+
+    def read_protective_torque(self, motor_idx: int):
+        return self.read("Protective_Torque", motor_idx)
+
+    def sync_read_protective_torque(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Protective_Torque", motor_ids)
+
+    def sync_write_protective_torque(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Protective_Torque", values, motor_ids)
+
+    def read_protection_time(self, motor_idx: int):
+        return self.read("Protection_Time", motor_idx)
+
+    def sync_read_protection_time(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Protection_Time", motor_ids)
+
+    def write_speed_closed_loop_p_proportional_coefficient(self, value, motor_idx: int):
+        self.write("Speed_closed_loop_P_proportional_coefficient", value, motor_idx)
+
+    def read_speed_closed_loop_p_proportional_coefficient(self, motor_idx: int):
+        return self.read("Speed_closed_loop_P_proportional_coefficient", motor_idx)
+
+    def sync_read_speed_closed_loop_p_proportional_coefficient(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Speed_closed_loop_P_proportional_coefficient", motor_ids)
+
+    def sync_write_speed_closed_loop_p_proportional_coefficient(self, values: int | list[int],
+                                                                motor_ids: list[int] | None = None):
+        self.sync_write("Speed_closed_loop_P_proportional_coefficient", values, motor_ids)
+
+    def write_over_current_protection_time(self, value, motor_idx: int):
+        self.write("Over_Current_Protection_Time", value, motor_idx)
+
+    def read_over_current_protection_time(self, motor_idx: int):
+        return self.read("Over_Current_Protection_Time", motor_idx)
+
+    def sync_read_over_current_protection_time(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Over_Current_Protection_Time", motor_ids)
+
+    def sync_write_over_current_protection_time(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Over_Current_Protection_Time", values, motor_ids)
+
+    def write_velocity_closed_loop_i_integral_coefficient(self, value, motor_idx: int):
+        self.write("Velocity_closed_loop_I_integral_coefficient", value, motor_idx)
+
+    def read_velocity_closed_loop_i_integral_coefficient(self, motor_idx: int):
+        return self.read("Velocity_closed_loop_I_integral_coefficient", motor_idx)
+
+    def sync_read_velocity_closed_loop_i_integral_coefficient(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Velocity_closed_loop_I_integral_coefficient", motor_ids)
+
+    def sync_write_velocity_closed_loop_i_integral_coefficient(self, values: int | list[int],
+                                                               motor_ids: list[int] | None = None):
+        self.sync_write("Velocity_closed_loop_I_integral_coefficient", values, motor_ids)
+
+    def write_torque_enable(self, value, motor_idx: int):
+        self.write("Torque_Enable", value, motor_idx)
+
+    def read_torque_enable(self, motor_idx: int):
+        return self.read("Torque_Enable", motor_idx)
+
+    def sync_read_torque_enable(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Torque_Enable", motor_ids)
+
+    def sync_write_torque_enable(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Torque_Enable", values, motor_ids)
 
     def write_goal_position(self, value, motor_idx: int):
-        self.write("goal_position", value, motor_idx)
+        self.write("Goal_Position", value, motor_idx)
 
-    def write_goal_current(self, value, motor_idx: int):
-        self.write("goal_current", value, motor_idx)
+    def read_goal_position(self, motor_idx: int):
+        return self.read("Goal_Position", motor_idx)
 
-    def write_current_limit(self, value, motor_idx: int):
-        self.write("current_limit", value, motor_idx)
+    def sync_read_goal_position(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Goal_Position", motor_ids)
 
-    def sync_write_homing(self, values: int | list[int], motor_ids: list[int] | None = None):
-        self.sync_write("homing", values, motor_ids)
+    def sync_write_goal_position(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Goal_Position", values, motor_ids)
 
-    def sync_write_torque_enable(self, motor_ids: list[int] | None = None):
-        self.sync_write("torque", TorqueMode.ENABLED.value, motor_ids)
+    def write_goal_time(self, value, motor_idx: int):
+        self.write("Goal_Time", value, motor_idx)
 
-    def sync_write_torque_disable(self, motor_ids: list[int] | None = None):
-        self.sync_write("torque", TorqueMode.DISABLED.value, motor_ids)
+    def read_goal_time(self, motor_idx: int):
+        return self.read("Goal_Time", motor_idx)
 
-    def sync_write_torque(self, values, motor_ids: list[int] | None = None):
-        self.sync_write("torque", values, motor_ids)
+    def sync_read_goal_time(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Goal_Time", motor_ids)
 
-    def sync_write_operating_mode(self, values: int | list[int], motor_ids: list[int] | None = None):
-        self.sync_write("operating", values, motor_ids)
+    def sync_write_goal_time(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Goal_Time", values, motor_ids)
 
-    def sync_write_drive_mode(self, values: int | list[int], motor_ids: list[int] | None = None):
-        self.sync_write("driving", values, motor_ids)
+    def write_goal_speed(self, value, motor_idx: int):
+        self.write("Goal_Speed", value, motor_idx)
 
-    def sync_read_position(self, motor_ids: list[int] | None = None):
-        return self.sync_read("position", motor_ids)
+    def read_goal_speed(self, motor_idx: int):
+        return self.read("Goal_Speed", motor_idx)
 
-    def sync_write_goal_position(self, values, motor_ids: list[int] | None = None):
-        self.sync_write("goal_position", values, motor_ids)
+    def sync_read_goal_speed(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Goal_Speed", motor_ids)
 
-    def sync_write_goal_current(self, values, motor_ids: list[int] | None = None):
-        self.sync_write("goal_current", values, motor_ids)
+    def sync_write_goal_speed(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Goal_Speed", values, motor_ids)
 
-    def sync_write_current_limit(self, values, motor_ids: list[int] | None = None):
-        self.sync_write("current_limit", values, motor_ids)
+    def write_lock(self, value, motor_idx: int):
+        self.write("Lock", value, motor_idx)
+
+    def read_lock(self, motor_idx: int):
+        return self.read("Lock", motor_idx)
+
+    def sync_read_lock(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Lock", motor_ids)
+
+    def sync_write_lock(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Lock", values, motor_ids)
+
+    def read_present_position(self, motor_idx: int):
+        return self.read("Present_Position", motor_idx)
+
+    def sync_read_present_position(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Present_Position", motor_ids)
+
+    def read_present_speed(self, motor_idx: int):
+        return self.read("Present_Speed", motor_idx)
+
+    def sync_read_present_speed(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Present_Speed", motor_ids)
+
+    def read_present_load(self, motor_idx: int):
+        return self.read("Present_Load", motor_idx)
+
+    def sync_read_present_load(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Present_Load", motor_ids)
+
+    def read_present_voltage(self, motor_idx: int):
+        return self.read("Present_Voltage", motor_idx)
+
+    def sync_read_present_voltage(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Present_Voltage", motor_ids)
+
+    def read_present_temperature(self, motor_idx: int):
+        return self.read("Present_Temperature", motor_idx)
+
+    def sync_read_present_temperature(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Present_Temperature", motor_ids)
+
+    def read_moving(self, motor_idx: int):
+        return self.read("Moving", motor_idx)
+
+    def sync_read_moving(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Moving", motor_ids)
+
+    def read_present_current(self, motor_idx: int):
+        return self.read("Present_Current", motor_idx)
+
+    def sync_read_present_current(self, motor_ids: list[int] | None = None):
+        return self.sync_read("Present_Current", motor_ids)
