@@ -76,7 +76,7 @@ def read_present_positions(arm: DynamixelXLMotorsChain) -> np.array:
     try:
 
         present_positions = arm.sync_read_present_position()
-    except Exception as e:
+    except ConnectionError as e:
         print("Error while reading present positions: ", e)
 
         return np.array([None, None, None, None, None, None])

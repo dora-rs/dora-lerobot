@@ -1,7 +1,6 @@
 nodes:
   - id: lcr_leader
-    path: python
-    args: ../../node_hub/dynamixel_client/client.py
+    path: ../../node_hub/dynamixel_client/client.py
     inputs:
       ping_present_position: dora/timer/millis/2 # ping the position every 10ms
     outputs:
@@ -19,8 +18,7 @@ nodes:
       INVERTED:  False True True False True True
 
   - id: lcr_interpolate
-    path: python
-    args: ../nodes/interpolate_lcr_to_lcr.py
+    path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
       leader_position: lcr_leader/present_position
       follower_position: lcr_follower/present_position
@@ -28,8 +26,7 @@ nodes:
       - goal_position
 
   - id: lcr_follower
-    path: python
-    args: ../../node_hub/dynamixel_client/client.py
+    path: ../../node_hub/dynamixel_client/client.py
     inputs:
       ping_present_position: dora/timer/millis/500 # ping the position every 500ms
       goal_position: lcr_interpolate/goal_position

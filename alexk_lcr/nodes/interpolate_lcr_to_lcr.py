@@ -44,6 +44,11 @@ def u32_to_i32(value: np.array) -> np.array:
 
 
 def in_range_position(value: np.array) -> np.array:
+    """
+    This function assures that the position values are in the range of the LCR standard [-2048, 2048] for almost all
+    servos and [-1024, 3072] for the last value. This is important because an issue with communication can cause a
+    +- 4095 offset value, so we need to assure that the values are in the range.
+    """
     i32_values = u32_to_i32(value)
 
     for i in range(6):
@@ -58,9 +63,9 @@ def in_range_position(value: np.array) -> np.array:
             elif i32_values[i] < -2048:
                 i32_values[i] = 2048 - (-i32_values[i] % 2048)
         else:
-            if i32_values[i] > 3072:
-                i32_values[i] = - 2048 + (i32_values[i] % 2048)
-            elif i32_values[i] < -1024:
+            if i32_values[i] > 2048:
+                i32_values[i] = -2048 + (i32_values[i] % 2048)
+            elif i32_values[i] < -2048:
                 i32_values[i] = 2048 - (-i32_values[i] % 2048)
 
     return i32_to_u32(i32_values)
@@ -72,7 +77,7 @@ def main():
     leader_position = np.array([0, 0, 0, 0, 0, 0])
     follower_position = np.array([0, 0, 0, 0, 0, 0])
 
-    follower_received = False
+    follower_received = True
 
     for event in node:
         event_type = event["type"]
@@ -88,6 +93,10 @@ def main():
 
                     goal_position = u32_to_i32(leader_position)
 
+                    """
+                    A communication issue with the follower can induces a +- 4095 offset in the position values.
+                    So we need to assure that the goal_position is in the range of the Follower.
+                    """
                     for i in range(len(goal_position)):
                         if follower_position[i] > 0:
                             goal_position[i] = goal_position[i] + (follower_position[i] // 4096) * 4096

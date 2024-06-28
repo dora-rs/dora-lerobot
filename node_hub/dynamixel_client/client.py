@@ -212,7 +212,7 @@ class Client:
 
             self.time = time.time()
 
-        except Exception as e:
+        except ConnectionError as e:
             print("Error reading position:", e)
 
     def ping_goal_position(self, node, metadata):
@@ -226,7 +226,7 @@ class Client:
                 pa.array(goal_position.ravel()),
                 metadata
             )
-        except Exception as e:
+        except ConnectionError as e:
             print("Error reading goal position:", e)
 
     def ping_present_velocity(self, node, metadata):
@@ -238,24 +238,27 @@ class Client:
                 pa.array(velocity.ravel()),
                 metadata
             )
-        except Exception as e:
+        except ConnectionError as e:
             print("Error reading velocity:", e)
 
     def set_goal_position(self, goal_position):
-        positions = invert_configuration(goal_position.to_numpy().copy(),
-                                         self.homing_offset,
-                                         self.inverted)
+        try:
+            positions = invert_configuration(goal_position.to_numpy().copy(),
+                                             self.homing_offset,
+                                             self.inverted)
 
-        ids, positions = convert_to_chain_command(positions)
+            ids, positions = convert_to_chain_command(positions)
 
-        self.chain.sync_write_goal_position(positions, ids)
+            self.chain.sync_write_goal_position(positions, ids)
 
-        delta_time = time.time() - self.time
-        hz = 1 / delta_time if delta_time > 0 else 0
+            delta_time = time.time() - self.time
+            hz = 1 / delta_time if delta_time > 0 else 0
 
-        print("Set goal with frequency: ", hz, " Hz", flush=True)
+            print("Set goal with frequency: ", hz, " Hz", flush=True)
 
-        self.time = time.time()
+            self.time = time.time()
+        except ConnectionError as e:
+            print("Error writing goal position:", e)
 
 
 def main():

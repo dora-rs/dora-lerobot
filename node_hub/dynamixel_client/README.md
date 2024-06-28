@@ -20,7 +20,7 @@ nodes:
       - goal_position # regarding 'ping_goal_position' input, it will output the goal position every 10ms
 
     env:
-      PORT: COM9
+      PORT: COM9 # e.g. /dev/ttyUSB0 or COM9
       IDS: 1 2 3 4 5 6
 
       TORQUE: False False False False False True
