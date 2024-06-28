@@ -37,6 +37,7 @@ nodes:
       inputs:
         audio: dora/timer/millis/1000
       outputs:
+        - stop
         - text_llm
         - stop
 

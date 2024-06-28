@@ -10,13 +10,13 @@ import time
 import pyaudio
 
 from parler_tts import ParlerTTSForConditionalGeneration
-from transformers import AutoTokenizer, AutoFeatureExtractor, set_seed
+from transformers import AutoTokenizer, AutoFeatureExtractor, set_seed, StoppingCriteria, StoppingCriteriaList
 from transformers.generation.streamers import BaseStreamer
 
 device = "cuda:0" #if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 torch_dtype = torch.float16 if device != "cpu" else torch.float32
 
-repo_id = "parler-tts/parler_tts_mini_v0.1"
+repo_id = "ylacombe/parler-tts-mini-jenny-30H"
 
 model = ParlerTTSForConditionalGeneration.from_pretrained(
     repo_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True
@@ -182,15 +182,24 @@ def play_audio(audio_array):
     
     stream.write(audio_array.tobytes())
     
-    
+class InterruptStoppingCriteria(StoppingCriteria):
+    def __init__(self):
+        self.stop_signal = False
 
-def generate_base(text=default_text, description=default_description, play_steps_in_s=0.5, len_t = 60):
+    def __call__(self, input_ids: torch.LongTensor, scores: torch.FloatTensor, **kwargs) -> bool:
+        return self.stop_signal
+
+    def stop(self):
+        self.stop_signal = True
+
+def generate_base(node, text=default_text, description=default_description, play_steps_in_s=0.5, len_t = 60):
     global init_sleep
     play_steps = int(frame_rate * play_steps_in_s)
     streamer = ParlerTTSStreamer(model, device=device, play_steps=play_steps)
-
     inputs = tokenizer(description, return_tensors="pt").to(device)
     prompt = tokenizer(text, return_tensors="pt").to(device)
+    
+    stopping_criteria = InterruptStoppingCriteria()
 
     generation_kwargs = dict(
         input_ids=inputs.input_ids,
@@ -199,8 +208,8 @@ def generate_base(text=default_text, description=default_description, play_steps
         do_sample=True,
         temperature=1.0,
         min_new_tokens=10,
+        stopping_criteria=StoppingCriteriaList([stopping_criteria]),
     )
-    
     set_seed(SEED)
     thread = Thread(target=model.generate, kwargs=generation_kwargs)
     thread.start()
@@ -208,6 +217,7 @@ def generate_base(text=default_text, description=default_description, play_steps
     prev_time = time.time()
     
     for new_audio in streamer:
+        print("Playing")
         if init_sleep:
             print("Initialising")
             init_sleep = False
@@ -218,14 +228,24 @@ def generate_base(text=default_text, description=default_description, play_steps
         print(f"Time between iterations: {round(current_time - prev_time, 2)} seconds")
         prev_time = current_time
         play_audio(new_audio)
+        event = node.next(timeout=0.01)
+        print(event["type"])
+        if event["type"] == "ERROR":
+            pass
+        elif event["type"] == "INPUT":
+            if event["id"] == "stop":
+                stopping_criteria.stop()
+                break
 
 node = Node()
-for event in node:
-    if event["type"] == "INPUT":
+while True:
+    event = node.next()
+    if event is None:
+        break
+    if event["type"] == "INPUT" and event["id"] == "text":
         text = event["value"][0].as_py()
-        t_start = time.time()
-        generate_base(text, default_description, 1, len(text) + 1)
-        init_sleep = True
+        generate_base(node, text, default_description, 1, len(text) + 1)
+
 stream.stop_stream()
 stream.close()
 p.terminate()
