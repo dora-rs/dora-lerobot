@@ -3,7 +3,7 @@ nodes:
     custom:
       source: ../nodes/reachy_client.py
       inputs:
-        action: eval/action
+        # action: eval/action
         tick: dora/timer/millis/33
       outputs:
         - agent_pos

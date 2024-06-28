@@ -38,18 +38,13 @@ nodes:
         audio: dora/timer/millis/1000
       outputs:
         - text_llm
+        - stop
 
   - id: parler
     custom:
       source: ../nodes/speak_node.py
       inputs:
-        text: whisper/text_llm
-  
-  # - id: parler
-  #   custom:
-  #     source: ../nodes/parler_node.py
-  #     inputs:
-  #       text: idefics2/speak
-  #     outputs:
-  #       - start_high_five
-  
+        text: idefics2/speak
+        stop: whisper/stop
+      outputs:
+        - start_high_five
