@@ -49,6 +49,8 @@ for dora_event in node:
                 and (event.key == Key.alt_r)
                 and isinstance(event, Events.Press)
             ):
+                ## Stop the previous recording
+                node.send_output("stop", pa.array([]))
 
                 ## Microphone
                 audio_data = sd.rec(
