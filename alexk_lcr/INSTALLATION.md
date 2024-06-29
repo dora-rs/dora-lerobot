@@ -1,7 +1,7 @@
 # Dora pipeline for teleoperated low-cost arm and episode recording for LeRobot
 
 AlexK Low Cost Robot is a low-cost robotic arm that can be teleoperated using a similar arm. This repository contains
-the Dora pipeline to record episodes for LeRobot.
+the Dora pipeline to manipulate the arms, the camera, and record/replay episodes with LeRobot.
 
 ## Installation
 
@@ -30,10 +30,10 @@ you may need to setup your Python environment:
 git clone https://github.com/dora-rs/dora-lerobot
 ```
 
-- Open a bash terminal and navigate to the root of the submodule `alexk_low_cost_robot` in the repository.
+- Open a bash terminal and navigate to the root of the submodule `alexk_lcr` in the repository.
 
 ```bash
-cd dora-lerobot/alexk_low_cost_robot
+cd dora-lerobot/alexk_lcr
 ```
 
 - Create a virtual environment by running the following command:
@@ -57,13 +57,17 @@ Finally, install the required Python packages by running the following command:
 pip install -r requirements.txt
 ```
 
-**Note**: You're totally free to use your own Python environment, a Conda environment, or whatever you prefer, you will have to activate 
-your custom python environment before running `dora start [graph].yml`.
+**Note**: You're totally free to use your own Python environment, a Conda environment, or whatever you prefer, you will
+have to activate
+your custom python environment before running `dora up && dora start [graph].yml`.
 
-In order to record episodes, you need ffmpeg installed on your system. You can download it from the [official website](https://ffmpeg.org/download.html).
+In order to record episodes, you need ffmpeg installed on your system. You can download it from
+the [official website](https://ffmpeg.org/download.html).
 
-If you're on Windows, you can download the latest build from [here](https://ffmpeg.zeranoe.com/builds/). You can extract the zip file and add the `bin` folder to your PATH.
-If you're on Linux, you can install ffmpeg using the package manager of your distribution. (e.g `sudo apt install ffmpeg` on Ubuntu)
+If you're on Windows, you can download the latest build from [here](https://www.gyan.dev/ffmpeg/builds/). You can
+extract the zip file and add the `bin` folder to your PATH.
+If you're on Linux, you can install ffmpeg using the package manager of your distribution. (
+e.g `sudo apt install ffmpeg` on Ubuntu)
 
 ## License
 

@@ -1,7 +1,7 @@
 # Dora pipeline for teleoperated low-cost arm and episode recording for LeRobot
 
 AlexK Low Cost Robot is a low-cost robotic arm that can be teleoperated using a similar arm. This repository contains
-the Dora pipeline to record episodes for LeRobot.
+the Dora pipeline to manipulate the arms, the camera, and record/replay episodes with LeRobot.
 
 ## Recording
 
@@ -16,10 +16,10 @@ Those are the the steps to teleoperate the arm and record the episodes:
 - adjust the serial ports for the master and puppet arms as env variables
   in : `MASTER_PATH`, `PUPPET_PATH`, `CAMERA_ID`
 
-- Open a terminal and navigate to the root of the submodule `alexk_low_cost_robot` in the repository.
+- Open a terminal and navigate to the root of the submodule `alexk_lcr` in the repository.
 
 ```bash
-cd dora-lerobot/alexk_low_cost_robot
+cd dora-lerobot/alexk_lcr
 ```
 
 - Start your Dora application with the following command:

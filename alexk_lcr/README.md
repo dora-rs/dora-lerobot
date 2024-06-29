@@ -21,7 +21,7 @@ LeRobot and teleoperate the robot.
 
 ## Recording
 
-Check the [RECORDING.md](RECORDING.md) file for instructions on how to record episodes for LeRobot using the robot.
+This section is under construction.
 
 ## Examples
 
@@ -29,11 +29,14 @@ There are also some other example applications in the `graph` folder. Have fun!
 
 Here is a list of the available examples:
 
-- `simple_teleop.yml`: A simple teleoperation pipeline that allows you to control the robot, without recording
-  the episodes. You can use it to test the robot:
+- `mono_teleop.yml`: A simple teleoperation pipeline that allows you to control a follower arm using a leader arm. It
+  does not record the episodes, so you don't need to have a camera.
+
+You must configure the arms, retrieve the device port, and modify the file `mono_teleop.yml` to set the correct
+environment variables. (e.g. `PORT`, `HOMING_OFFSETS`, `INVERTED`)
 
 ```bash
-cd dora-lerobot/alexk_low_cost_robot
+cd dora-lerobot/alexk_lcr
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
@@ -45,7 +48,29 @@ venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
 dora up
-dora start ./graphs/simple_teleop.yml
+dora start ./graphs/mono_teleop.yml
+```
+
+- `bi_teleop.yml`: A simple teleoperation pipeline that allows you to control two follower arm using two leader arm
+  (left and right). It does not record the episodes, so you don't need to have a camera.
+
+You must configure the arms, retrieve the device port, and modify the file `bi_teleop.yml` to set the correct
+environment variables. (e.g. `PORT`, `HOMING_OFFSETS`, `INVERTED`)
+
+```bash
+cd dora-lerobot/alexk_lcr
+
+# If you are using a custom environment, you will have to activate it before running the command
+source [your_custom_env_bin]/activate
+
+# If you followed the installation instructions, you can run the following command
+source venv/bin/activate # On Linux
+source venv/Scripts/activate # On Windows bash
+venv\Scripts\activate.bat # On Windows cmd
+venv\Scripts\activate.ps1 # On Windows PowerShell
+
+dora up
+dora start ./graphs/bi_teleop.yml
 ```
 
 ## License
