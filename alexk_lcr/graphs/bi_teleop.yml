@@ -2,7 +2,7 @@ nodes:
   - id: lcr_left_leader
     path: ../../node_hub/dynamixel_client/client.py
     inputs:
-      ping_present_position: dora/timer/millis/2 # ping the position every 10ms
+      pull_present_position: dora/timer/millis/2 # pull the position every 10ms
     outputs:
       - present_position
     env:
@@ -28,8 +28,8 @@ nodes:
   - id: lcr_left_follower
     path: ../../node_hub/dynamixel_client/client.py
     inputs:
-      ping_present_position: dora/timer/millis/500 # ping the position every 500ms
-      goal_position: lcr_left_interpolate/goal_position
+      pull_present_position: dora/timer/millis/500 # pull the position every 500ms
+      write_goal_position: lcr_left_interpolate/goal_position
     outputs:
       - present_position
     env:
@@ -47,7 +47,7 @@ nodes:
   - id: lcr_right_leader
     path: ../../node_hub/dynamixel_client/client.py
     inputs:
-      ping_present_position: dora/timer/millis/2 # ping the position every 10ms
+      pull_present_position: dora/timer/millis/2 # pull the position every 10ms
     outputs:
       - present_position
     env:
@@ -74,8 +74,8 @@ nodes:
   - id: lcr_right_follower
     path: ../../node_hub/dynamixel_client/client.py
     inputs:
-      ping_present_position: dora/timer/millis/500 # ping the position every 500ms
-      goal_position: lcr_right_interpolate/goal_position
+      pull_present_position: dora/timer/millis/500 # pull the position every 500ms
+      write_goal_position: lcr_right_interpolate/goal_position
     outputs:
       - present_position
     env:
