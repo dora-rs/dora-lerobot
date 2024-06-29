@@ -11,86 +11,33 @@ import pyarrow as pa
 
 from dora import Node
 
-from dynamixel import DynamixelXLMotorsChain, TorqueMode
-
-
-def convert_to_chain_command(values: np.array, ids: np.array) -> (list[int], np.array):
-    """
-    Convert the values to a chain command. Skip the None values and return the ids and values.
-    Args:
-        values: np.array
-        ids: np.array
-
-    Returns:
-        (ids, values): list[int], np.array
-    """
-
-    non_none_values = np.array([value for value in values if value is not None])
-    non_none_values_ids = [ids[i] for i, value in enumerate(values) if value is not None]
-
-    return non_none_values_ids, non_none_values
-
-
-def i32_to_u32(value: np.array) -> np.array:
-    """
-    Convert a signed 32-bit integer array to an unsigned 32-bit integer array.
-    Args:
-        value: np.array
-
-    Returns:
-        np.array
-    """
-
-    for i in range(len(value)):
-        if value[i] is not None and value[i] < 0:
-            value[i] = value[i] + 4294967296
-
-    return value
-
-
-def u32_to_i32(value: np.array) -> np.array:
-    """
-    Convert an unsigned 32-bit integer array to a signed 32-bit integer array.
-    Args:
-        value: np.array
-
-    Returns:
-        np.array
-    """
-
-    for i in range(len(value)):
-        if value[i] is not None and value[i] > 2147483647:
-            value[i] = value[i] - 4294967296
-
-    return value
+from dynamixel import DynamixelXLBus, TorqueMode, retrieve_ids_and_command, u32_to_i32, i32_to_u32
 
 
 def apply_homing_offset(values: np.array, homing_offset: np.array) -> np.array:
     """
     Apply the homing offset to the values.
+    values: np.array of i32
     """
-
-    values = u32_to_i32(values)
 
     for i in range(len(values)):
         if values[i] is not None:
             values[i] += homing_offset[i]
 
-    return i32_to_u32(values)
+    return values
 
 
 def apply_inverted(values: np.array, inverted: np.array) -> np.array:
     """
     Apply the inverted values.
+    values: np.array of i32
     """
-
-    values = u32_to_i32(values)
 
     for i in range(len(values)):
         if values[i] is not None and inverted[i]:
             values[i] = -values[i]
 
-    return i32_to_u32(values)
+    return values
 
 
 def apply_configuration(values: np.array, homing_offset: np.array, inverted: np.array) -> np.array:
@@ -129,7 +76,7 @@ class Client:
 
     def __init__(self, config):
         self.config = config
-        self.chain = DynamixelXLMotorsChain(config["port"], config["ids"])
+        self.chain = DynamixelXLBus(config["port"], config["ids"])
 
         self.homing_offset = config["homing_offset"]
         self.inverted = config["inverted"]
@@ -142,18 +89,22 @@ class Client:
             print("Error writing torque status:", e)
 
         try:
-            position = self.chain.sync_read_present_position()
-            positions = invert_configuration(i32_to_u32(config["initial_goal_position"]), self.homing_offset,
-                                             self.inverted)
+            positions = invert_configuration(
+                config["initial_goal_position"],
+                self.homing_offset,
+                self.inverted)
 
-            ids, positions = convert_to_chain_command(positions, self.chain.motor_ids)
+            ids, positions = retrieve_ids_and_command(positions, self.chain.motor_ids)
 
-            self.chain.sync_write_goal_position(positions, ids)
+            self.chain.sync_write_goal_position_i32(positions, ids)
         except Exception as e:
             print("Error writing goal position:", e)
 
         try:
-            ids, currents = convert_to_chain_command(config["initial_goal_current"], self.chain.motor_ids)
+            ids, currents = retrieve_ids_and_command(
+                config["initial_goal_current"],
+                self.chain.motor_ids)
+
             self.chain.sync_write_goal_current(currents, ids)
         except Exception as e:
             print("Error writing goal current:", e)
@@ -162,7 +113,7 @@ class Client:
 
         self.node = Node(config["name"])
 
-        self.ping_present_position(self.node, None)
+        self.pull_present_position(self.node, None)
 
     def run(self):
         # Run the event loop of Dora and call appropriate functions
@@ -173,14 +124,18 @@ class Client:
             if event_type == "INPUT":
                 event_id = event["id"]
 
-                if event_id == "ping_present_position":
-                    self.ping_present_position(self.node, event["metadata"])
-                elif event_id == "ping_goal_position":
-                    self.ping_goal_position(self.node, event["metadata"])
-                elif event_id == "ping_present_velocity":
-                    self.ping_present_velocity(self.node, event["metadata"])
-                elif event_id == "goal_position":
-                    self.set_goal_position(event["value"])
+                if event_id == "pull_present_position":
+                    self.pull_present_position(self.node, event["metadata"])
+                elif event_id == "pull_goal_position":
+                    self.pull_goal_position(self.node, event["metadata"])
+                elif event_id == "pull_present_velocity":
+                    self.pull_present_velocity(self.node, event["metadata"])
+                elif event_id == "write_goal_position":
+                    self.write_goal_position(event["value"])
+                elif event_id == "write_goal_current":
+                    self.write_goal_current(event["value"])
+                elif event_id == "write_goal_velocity":
+                    self.write_goal_velocity(event["value"])
 
             elif event_type == "STOP":
                 break
@@ -191,11 +146,12 @@ class Client:
         self.chain.sync_write_torque_enable(TorqueMode.DISABLED.value)
         self.chain.close()
 
-    def ping_present_position(self, node, metadata):
+    def pull_present_position(self, node, metadata):
         try:
-            position = apply_configuration(self.chain.sync_read_present_position(),
-                                           self.homing_offset,
-                                           self.inverted)
+            position = i32_to_u32(apply_configuration(
+                self.chain.sync_read_present_position_i32(),
+                self.homing_offset,
+                self.inverted))
 
             node.send_output(
                 "present_position",
@@ -206,11 +162,12 @@ class Client:
         except ConnectionError as e:
             print("Error reading position:", e)
 
-    def ping_goal_position(self, node, metadata):
+    def pull_goal_position(self, node, metadata):
         try:
-            goal_position = apply_configuration(self.chain.sync_read_goal_position(),
-                                                self.homing_offset,
-                                                self.inverted)
+            goal_position = i32_to_u32(apply_configuration(
+                self.chain.sync_read_goal_position_i32(),
+                self.homing_offset,
+                self.inverted))
 
             node.send_output(
                 "goal_position",
@@ -220,7 +177,7 @@ class Client:
         except ConnectionError as e:
             print("Error reading goal position:", e)
 
-    def ping_present_velocity(self, node, metadata):
+    def pull_present_velocity(self, node, metadata):
         try:
             velocity = self.chain.sync_read_present_velocity()
 
@@ -232,17 +189,37 @@ class Client:
         except ConnectionError as e:
             print("Error reading velocity:", e)
 
-    def set_goal_position(self, goal_position):
+    def write_goal_position(self, goal_position):
         try:
-            positions = invert_configuration(goal_position.to_numpy().copy(),
+            positions = invert_configuration(u32_to_i32(goal_position).to_numpy().copy(),
                                              self.homing_offset,
                                              self.inverted)
 
-            ids, positions = convert_to_chain_command(positions, self.chain.motor_ids)
+            ids, positions = retrieve_ids_and_command(positions, self.chain.motor_ids)
 
-            self.chain.sync_write_goal_position(positions, ids)
+            self.chain.sync_write_goal_position_i32(positions, ids)
         except ConnectionError as e:
             print("Error writing goal position:", e)
+
+    def write_goal_current(self, goal_current):
+        try:
+            ids, currents = retrieve_ids_and_command(
+                goal_current,
+                self.chain.motor_ids)
+
+            self.chain.sync_write_goal_current(currents, ids)
+        except ConnectionError as e:
+            print("Error writing goal current:", e)
+
+    def write_goal_velocity(self, goal_velocity):
+        try:
+            ids, velocities = retrieve_ids_and_command(
+                goal_velocity,
+                self.chain.motor_ids)
+
+            self.chain.sync_write_goal_velocity(velocities, ids)
+        except ConnectionError as e:
+            print("Error writing goal velocity:", e)
 
 
 def main():

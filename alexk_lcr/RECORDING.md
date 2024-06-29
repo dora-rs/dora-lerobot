@@ -46,3 +46,7 @@ Then, you can teleoperate the arm by using the master arm, and record the episod
 4. After having pressed esc, type `dora stop` to stop the Dora pipeline.
 5. Write down the location of the logs (e.g `018fc3a8-3b76-70f5-84a2-22b84df24739`), this is where the
    dataset (and logs) are stored.
+
+## License
+
+This library is licensed under the [Apache License 2.0](../../LICENSE).

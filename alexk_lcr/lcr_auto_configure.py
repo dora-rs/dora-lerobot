@@ -17,7 +17,8 @@ import time
 
 import numpy as np
 
-from dynamixel import DynamixelXLMotorsChain, OperatingMode, DriveMode
+from dynamixel import DynamixelXLBus, OperatingMode, DriveMode, u32_to_i32, i32_to_u32, retrieve_ids_and_command, \
+    TorqueMode
 
 
 def pause():
@@ -27,71 +28,40 @@ def pause():
     input("Press Enter to continue...")
 
 
-def i32_to_u32(value: np.array) -> np.array:
-    for i in range(len(value)):
-        if value[i] is not None and value[i] < 0:
-            value[i] = value[i] + 4294967296
-
-    return value
-
-
-def u32_to_i32(value: np.array) -> np.array:
-    for i in range(len(value)):
-        if value[i] is not None and value[i] > 2147483647:
-            value[i] = value[i] - 4294967296
-
-    return value
-
-
 def apply_homing_offset(values: np.array, homing_offset: np.array) -> np.array:
-    values = u32_to_i32(values)
-
     for i in range(len(values)):
         if values[i] is not None:
             values[i] += homing_offset[i]
 
-    return i32_to_u32(values)
+    return values
 
 
 def apply_inverted(values: np.array, inverted: np.array) -> np.array:
-    values = u32_to_i32(values)
-
     for i in range(len(values)):
         if values[i] is not None and inverted[i]:
             values[i] = -values[i]
 
-    return i32_to_u32(values)
+    return values
 
 
 def apply_configuration(values: np.array, homing_offset: np.array, inverted: np.array) -> np.array:
-    return apply_homing_offset(apply_inverted(values, inverted), homing_offset)
+    return apply_homing_offset(
+        apply_inverted(
+            values,
+            inverted
+        ),
+        homing_offset
+    )
 
 
-def read_present_positions(arm: DynamixelXLMotorsChain) -> np.array:
-    """
-    Read the present positions of the motors.
-    :param arm: DynamixelXLMotorsChain
-    :return: numpy array of present positions
-    """
-    try:
-
-        present_positions = arm.sync_read_present_position()
-    except ConnectionError as e:
-        print("Error while reading present positions: ", e)
-
-        return np.array([None, None, None, None, None, None])
-
-    return present_positions
-
-
-def prepare_configuration(arm: DynamixelXLMotorsChain):
+def prepare_configuration(arm: DynamixelXLBus):
     """
     Prepare the configuration for the LCR.
-    :param arm: DynamixelXLMotorsChain
+    :param arm: DynamixelXLBus
     """
 
     # To be configured, all servos must be in "torque disable" mode
-    arm.sync_write_torque_enable(0)
+    arm.sync_write_torque_enable(TorqueMode.DISABLED.value)
 
     # We need to work with 'extended position mode' (4) for all servos, because in joint mode (1) the servos can't
     # rotate more than 360 degrees (from 0 to 4095) And some mistake can happen while assembling the arm,
@@ -155,16 +125,19 @@ def calculate_nearest_rounded_positions(positions: np.array) -> np.array:
         [round(positions[i] / 1024) * 1024 if positions[i] is not None else None for i in range(len(positions))])
 
 
-def configure_homing(arm: DynamixelXLMotorsChain, inverted: list[bool], wanted: np.array) -> np.array:
+def configure_homing(arm: DynamixelXLBus, inverted: list[bool], wanted: np.array) -> np.array:
     """
     Configure the homing for the LCR.
-    :param arm: DynamixelXLMotorsChain
+    :param arm: DynamixelXLBus
     :param inverted: list of booleans to determine if the position should be inverted
     """
 
     # Get the present positions of the servos
-    present_positions = u32_to_i32(
-        apply_configuration(read_present_positions(arm), np.array([0, 0, 0, 0, 0, 0]), inverted))
+
+    present_positions = apply_configuration(
+        arm.sync_read_present_position_i32(),
+        np.array([0, 0, 0, 0, 0, 0]),
+        inverted)
 
     nearest_positions = calculate_nearest_rounded_positions(present_positions)
 
@@ -173,15 +146,17 @@ def configure_homing(arm: DynamixelXLMotorsChain, inverted: list[bool], wanted: 
     return correction
 
 
-def configure_drive_mode(arm: DynamixelXLMotorsChain, homing: np.array):
+def configure_drive_mode(arm: DynamixelXLBus, homing: np.array):
     """
     Configure the drive mode for the LCR.
-    :param arm: DynamixelXLMotorsChain
+    :param arm: DynamixelXLBus
     :param homing: numpy array of homing
     """
     # Get current positions
-    present_positions = u32_to_i32(
-        apply_configuration(read_present_positions(arm), homing, np.array([False, False, False, False, False, False])))
+    present_positions = apply_configuration(
+        arm.sync_read_present_position_i32(),
+        homing,
+        np.array([False, False, False, False, False, False]))
 
     nearest_positions = calculate_nearest_rounded_positions(present_positions)
 
@@ -217,7 +192,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    arm = DynamixelXLMotorsChain(args.port, [1, 2, 3, 4, 5, 6])
+    arm = DynamixelXLBus(args.port, [1, 2, 3, 4, 5, 6])
 
     prepare_configuration(arm)
 
@@ -248,7 +223,7 @@ if __name__ == "__main__":
     print("Make sure everything is working properly:")
 
     while True:
-        positions = apply_configuration(read_present_positions(arm), homing, inverted)
-        print(u32_to_i32(positions))
+        positions = apply_configuration(arm.sync_read_present_position_i32(), homing, inverted)
+        print("Positions: ", " ".join([str(i) for i in positions]))
 
         time.sleep(1)

@@ -13,6 +13,49 @@ BAUD_RATE = 1_000_000
 TIMEOUT_MS = 1000
 
 
+def u32_to_i32(value: int | np.array) -> int | np.array:
+    """
+    Convert an unsigned 32-bit integer array to a signed 32-bit integer array.
+    """
+
+    if isinstance(value, int):
+        if value > 2147483647:
+            value = value - 4294967296
+    else:
+        for i in range(len(value)):
+            if value[i] is not None and value[i] > 2147483647:
+                value[i] = value[i] - 4294967296
+
+    return value
+
+
+def i32_to_u32(value: int | np.array) -> int | np.array:
+    """
+    Convert a signed 32-bit integer array to an unsigned 32-bit integer array.
+    """
+
+    if isinstance(value, int):
+        if value < 0:
+            value = value + 4294967296
+    else:
+        for i in range(len(value)):
+            if value[i] is not None and value[i] < 0:
+                value[i] = value[i] + 4294967296
+
+    return value
+
+
+def retrieve_ids_and_command(values: np.array, ids: np.array) -> (list[int], np.array):
+    """
+    Convert the values to a chain command. Skip the None values and return the ids and values.
+    """
+
+    non_none_values = np.array([value for value in values if value is not None])
+    non_none_values_ids = [ids[i] for i, value in enumerate(values) if value is not None]
+
+    return non_none_values_ids, non_none_values
+
+
 class TorqueMode(enum.Enum):
     ENABLED = 1
     DISABLED = 0
@@ -94,7 +137,7 @@ X_SERIES_CONTROL_TABLE = [
 ]
 
 
-class DynamixelXLMotorsChain:
+class DynamixelXLBus:
 
     def __init__(self, port: str, ids: list[int]):
         self.port = port
@@ -127,7 +170,6 @@ class DynamixelXLMotorsChain:
         self.port_handler.closePort()
 
     def write(self, data_name, value, motor_idx: int):
-
         addr = self.motor_ctrl[motor_idx][data_name]["addr"]
         bytes = self.motor_ctrl[motor_idx][data_name]["bytes"]
         args = (self.port_handler, motor_idx, addr, value)
@@ -421,11 +463,19 @@ class DynamixelXLMotorsChain:
     def read_goal_velocity(self, motor_idx: int):
         return self.read("Goal_Velocity", motor_idx)
 
-    def write_goal_position(self, value, motor_idx: int):
+    def write_goal_position_u32(self, value, motor_idx: int):
         self.write("Goal_Position", value, motor_idx)
 
-    def read_goal_position(self, motor_idx: int):
+    def write_goal_position_i32(self, value, motor_idx: int):
+        self.write("Goal_Position", i32_to_u32(value), motor_idx)
+
+    def read_goal_position_u32(self, motor_idx: int):
         return self.read("Goal_Position", motor_idx)
+
+    def read_goal_position_i32(self, motor_idx: int):
+        goal_position_u32 = self.read_goal_position_u32(motor_idx)
+
+        return u32_to_i32(goal_position_u32)
 
     def read_present_pwm(self, motor_idx: int):
         return self.read("Present_PWM", motor_idx)
@@ -436,8 +486,13 @@ class DynamixelXLMotorsChain:
     def read_present_velocity(self, motor_idx: int):
         return self.read("Present_Velocity", motor_idx)
 
-    def read_present_position(self, motor_idx: int):
+    def read_present_position_u32(self, motor_idx: int):
         return self.read("Present_Position", motor_idx)
+
+    def read_present_position_i32(self, motor_idx: int):
+        present_position_u32 = self.read_present_position_u32(motor_idx)
+
+        return u32_to_i32(present_position_u32)
 
     def read_present_input_voltage(self, motor_idx: int):
         return self.read("Present_Input_Voltage", motor_idx)
@@ -532,8 +587,13 @@ class DynamixelXLMotorsChain:
     def sync_read_goal_velocity(self, motor_ids: list[int] | None = None):
         return self.sync_read("Goal_Velocity", motor_ids)
 
-    def sync_read_goal_position(self, motor_ids: list[int] | None = None):
+    def sync_read_goal_position_u32(self, motor_ids: list[int] | None = None):
         return self.sync_read("Goal_Position", motor_ids)
+
+    def sync_read_goal_position_i32(self, motor_ids: list[int] | None = None):
+        goal_position_u32 = self.sync_read_goal_position_u32(motor_ids)
+
+        return u32_to_i32(goal_position_u32)
 
     def sync_read_present_pwm(self, motor_ids: list[int] | None = None):
         return self.sync_read("Present_PWM", motor_ids)
@@ -544,8 +604,13 @@ class DynamixelXLMotorsChain:
     def sync_read_present_velocity(self, motor_ids: list[int] | None = None):
         return self.sync_read("Present_Velocity", motor_ids)
 
-    def sync_read_present_position(self, motor_ids: list[int] | None = None):
+    def sync_read_present_position_u32(self, motor_ids: list[int] | None = None):
         return self.sync_read("Present_Position", motor_ids)
+
+    def sync_read_present_position_i32(self, motor_ids: list[int] | None = None):
+        present_position_u32 = self.sync_read_present_position_u32(motor_ids)
+
+        return u32_to_i32(present_position_u32)
 
     def sync_read_present_input_voltage(self, motor_ids: list[int] | None = None):
         return self.sync_read("Present_Input_Voltage", motor_ids)
@@ -625,5 +690,8 @@ class DynamixelXLMotorsChain:
     def sync_write_goal_velocity(self, values: int | list[int], motor_ids: list[int] | None = None):
         self.sync_write("Goal_Velocity", values, motor_ids)
 
-    def sync_write_goal_position(self, values: int | list[int], motor_ids: list[int] | None = None):
+    def sync_write_goal_position_u32(self, values: int | list[int], motor_ids: list[int] | None = None):
         self.sync_write("Goal_Position", values, motor_ids)
+
+    def sync_write_goal_position_i32(self, values: int | list[int], motor_ids: list[int] | None = None):
+        self.sync_write("Goal_Position", i32_to_u32(values), motor_ids)
