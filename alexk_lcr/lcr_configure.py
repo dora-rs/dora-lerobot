@@ -7,7 +7,8 @@ The program will:
 3. Record the position of the LCR.
 4. Ask the user to move the LCR to the position 2 (see CONFIGURING.md for more details).
 5. Record the position of the LCR.
-8. Calculate the offset of the LCR and save it to the configuration file.
+8. Calculate the offset and inverted mode of the LCR.
+9. Let the user verify in real time that the LCR is working properly.
 
 It will also enable all appropriate operating modes for the LCR.
 """
@@ -209,18 +210,22 @@ if __name__ == "__main__":
     inverted = configure_drive_mode(arm, homing)
     homing = configure_homing(arm, inverted, wanted_position_2())
 
+    # Invert offset for all inverted servos
     for i in range(len(inverted)):
         if inverted[i]:
             homing[i] = -homing[i]
 
     print("Configuration done!")
 
-    print("Here is the configuration: ")
+    print("Here is the configuration, you can copy this in your environment variables for client graph:")
 
-    print("HOMING_OFFSET: ", " ".join([str(i) for i in homing]))
-    print("INVERTED: ", " ".join([str(i) for i in inverted]))
+    print("=====================================")
+    print("      HOMING_OFFSET: ", " ".join([str(i) for i in homing]))
+    print("      INVERTED: ", " ".join([str(i) for i in inverted]))
+    print("=====================================")
 
     print("Make sure everything is working properly:")
+    pause()
 
     while True:
         positions = apply_configuration(arm.sync_read_present_position_i32(), homing, inverted)

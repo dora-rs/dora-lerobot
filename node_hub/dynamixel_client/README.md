@@ -8,8 +8,7 @@ is a Python node that communicates with the motors via the USB port.
 ````YAML
 nodes:
   - id: dynamixel_client
-    path: python
-    args: client.py # modify this to the relative path from the graph file to the client script
+    path: client.py # modify this to the relative path from the graph file to the client script
     inputs:
       pull_present_position: dora/timer/millis/10 # pull the present position every 10ms
       pull_present_velocity: dora/timer/millis/10 # pull the present velocity every 10ms

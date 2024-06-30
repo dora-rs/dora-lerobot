@@ -56,7 +56,7 @@ python lcr_configure.py --port /dev/ttyUSB0
 - Repeat the same steps for the Leader arm:
 
 ```bash
-python lcr_auto_configure.py --port /dev/ttyUSB1
+python lcr_configure.py --port /dev/ttyUSB1
 ```
 
 **Note:** change `/dev/ttyUSB1` to the device port you retrieved from the official wizard (like `COM4` on Windows).

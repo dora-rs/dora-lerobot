@@ -1,5 +1,5 @@
 """
-Dynamixel Client: This node is used to represent a chain of dynamixel motors. It can be used to read positions,
+Feetech Client: This node is used to represent a chain of feetech motors. It can be used to read positions,
 velocities, currents, and set goal positions and currents.
 """
 
@@ -225,18 +225,18 @@ class Client:
 def main():
     # Handle dynamic nodes, ask for the name of the node in the dataflow
     parser = argparse.ArgumentParser(
-        description="Dynamixel Client: This node is used to represent a chain of dynamixel motors. "
+        description="Feetech Client: This node is used to represent a chain of feetech motors. "
                     "It can be used to read "
                     "positions, velocities, currents, and set goal positions and currents.")
 
     parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="dynamixel_client")
+                        default="feetech_client")
 
     args = parser.parse_args()
 
     # Check if port is set
     if not os.environ.get("PORT"):
-        raise ValueError("The port is not set. Please set the port of the dynamixel motors.")
+        raise ValueError("The port is not set. Please set the port of the feetech motors.")
 
     # Create configuration
     config = {
@@ -256,7 +256,7 @@ def main():
                      list(os.getenv("INVERTED", "False False False False False False").split())]
     }
 
-    print("Dynamixel Client Configuration: ", config, flush=True)
+    print("Feetech Client Configuration: ", config, flush=True)
 
     client = Client(config)
     client.run()

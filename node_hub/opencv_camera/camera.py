@@ -3,13 +3,13 @@ LCR webcam: this Dora node reads the webcam feed of CAMERA_ID and propagates in 
 
 1. It reads the webcam feed of CAMERA_ID.
 2. It sends the webcam feed to the dataflow.
-3. If no webcam is found at CAMERA_ID, it sends a black image to the dataflow.
+3. If no camera is found at CAMERA_ID, it sends a black image to the dataflow.
 
 This node also shows the webcam feed in a window.
 """
-
 import os
 import cv2
+import argparse
 
 import numpy as np
 import pyarrow as pa
@@ -18,6 +18,15 @@ from dora import Node
 
 
 def main():
+    # Handle dynamic nodes, ask for the name of the node in the dataflow
+    parser = argparse.ArgumentParser(
+        description="Camera Client: This node is used to represent a camera. ")
+
+    parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
+                        default="opencv_camera")
+
+    args = parser.parse_args()
+
     if not os.getenv("CAMERA_ID") or not os.getenv("CAMERA_WIDTH") or not os.getenv("CAMERA_HEIGHT"):
         raise ValueError("Please set the CAMERA_ID, CAMERA_WIDTH, and CAMERA_HEIGHT environment variables")
 
@@ -25,12 +34,9 @@ def main():
     camera_width = os.getenv("CAMERA_WIDTH")
     camera_height = os.getenv("CAMERA_HEIGHT")
 
-    node = Node()
+    node = Node(args.name)
 
-    if os.name == "nt":
-        if not camera_id.isnumeric():
-            raise ValueError("You're using Windows, please set the CAMERA_ID environment variable to an integer")
-
+    if camera_id.isnumeric():
         camera_id = int(camera_id)
 
     video_capture = cv2.VideoCapture(camera_id)
@@ -42,7 +48,7 @@ def main():
         if event_type == "INPUT":
             event_id = event["id"]
 
-            if event_id == "tick":
+            if event_id == "pull_image":
                 ret, frame = video_capture.read()
 
                 if not ret:
@@ -64,19 +70,10 @@ def main():
                     event["metadata"],
                 )
 
-                cv2.imshow(str(camera_id), frame)
-                if cv2.waitKey(1) & 0xFF == ord("q"):
-                    cv2.destroyWindow(str(camera_id))
-                    node.send_output("close", pa.array([0]))
-
-                    break
-
         elif event_type == "STOP":
-            cv2.destroyWindow(str(camera_id))
             break
         elif event_type == "ERROR":
-            print("[lcr_webcam] error: ", event["error"])
-            break
+            raise ValueError("An error occurred in the dataflow: " + event["error"])
 
     video_capture.release()
 
