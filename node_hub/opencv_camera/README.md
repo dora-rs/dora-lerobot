@@ -1,16 +1,18 @@
 ## Camera Node for OpenCV compatible cameras
 
-
+Simple Camera node that uses OpenCV to capture images from a camera. The node can be configured to use a specific camera
+id, width and height.
+It then sends the images to the dataflow.
 
 ## YAML Configuration
 
 ````YAML
 nodes:
   - id: opencv_camera
-    path: python
-    args: camera.py # modify this to the relative path from the graph file to the client script
+    path: camera.py # modify this to the relative path from the graph file to the client script
     inputs:
       pull_image: dora/timer/millis/10 # pull the image every 10ms
+      # stop: some stop signal
     outputs:
       - image # push the image to the dataflow 
 

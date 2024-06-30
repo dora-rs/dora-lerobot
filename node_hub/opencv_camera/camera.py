@@ -70,6 +70,9 @@ def main():
                     event["metadata"],
                 )
 
+            if event_id == "stop":
+                break
+
         elif event_type == "STOP":
             break
         elif event_type == "ERROR":

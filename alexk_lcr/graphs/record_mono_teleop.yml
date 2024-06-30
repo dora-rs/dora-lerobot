@@ -1,45 +1,30 @@
 nodes:
-  - id: lcr_leader
-    path: ../../node_hub/dynamixel_client/client.py
+  - id: opencv_camera
+    path: ../../node_hub/opencv_camera/camera.py
     inputs:
-      pull_present_position: dora/timer/millis/2 # pull the position every 10ms
+      pull_image: dora/timer/millis/16 # pull the image every 10ms
+      stop: pygame_interface/stop # stop the camera when the interface stops
     outputs:
-      - present_position
+      - image # push the image to the dataflow
+
     env:
-      PORT: COM9
-      IDS: 1 2 3 4 5 6
+      CAMERA_ID: 0 # camera id to use, change this to the camera id you want to use (e.g 0, 1, /dev/video0, /dev/video1)
+      CAMERA_WIDTH: 640 # camera width
+      CAMERA_HEIGHT: 480 # camera height
 
-      TORQUE: False False False False False True
-
-      INITIAL_GOAL_POSITION: None None None None None -450
-      INITIAL_GOAL_CURRENT: None None None None None 40
-
-      HOMING_OFFSET:  -2048 2048 2048 -2048 1024 2048
-      INVERTED:  False True True False True True
-
-  - id: lcr_interpolate
-    path: ../nodes/interpolate_lcr_to_lcr.py
+  - id: pygame_interface
+    path: ../../node_hub/pygame_minimalistic_interface/interface.py # modify this to the relative path from the graph file to the client script
     inputs:
-      leader_position: lcr_leader/present_position
-      follower_position: lcr_follower/present_position
-    outputs:
-      - goal_position
+      tick: dora/timer/millis/16 # update the interface every 16ms (= 60fps)
 
-  - id: lcr_follower
-    path: ../../node_hub/dynamixel_client/client.py
-    inputs:
-      pull_present_position: dora/timer/millis/500 # pull the position every 500ms
-      write_goal_position: lcr_interpolate/goal_position
+      write_image_left: opencv_camera/image # write the image to the left side of the interface
+      write_image_right: opencv_camera/image # write the image to the right side of the interface
+      # write_text: some text from other node
     outputs:
-      - present_position
+      - key_pressed
+      - key_released
+      - stop
+
     env:
-      PORT: COM7
-      IDS: 1 2 3 4 5 6
-
-      TORQUE: True True True True True True
-
-      INITIAL_GOAL_POSITION: None None None None None -450
-      INITIAL_GOAL_CURRENT: None None None None None 500
-
-      HOMING_OFFSET:  -2048 -2048 -1024 -2048 4096 -2048
-      INVERTED:  False False False False True False
+      CAMERA_WIDTH: 640 # camera width
+      CAMERA_HEIGHT: 480 # camera height
