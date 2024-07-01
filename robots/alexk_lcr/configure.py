@@ -67,7 +67,7 @@ def prepare_configuration(arm: DynamixelBus):
     # We need to work with 'extended position mode' (4) for all servos, because in joint mode (1) the servos can't
     # rotate more than 360 degrees (from 0 to 4095) And some mistake can happen while assembling the arm,
     # you could end up with a servo with a position 0 or 4095 at a crucial point See [
-    # https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/#operating-mode11]
+    # https://emanual.robotis.com/docs/en/dxl/x/x_series/#operating-mode11]
     arm.sync_write_operating_mode(OperatingMode.EXTENDED_POSITION.value, [1, 2, 3, 4, 5])
 
     # Gripper is always 'position control current based' (5)
@@ -195,12 +195,12 @@ if __name__ == "__main__":
 
     arm = DynamixelBus(
         args.port, {
-            1: "xl430-w250",
-            2: "xl430-w250",
-            3: "xl330-m288",
-            4: "xl330-m288",
-            5: "xl330-m288",
-            6: "xl330-m288",
+            1: "x_series",
+            2: "x_series",
+            3: "x_series",
+            4: "x_series",
+            5: "x_series",
+            6: "x_series",
         }
     )
 
