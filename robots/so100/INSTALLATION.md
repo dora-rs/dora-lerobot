@@ -74,7 +74,7 @@ venv\Scripts\activate.ps1 # On Windows PowerShell
 export GIT_LFS_SKIP_SMUDGE=1 # Skip downloading the large files
 # set GIT_LFS_SKIP_SMUDGE=1 On PowerShell
 
-git clone https://github.com/huggingface/lerobot/
+git clone https://github.com/hennzau/lerobot/
 
 pip install -e lerobot/
 ```

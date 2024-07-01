@@ -1,16 +1,16 @@
 """
-LCR Auto Configure: This program is used to automatically configure the Low Cost Robot (LCR) for the user.
+SO100 Auto Configure: This program is used to automatically configure the Low Cost Robot (SO100) for the user.
 
 The program will:
-1. Disable all torque motors of provided LCR.
-2. Ask the user to move the LCR to the position 1 (see CONFIGURING.md for more details).
-3. Record the position of the LCR.
-4. Ask the user to move the LCR to the position 2 (see CONFIGURING.md for more details).
-5. Record the position of the LCR.
-8. Calculate the offset and inverted mode of the LCR.
-9. Let the user verify in real time that the LCR is working properly.
+1. Disable all torque motors of provided SO100.
+2. Ask the user to move the SO100 to the position 1 (see CONFIGURING.md for more details).
+3. Record the position of the SO100.
+4. Ask the user to move the SO100 to the position 2 (see CONFIGURING.md for more details).
+5. Record the position of the SO100.
+8. Calculate the offset and inverted mode of the SO100.
+9. Let the user verify in real time that the SO100 is working properly.
 
-It will also enable all appropriate operating modes for the LCR.
+It will also enable all appropriate operating modes for the SO100.
 """
 
 import argparse
@@ -18,8 +18,8 @@ import time
 
 import numpy as np
 
-from dynamixel import DynamixelXLBus, OperatingMode, DriveMode, u32_to_i32, i32_to_u32, retrieve_ids_and_command, \
-    TorqueMode
+from lerobot.common.robot_devices.motors.feetech import FeetechBus, OperatingMode, DriveMode, u32_to_i32, i32_to_u32, \
+    retrieve_ids_and_command, TorqueMode
 
 
 def pause():
@@ -55,19 +55,21 @@ def apply_configuration(values: np.array, homing_offset: np.array, inverted: np.
     )
 
 
-def prepare_configuration(arm: DynamixelXLBus):
+def prepare_configuration(arm: FeetechBus):
     """
-    Prepare the configuration for the LCR.
-    :param arm: DynamixelXLBus
+    Prepare the configuration for the SO100.
+    :param arm: FeetechBus
     """
 
     # To be configured, all servos must be in "torque disable" mode
     arm.sync_write_torque_enable(TorqueMode.DISABLED.value)
 
+    # TODO: Check if the following code is correct for Feetech Servos
+
     # We need to work with 'extended position mode' (4) for all servos, because in joint mode (1) the servos can't
     # rotate more than 360 degrees (from 0 to 4095) And some mistake can happen while assembling the arm,
     # you could end up with a servo with a position 0 or 4095 at a crucial point See [
-    # https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/#operating-mode11]
+    # https://emanual.robotis.com/docs/en/dxl/x/sts3215/#operating-mode11]
     arm.sync_write_operating_mode(OperatingMode.EXTENDED_POSITION.value, [1, 2, 3, 4, 5])
 
     # Gripper is always 'position control current based' (5)
@@ -126,10 +128,10 @@ def calculate_nearest_rounded_positions(positions: np.array) -> np.array:
         [round(positions[i] / 1024) * 1024 if positions[i] is not None else None for i in range(len(positions))])
 
 
-def configure_homing(arm: DynamixelXLBus, inverted: list[bool], wanted: np.array) -> np.array:
+def configure_homing(arm: FeetechBus, inverted: list[bool], wanted: np.array) -> np.array:
     """
-    Configure the homing for the LCR.
-    :param arm: DynamixelXLBus
+    Configure the homing for the SO100.
+    :param arm: FeetechBus
     :param inverted: list of booleans to determine if the position should be inverted
     """
 
@@ -147,10 +149,10 @@ def configure_homing(arm: DynamixelXLBus, inverted: list[bool], wanted: np.array
     return correction
 
 
-def configure_drive_mode(arm: DynamixelXLBus, homing: np.array):
+def configure_drive_mode(arm: FeetechBus, homing: np.array):
     """
-    Configure the drive mode for the LCR.
-    :param arm: DynamixelXLBus
+    Configure the drive mode for the SO100.
+    :param arm: FeetechBus
     :param homing: numpy array of homing
     """
     # Get current positions
@@ -186,25 +188,33 @@ def wanted_position_2() -> np.array:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="LCR Auto Configure: This program is used to automatically configure the Low Cost Robot (LCR) for "
+        description="SO100 Auto Configure: This program is used to automatically configure the Low Cost Robot (SO100) for "
                     "the user.")
 
-    parser.add_argument("--port", type=str, required=True, help="The port of the LCR.")
+    parser.add_argument("--port", type=str, required=True, help="The port of the SO100.")
 
     args = parser.parse_args()
 
-    arm = DynamixelXLBus(args.port, [1, 2, 3, 4, 5, 6])
-
+    arm = FeetechBus(
+        args.port, {
+            1: "sts3215",
+            2: "sts3215",
+            3: "sts3215",
+            4: "sts3215",
+            5: "sts3215",
+            6: "sts3215",
+        }
+    )
     prepare_configuration(arm)
 
-    # Ask the user to move the LCR to the position 1
-    print("Please move the LCR to the position 1")
+    # Ask the user to move the SO100 to the position 1
+    print("Please move the SO100 to the position 1")
     pause()
 
     homing = configure_homing(arm, [False, False, False, False, False, False], wanted_position_1())
 
-    # Ask the user to move the LCR to the position 2
-    print("Please move the LCR to the position 2")
+    # Ask the user to move the SO100 to the position 2
+    print("Please move the SO100 to the position 2")
     pause()
 
     inverted = configure_drive_mode(arm, homing)

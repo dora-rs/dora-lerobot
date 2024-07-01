@@ -11,7 +11,8 @@ import pyarrow as pa
 
 from dora import Node
 
-from dynamixel import DynamixelXLBus, TorqueMode, retrieve_ids_and_command, u32_to_i32, i32_to_u32
+from lerobot.common.robot_devices.motors.dynamixel import DynamixelBus, TorqueMode, retrieve_ids_and_command, \
+    u32_to_i32, i32_to_u32
 
 
 def apply_homing_offset(values: np.array, homing_offset: np.array) -> np.array:
@@ -76,7 +77,12 @@ class Client:
 
     def __init__(self, config):
         self.config = config
-        self.chain = DynamixelXLBus(config["port"], config["ids"])
+
+        arm = {}
+        for i in range(len(config["ids"])):
+            arm[config["ids"][i]] = "xl330-m288"
+
+        self.bus = DynamixelBus(config["port"], arm)
 
         self.homing_offset = config["homing_offset"]
         self.inverted = config["inverted"]
@@ -84,7 +90,7 @@ class Client:
         # Set initial values
 
         try:
-            self.chain.sync_write_torque_enable(config["torque"])
+            self.bus.sync_write_torque_enable(config["torque"])
         except Exception as e:
             print("Error writing torque status:", e)
 
@@ -94,18 +100,18 @@ class Client:
                 self.homing_offset,
                 self.inverted)
 
-            ids, positions = retrieve_ids_and_command(positions, self.chain.motor_ids)
+            ids, positions = retrieve_ids_and_command(positions, self.bus.motor_ids)
 
-            self.chain.sync_write_goal_position_i32(positions, ids)
+            self.bus.sync_write_goal_position_i32(positions, ids)
         except Exception as e:
             print("Error writing goal position:", e)
 
         try:
             ids, currents = retrieve_ids_and_command(
                 config["initial_goal_current"],
-                self.chain.motor_ids)
+                self.bus.motor_ids)
 
-            self.chain.sync_write_goal_current(currents, ids)
+            self.bus.sync_write_goal_current(currents, ids)
         except Exception as e:
             print("Error writing goal current:", e)
 
@@ -143,13 +149,13 @@ class Client:
                 raise ValueError("An error occurred in the dataflow: " + event["error"])
 
     def close(self):
-        self.chain.sync_write_torque_enable(TorqueMode.DISABLED.value)
-        self.chain.close()
+        self.bus.sync_write_torque_enable(TorqueMode.DISABLED.value)
+        self.bus.close()
 
     def pull_present_position(self, node, metadata):
         try:
             position = i32_to_u32(apply_configuration(
-                self.chain.sync_read_present_position_i32(),
+                self.bus.sync_read_present_position_i32(),
                 self.homing_offset,
                 self.inverted))
 
@@ -165,7 +171,7 @@ class Client:
     def pull_goal_position(self, node, metadata):
         try:
             goal_position = i32_to_u32(apply_configuration(
-                self.chain.sync_read_goal_position_i32(),
+                self.bus.sync_read_goal_position_i32(),
                 self.homing_offset,
                 self.inverted))
 
@@ -179,7 +185,7 @@ class Client:
 
     def pull_present_velocity(self, node, metadata):
         try:
-            velocity = self.chain.sync_read_present_velocity()
+            velocity = self.bus.sync_read_present_velocity()
 
             node.send_output(
                 "present_velocity",
@@ -195,9 +201,9 @@ class Client:
                                              self.homing_offset,
                                              self.inverted)
 
-            ids, positions = retrieve_ids_and_command(positions, self.chain.motor_ids)
+            ids, positions = retrieve_ids_and_command(positions, self.bus.motor_ids)
 
-            self.chain.sync_write_goal_position_i32(positions, ids)
+            self.bus.sync_write_goal_position_i32(positions, ids)
         except ConnectionError as e:
             print("Error writing goal position:", e)
 
@@ -205,9 +211,9 @@ class Client:
         try:
             ids, currents = retrieve_ids_and_command(
                 goal_current,
-                self.chain.motor_ids)
+                self.bus.motor_ids)
 
-            self.chain.sync_write_goal_current(currents, ids)
+            self.bus.sync_write_goal_current(currents, ids)
         except ConnectionError as e:
             print("Error writing goal current:", e)
 
@@ -215,9 +221,9 @@ class Client:
         try:
             ids, velocities = retrieve_ids_and_command(
                 goal_velocity,
-                self.chain.motor_ids)
+                self.bus.motor_ids)
 
-            self.chain.sync_write_goal_velocity(velocities, ids)
+            self.bus.sync_write_goal_velocity(velocities, ids)
         except ConnectionError as e:
             print("Error writing goal velocity:", e)
 

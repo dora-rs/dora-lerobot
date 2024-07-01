@@ -18,8 +18,8 @@ import time
 
 import numpy as np
 
-from dynamixel import DynamixelXLBus, OperatingMode, DriveMode, u32_to_i32, i32_to_u32, retrieve_ids_and_command, \
-    TorqueMode
+from lerobot.common.robot_devices.motors.dynamixel import DynamixelBus, OperatingMode, DriveMode, u32_to_i32, \
+    i32_to_u32, retrieve_ids_and_command, TorqueMode
 
 
 def pause():
@@ -55,10 +55,10 @@ def apply_configuration(values: np.array, homing_offset: np.array, inverted: np.
     )
 
 
-def prepare_configuration(arm: DynamixelXLBus):
+def prepare_configuration(arm: DynamixelBus):
     """
     Prepare the configuration for the LCR.
-    :param arm: DynamixelXLBus
+    :param arm: DynamixelBus
     """
 
     # To be configured, all servos must be in "torque disable" mode
@@ -126,10 +126,10 @@ def calculate_nearest_rounded_positions(positions: np.array) -> np.array:
         [round(positions[i] / 1024) * 1024 if positions[i] is not None else None for i in range(len(positions))])
 
 
-def configure_homing(arm: DynamixelXLBus, inverted: list[bool], wanted: np.array) -> np.array:
+def configure_homing(arm: DynamixelBus, inverted: list[bool], wanted: np.array) -> np.array:
     """
     Configure the homing for the LCR.
-    :param arm: DynamixelXLBus
+    :param arm: DynamixelBus
     :param inverted: list of booleans to determine if the position should be inverted
     """
 
@@ -147,10 +147,10 @@ def configure_homing(arm: DynamixelXLBus, inverted: list[bool], wanted: np.array
     return correction
 
 
-def configure_drive_mode(arm: DynamixelXLBus, homing: np.array):
+def configure_drive_mode(arm: DynamixelBus, homing: np.array):
     """
     Configure the drive mode for the LCR.
-    :param arm: DynamixelXLBus
+    :param arm: DynamixelBus
     :param homing: numpy array of homing
     """
     # Get current positions
@@ -193,7 +193,16 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    arm = DynamixelXLBus(args.port, [1, 2, 3, 4, 5, 6])
+    arm = DynamixelBus(
+        args.port, {
+            1: "xl430-w250",
+            2: "xl430-w250",
+            3: "xl330-m288",
+            4: "xl330-m288",
+            5: "xl330-m288",
+            6: "xl330-m288",
+        }
+    )
 
     prepare_configuration(arm)
 
