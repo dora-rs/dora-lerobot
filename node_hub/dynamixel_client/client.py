@@ -4,6 +4,7 @@ velocities, currents, and set goal positions and currents.
 """
 
 import os
+import time
 import argparse
 
 import numpy as np
@@ -119,6 +120,8 @@ class Client:
 
         self.node = Node(config["name"])
 
+        self.last_pull_time = 0
+        self.last_write_time = 0
         self.pull_present_position(self.node, None)
 
     def run(self):
@@ -136,12 +139,16 @@ class Client:
                     self.pull_goal_position(self.node, event["metadata"])
                 elif event_id == "pull_present_velocity":
                     self.pull_present_velocity(self.node, event["metadata"])
+                elif event_id == "pull_present_current":
+                    self.pull_present_current(self.node, event["metadata"])
+                elif event_id == "pull_goal_current":
+                    self.pull_goal_current(self.node, event["metadata"])
                 elif event_id == "write_goal_position":
-                    self.write_goal_position(event["value"])
+                    self.write_goal_position(event["value"].to_numpy())
                 elif event_id == "write_goal_current":
-                    self.write_goal_current(event["value"])
+                    self.write_goal_current(event["value"].to_numpy())
                 elif event_id == "write_goal_velocity":
-                    self.write_goal_velocity(event["value"])
+                    self.write_goal_velocity(event["value"].to_numpy())
 
             elif event_type == "STOP":
                 break
@@ -150,7 +157,6 @@ class Client:
 
     def close(self):
         self.bus.sync_write_torque_enable(TorqueMode.DISABLED.value)
-        self.bus.close()
 
     def pull_present_position(self, node, metadata):
         try:
@@ -164,6 +170,11 @@ class Client:
                 pa.array(position.ravel()),
                 metadata
             )
+
+            delta = time.time() - self.last_pull_time
+            hz = 1 / delta if delta != 0 else 0
+            print("pull_present_position at ", hz, " hz")
+            self.last_pull_time = time.time()
 
         except ConnectionError as e:
             print("Error reading position:", e)
@@ -195,15 +206,46 @@ class Client:
         except ConnectionError as e:
             print("Error reading velocity:", e)
 
+    def pull_present_current(self, node, metadata):
+        try:
+            current = self.bus.sync_read_present_current()
+
+            node.send_output(
+                "present_current",
+                pa.array(current.ravel()),
+                metadata
+            )
+        except ConnectionError as e:
+            print("Error reading current:", e)
+
+    def pull_goal_current(self, node, metadata):
+        try:
+            goal_current = self.bus.sync_read_goal_current()
+
+            node.send_output(
+                "goal_current",
+                pa.array(goal_current.ravel()),
+                metadata
+            )
+        except ConnectionError as e:
+            print("Error reading goal current:", e)
+
     def write_goal_position(self, goal_position):
         try:
-            positions = invert_configuration(u32_to_i32(goal_position).to_numpy().copy(),
+
+            positions = invert_configuration(u32_to_i32(goal_position),
                                              self.homing_offset,
                                              self.inverted)
 
             ids, positions = retrieve_ids_and_command(positions, self.bus.motor_ids)
 
             self.bus.sync_write_goal_position_i32(positions, ids)
+
+            delta = time.time() - self.last_write_time
+            hz = 1 / delta if delta != 0 else 0
+            print("write_goal_position at ", hz, " hz")
+            self.last_write_time = time.time()
+
         except ConnectionError as e:
             print("Error writing goal position:", e)
 

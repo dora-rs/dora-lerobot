@@ -94,8 +94,8 @@ def main():
                 raw_data = event["value"].to_numpy()
                 image_right = pygame.image.frombuffer(raw_data, (int(camera_width), int(camera_height)), "BGR")
 
-            elif event_id == "text":
-                text = font.render(event["value"], True, (255, 255, 255))
+            elif event_id == "write_text":
+                text = font.render(event["value"][0].as_py(), True, (255, 255, 255))
 
         elif event_type == "STOP":
             break

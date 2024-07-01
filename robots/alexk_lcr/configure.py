@@ -174,14 +174,14 @@ def wanted_position_1() -> np.array:
     """
     The present position wanted in position 1 for the arm
     """
-    return np.array([0, -1024, 1024, 0, 0, 0])
+    return np.array([0, -1024, 1024, 0, -1024, 0])
 
 
 def wanted_position_2() -> np.array:
     """
     The present position wanted in position 2 for the arm
     """
-    return np.array([1024, 0, 0, 1024, 1024, -1024])
+    return np.array([1024, 0, 0, 1024, 0, -1024])
 
 
 if __name__ == "__main__":

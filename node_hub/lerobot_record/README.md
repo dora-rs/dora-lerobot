@@ -13,8 +13,6 @@ nodes:
       pull_present_position: dora/timer/millis/10 # pull the present position every 10ms
       pull_present_velocity: dora/timer/millis/10 # pull the present velocity every 10ms
       pull_goal_position: dora/timer/millis/10 # pull the goal position every 10ms
-      pull_present_current: dora/timer/millis/10 # pull the present current every 10ms
-      pull_goal_current: dora/timer/millis/10 # pull the goal current every 10ms
 
       # write_goal_position: some goal position from other node
       # write_goal_current: some goal current from other node
@@ -23,8 +21,6 @@ nodes:
       - present_position # regarding 'pull_position' input, it will output the position every 10ms
       - present_velocity # regarding 'pull_velocity' input, it will output the velocity every 10ms
       - goal_position # regarding 'pull_goal_position' input, it will output the goal position every 10ms
-      - present_current
-      - goal_current
 
     env:
       PORT: COM9 # e.g. /dev/ttyUSB0 or COM9

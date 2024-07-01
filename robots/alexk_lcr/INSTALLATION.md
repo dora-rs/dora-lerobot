@@ -23,7 +23,7 @@ cargo install dora-cli
 Now you're ready to run Rust dataflow applications! We decided to only make Python dataflow for AlexK Low Cost Robot, so
 you may need to setup your Python environment:
 
-- Install Python 3.8 or later by following the instructions at [Python](https://www.python.org/downloads/).
+- Install Python 3.10 or later by following the instructions at [Python](https://www.python.org/downloads/).
 - Clone this repository by running the following command:
 
 ```bash

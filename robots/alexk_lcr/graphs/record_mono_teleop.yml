@@ -2,7 +2,7 @@ nodes:
   - id: lcr_leader
     path: ../../../node_hub/dynamixel_client/client.py
     inputs:
-      pull_present_position: dora/timer/millis/2 # pull the position every 10ms
+      pull_present_position: dora/timer/millis/10 # pull the position every 10ms
     outputs:
       - present_position
     env:
@@ -14,7 +14,7 @@ nodes:
       INITIAL_GOAL_POSITION: None None None None None -450
       INITIAL_GOAL_CURRENT: None None None None None 40
 
-      HOMING_OFFSET: -2048 2048 2048 -2048 1024 2048
+      HOMING_OFFSET: -2048 2048 2048 -2048 0 2048
       INVERTED: False True True False True True
 
   - id: lcr_interpolate
@@ -28,7 +28,7 @@ nodes:
   - id: lcr_follower
     path: ../../../node_hub/dynamixel_client/client.py
     inputs:
-      pull_present_position: dora/timer/millis/500 # pull the position every 500ms
+      pull_present_position: dora/timer/millis/10
       write_goal_position: lcr_interpolate/goal_position
     outputs:
       - present_position
@@ -38,10 +38,10 @@ nodes:
 
       TORQUE: True True True True True True
 
-      INITIAL_GOAL_POSITION: None None None None None -450
+      INITIAL_GOAL_POSITION: None None None None None None
       INITIAL_GOAL_CURRENT: None None None None None 500
 
-      HOMING_OFFSET: -2048 -2048 -1024 -2048 4096 -2048
+      HOMING_OFFSET: 0 -2048 -1024 -2048 3072 -2048
       INVERTED: False False False False True False
 
   - id: opencv_camera
@@ -63,8 +63,7 @@ nodes:
       tick: dora/timer/millis/16 # update the interface every 16ms (= 60fps)
 
       write_image_left: opencv_camera/image # write the image to the left side of the interface
-      write_image_right: opencv_camera/image # write the image to the right side of the interface
-      # write_text: some text from other node
+      write_text: lerobot_record/text
     outputs:
       - key_pressed
       - key_released
@@ -73,3 +72,17 @@ nodes:
     env:
       CAMERA_WIDTH: 640 # camera width
       CAMERA_HEIGHT: 480 # camera height
+
+  - id: lerobot_record
+    path: ../../../node_hub/lerobot_record/record.py
+    inputs:
+      tick: dora/timer/millis/33
+
+      key_pressed: pygame_interface/key_pressed
+      key_released: pygame_interface/key_released
+
+      action: lcr_leader/present_position
+      observation.state: lcr_follower/present_position
+      observation.images.cam: opencv_camera/image
+    outputs:
+      - text
