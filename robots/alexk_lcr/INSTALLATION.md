@@ -75,6 +75,7 @@ export GIT_LFS_SKIP_SMUDGE=1 # Skip downloading the large files
 # set GIT_LFS_SKIP_SMUDGE=1 On PowerShell
 
 git clone https://github.com/hennzau/lerobot/
+git switch user/rcadene/2024_06_22_control_robot
 
 pip install -e lerobot/
 ```
