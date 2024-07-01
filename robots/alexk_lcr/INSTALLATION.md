@@ -30,10 +30,10 @@ you may need to setup your Python environment:
 git clone https://github.com/dora-rs/dora-lerobot
 ```
 
-- Open a bash terminal and navigate to the root of the submodule `alexk_lcr` in the repository.
+- Open a bash terminal and navigate to the repository by running the following command:
 
 ```bash
-cd dora-lerobot/alexk_lcr
+cd dora-lerobot
 ```
 
 - Create a virtual environment by running the following command:
@@ -54,12 +54,30 @@ venv\Scripts\activate.ps1 # On Windows PowerShell
 Finally, install the required Python packages by running the following command:
 
 ```bash
-pip install -r requirements.txt
+pip install -r robots/alexk_lcr/requirements.txt
 ```
 
 **Note**: You're totally free to use your own Python environment, a Conda environment, or whatever you prefer, you will
 have to activate
 your custom python environment before running `dora up && dora start [graph].yml`.
+
+Now you installed the Dora pipeline, you need to install the LeRobot library:
+
+```bash
+cd dora-lerobot
+
+source venv/bin/activate # On Linux
+source venv/Scripts/activate # On Windows bash
+venv\Scripts\activate.bat # On Windows cmd
+venv\Scripts\activate.ps1 # On Windows PowerShell
+
+export GIT_LFS_SKIP_SMUDGE=1 # Skip downloading the large files
+# set GIT_LFS_SKIP_SMUDGE=1 On PowerShell
+
+git clone https://github.com/huggingface/lerobot/
+
+pip install -e lerobot/
+```
 
 In order to record episodes, you need ffmpeg installed on your system. You can download it from
 the [official website](https://ffmpeg.org/download.html).
@@ -68,6 +86,12 @@ If you're on Windows, you can download the latest build from [here](https://www.
 extract the zip file and add the `bin` folder to your PATH.
 If you're on Linux, you can install ffmpeg using the package manager of your distribution. (
 e.g `sudo apt install ffmpeg` on Ubuntu)
+
+Finally, you need to install a really useful node that will help you record data with Dora:
+
+```bash
+cargo install --git https://github.com/dora-rs/dora dora-record
+```
 
 ## License
 

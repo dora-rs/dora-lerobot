@@ -2,7 +2,7 @@ nodes:
   - id: lcr_leader
     custom:
       source: python
-      args: ../../node_hub/dynamixel_client/client.py
+      args: ../../../node_hub/dynamixel_client/client.py
       inputs:
         tick: dora/timer/millis/10
       outputs:
@@ -17,7 +17,7 @@ nodes:
   - id: so100_follower
     custom:
       source: python
-      args: ../../node_hub/feetech_client/client.py
+      args: ../../../node_hub/feetech_client/client.py
       inputs:
         goal_position: lcr_leader/position
       outputs:

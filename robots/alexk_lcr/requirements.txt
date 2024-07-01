@@ -1,0 +1,5 @@
+-r ../../node_hub/dynamixel_client/requirements.txt
+-r ../../node_hub/opencv_camera/requirements.txt
+-r ../../node_hub/pygame_minimalistic_interface/requirements.txt
+
+ffmpeg-python==0.2.0

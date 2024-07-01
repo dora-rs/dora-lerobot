@@ -1,14 +1,11 @@
 """
-
+This Dora node is a minimalistic interface that shows two images and text in a Pygame window.
 """
 
-import time
 import os
-import cv2
 import argparse
 import pygame
 
-import numpy as np
 import pyarrow as pa
 
 from dora import Node

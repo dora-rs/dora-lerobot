@@ -19,7 +19,7 @@ Those are the the steps to teleoperate the arm and record the episodes:
 - Open a terminal and navigate to the root of the submodule `alexk_lcr` in the repository.
 
 ```bash
-cd dora-lerobot/alexk_lcr
+cd dora-lerobot/robots/alexk_lcr
 ```
 
 - Start your Dora application with the following command:

@@ -25,7 +25,7 @@ This section is under construction.
 
 ## Examples
 
-There are also some other example applications in the `graph` folder. Have fun!
+There are also some other example applications in the `graphs` folder. Have fun!
 
 Here is a list of the available examples:
 
@@ -36,7 +36,7 @@ You must configure the arms, retrieve the device port, and modify the file `mono
 environment variables. (e.g. `PORT`, `HOMING_OFFSETS`, `INVERTED`)
 
 ```bash
-cd dora-lerobot/alexk_lcr
+cd dora-lerobot/
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
@@ -48,7 +48,7 @@ venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
 dora up
-dora start ./graphs/mono_teleop.yml
+dora start ./robots/alexk_lcr/graphs/mono_teleop.yml
 ```
 
 - `bi_teleop.yml`: A simple teleoperation pipeline that allows you to control two follower arm using two leader arm
@@ -58,7 +58,7 @@ You must configure the arms, retrieve the device port, and modify the file `bi_t
 environment variables. (e.g. `PORT`, `HOMING_OFFSETS`, `INVERTED`)
 
 ```bash
-cd dora-lerobot/alexk_lcr
+cd dora-lerobot/robots/alexk_lcr
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
@@ -70,9 +70,9 @@ venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
 dora up
-dora start ./graphs/bi_teleop.yml
+dora start ./robots/alexk_lcr/graphs/bi_teleop.yml
 ```
 
 ## License
 
-This library is licensed under the [Apache License 2.0](../LICENSE).
+This library is licensed under the [Apache License 2.0](../../LICENSE).

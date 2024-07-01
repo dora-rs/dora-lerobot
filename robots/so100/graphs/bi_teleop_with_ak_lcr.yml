@@ -2,7 +2,7 @@ nodes:
   - id: lcr_left_leader
     custom:
       source: python
-      args: ../../node_hub/dynamixel_client/client.py
+      args: ../../../node_hub/dynamixel_client/client.py
       inputs:
         tick: dora/timer/millis/10
       outputs:
@@ -17,7 +17,7 @@ nodes:
   - id: so100_left_follower
     custom:
       source: python
-      args: ../../node_hub/feetech_client/client.py
+      args: ../../../node_hub/feetech_client/client.py
       inputs:
         goal_position: lcr_left_leader/position
       outputs:
@@ -32,7 +32,7 @@ nodes:
   - id: lcr_right_leader
     custom:
       source: python
-      args: ../../node_hub/dynamixel_client/client.py
+      args: ../../../node_hub/dynamixel_client/client.py
       inputs:
         tick: dora/timer/millis/10
       outputs:
@@ -47,7 +47,7 @@ nodes:
   - id: so100_right_follower
     custom:
       source: python
-      args: ../../node_hub/feetech_client/client.py
+      args: ../../../node_hub/feetech_client/client.py
       inputs:
         goal_position: lcr_right_leader/position
       outputs:

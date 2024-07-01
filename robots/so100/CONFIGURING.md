@@ -1,6 +1,6 @@
 # Dora pipeline for teleoperated low-cost arm and episode recording for LeRobot
 
-AlexK Low Cost Robot is a low-cost robotic arm that can be teleoperated using a similar arm. This repository contains
+SO-ARM100 is a low-cost robotic arm that can be teleoperated using a similar arm. This repository contains
 the Dora pipeline to manipulate the arms, the camera, and record/replay episodes with LeRobot.
 
 ## Configuring
@@ -23,7 +23,7 @@ The first thing to do is to configure the Servo BUS:
 - Setting the ID of the servos from the base (1) to the gripper (6) for the Follower and Leader arms.
 
 Those steps can be done using the official wizard provided by the
-manufacturer [ROBOTIS](https://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_wizard2/).
+manufacturer [Feetech](https://gitee.com/ftservo/fddebug/blob/master/FD1.9.6(200107)-EN-U.7z).
 
 After that, you need to configure the homing offsets and drive mode to have the same behavior for every user. We
 recommend using our on-board tool to set all of that automatically:
@@ -33,7 +33,7 @@ recommend using our on-board tool to set all of that automatically:
 - Run the wizard with the following command and follow the instructions:
 
 ```bash
-cd dora-lerobot/alexk_lcr
+cd dora-lerobot/
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
@@ -44,7 +44,7 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
-python lcr_configure.py --port /dev/ttyUSB0
+python ./robots/so100/configure.py --port /dev/ttyUSB0
 ```
 
 **Note:** change `/dev/ttyUSB0` to the device port you retrieved from the official wizard (like `COM3` on Windows).
@@ -56,7 +56,7 @@ python lcr_configure.py --port /dev/ttyUSB0
 - Repeat the same steps for the Leader arm:
 
 ```bash
-python lcr_configure.py --port /dev/ttyUSB1
+python ./robots/so100/configure.py --port /dev/ttyUSB1
 ```
 
 **Note:** change `/dev/ttyUSB1` to the device port you retrieved from the official wizard (like `COM4` on Windows).
@@ -64,14 +64,14 @@ python lcr_configure.py --port /dev/ttyUSB1
 
 After following the guide, you should have the following configuration:
 
-![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_wanted_configuration.png)
+TODO: Add the configuration here
 
 This configuration has to be exported into environment variables inside the graph file. Here is an example of the
 configuration:
 
 ```YAML
 nodes:
-  - id: lcr_leader
+  - id: so100_follower
     env:
       HOMING_OFFSET: -2048 2048 2048 -2048 5120 2048
       INVERTED: False True True False True True

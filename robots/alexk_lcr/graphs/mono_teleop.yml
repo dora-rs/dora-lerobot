@@ -1,6 +1,6 @@
 nodes:
   - id: lcr_leader
-    path: ../../node_hub/dynamixel_client/client.py
+    path: ../../../node_hub/dynamixel_client/client.py
     inputs:
       pull_present_position: dora/timer/millis/2 # pull the position every 10ms
     outputs:
@@ -26,7 +26,7 @@ nodes:
       - goal_position
 
   - id: lcr_follower
-    path: ../../node_hub/dynamixel_client/client.py
+    path: ../../../node_hub/dynamixel_client/client.py
     inputs:
       pull_present_position: dora/timer/millis/500 # pull the position every 500ms
       write_goal_position: lcr_interpolate/goal_position
