@@ -58,7 +58,7 @@ You must configure the arms, retrieve the device port, and modify the file `bi_t
 environment variables. (e.g. `PORT`, `HOMING_OFFSETS`, `INVERTED`)
 
 ```bash
-cd dora-lerobot/robots/alexk_lcr
+cd dora-lerobot/
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
