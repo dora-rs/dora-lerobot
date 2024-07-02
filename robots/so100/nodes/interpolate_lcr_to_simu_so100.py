@@ -9,69 +9,29 @@ import pyarrow as pa
 from dora import Node
 
 
-def i32_to_u32(value: np.array) -> np.array:
-    """
-    Convert a signed 32-bit integer array to an unsigned 32-bit integer array.
-    Args:
-        value: np.array
-
-    Returns:
-        np.array
-    """
-
-    for i in range(len(value)):
-        if value[i] is not None and value[i] < 0:
-            value[i] = value[i] + 4294967296
-
-    return value
-
-
-def u32_to_i32(value: np.array) -> np.array:
-    """
-    Convert an unsigned 32-bit integer array to a signed 32-bit integer array.
-    Args:
-        value: np.array
-
-    Returns:
-        np.array
-    """
-
-    for i in range(len(value)):
-        if value[i] is not None and value[i] > 2147483647:
-            value[i] = value[i] - 4294967296
-
-    return value
-
-
-def in_range_position(value: np.array) -> np.array:
+def in_range_position(values: np.array) -> np.array:
     """
     This function assures that the position values are in the range of the LCR standard [-2048, 2048] all servos.
     This is important because an issue with communication can cause a +- 4095 offset value, so we need to assure
     that the values are in the range.
     """
-    i32_values = u32_to_i32(value)
 
     for i in range(6):
-        if i32_values[i] > 4096:
-            i32_values[i] = i32_values[i] % 4096
-        if i32_values[i] < -4096:
-            i32_values[i] = -(-i32_values[i] % 4096)
+        if values[i] > 4096:
+            values[i] = values[i] % 4096
+        if values[i] < -4096:
+            values[i] = -(-values[i] % 4096)
 
-        if i32_values[i] > 2048:
-            i32_values[i] = - 2048 + (i32_values[i] % 2048)
-        elif i32_values[i] < -2048:
-            i32_values[i] = 2048 - (-i32_values[i] % 2048)
+        if values[i] > 2048:
+            values[i] = - 2048 + (values[i] % 2048)
+        elif values[i] < -2048:
+            values[i] = 2048 - (-values[i] % 2048)
 
-    return i32_to_u32(i32_values)
+    return values
 
 
 def main():
     node = Node("lcr_interpolate")
-
-    leader_position = np.array([0, 0, 0, 0, 0, 0])
-    follower_position = np.array([0, 0, 0, 0, 0, 0])
-
-    follower_received = True
 
     for event in node:
         event_type = event["type"]
@@ -80,34 +40,33 @@ def main():
             event_id = event["id"]
 
             if event_id == "leader_position":
+                leader_joints = event["value"][0]["joints"].values.to_numpy(zero_copy_only=False)
+                leader_position = event["value"][0]["positions"].values.to_numpy()
 
-                if follower_received:
-                    leader_position = event["value"].to_numpy()
-                    leader_position = in_range_position(leader_position.copy())
+                leader_position = in_range_position(leader_position.copy())
 
-                    goal_position = u32_to_i32(leader_position)
+                # rotate the wrist_roll_joint by 90 degrees
+                leader_position[4] = leader_position[4] + 1024
 
-                    """
-                    A communication issue with the follower can induces a +- 4095 offset in the position values.
-                    So we need to assure that the goal_position is in the range of the Follower.
-                    """
-                    for i in range(len(goal_position)):
-                        if follower_position[i] > 0:
-                            goal_position[i] = goal_position[i] + (follower_position[i] // 4096) * 4096
-                        else:
-                            goal_position[i] = goal_position[i] - (-follower_position[i] // 4096) * 4096
+                leader_position[5] = 700.0/450.0 * leader_position[5]
 
-                    goal_position = i32_to_u32(goal_position)
+                # transform to radians:
+                leader_position = leader_position * np.pi / 2048
 
-                    node.send_output(
-                        "goal_position",
-                        pa.array(goal_position.ravel()),
-                        event["metadata"]
-                    )
+                # add '_joint' to the joint names
+                leader_joints = np.array([joint + "_joint" for joint in leader_joints])
 
-            elif event_id == "follower_position":
-                follower_received = True
-                follower_position = u32_to_i32(event["value"].to_numpy().copy())
+                goal_position_with_joints = {
+                    "joints": leader_joints,
+                    "positions": leader_position
+                }
+
+                node.send_output(
+                    "goal_position",
+                    pa.array([goal_position_with_joints]),
+                    event["metadata"]
+                )
+
         elif event_type == "STOP":
             break
         elif event_type == "ERROR":
