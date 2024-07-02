@@ -33,7 +33,7 @@ git clone https://github.com/dora-rs/dora-lerobot
 - Open a bash terminal and navigate to the repository by running the following command:
 
 ```bash
-cd dora-lerobot
+cd dora-dora_lerobot
 ```
 
 - Create a virtual environment by running the following command:
@@ -60,24 +60,17 @@ pip install -r robots/so100/requirements.txt
 **Note**: You're totally free to use your own Python environment, a Conda environment, or whatever you prefer, you will
 have to activate
 your custom python environment before running `dora up && dora start [graph].yml`.
-
-Now you installed the Dora pipeline, you need to install the LeRobot library:
+Now you installed the Dora pipeline, you need to install the DoraLerobot library:
 
 ```bash
-cd dora-lerobot
+cd dora-dora_lerobot
 
 source venv/bin/activate # On Linux
 source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
-export GIT_LFS_SKIP_SMUDGE=1 # Skip downloading the large files
-# set GIT_LFS_SKIP_SMUDGE=1 On PowerShell
-
-git clone https://github.com/hennzau/lerobot/
-git switch user/rcadene/2024_06_22_control_robot
-
-pip install -e lerobot/
+pip install ./dora_lerobot
 ```
 
 In order to record episodes, you need ffmpeg installed on your system. You can download it from

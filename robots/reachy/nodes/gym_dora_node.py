@@ -3,7 +3,7 @@ from pathlib import Path
 
 import gymnasium as gym
 import pandas as pd
-from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
+from dora_lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 
 import gym_dora  # noqa: F401
 

@@ -1,4 +1,4 @@
-# Dora pipeline for teleoperated low-cost arm and episode recording for LeRobot
+# Dora pipeline Robots
 
 AlexK Low Cost Robot is a low-cost robotic arm that can be teleoperated using a similar arm. This repository contains
 the Dora pipeline to record episodes for LeRobot.
@@ -36,7 +36,7 @@ You must configure the arms, retrieve the device port, and modify the file `mono
 environment variables. (e.g. `PORT`, `HOMING_OFFSETS`, `INVERTED`)
 
 ```bash
-cd dora-lerobot/
+cd dora-dora_lerobot/
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
@@ -58,7 +58,7 @@ You must configure the arms, retrieve the device port, and modify the file `bi_t
 environment variables. (e.g. `PORT`, `HOMING_OFFSETS`, `INVERTED`)
 
 ```bash
-cd dora-lerobot/
+cd dora-dora_lerobot/
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate

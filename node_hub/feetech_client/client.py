@@ -11,7 +11,7 @@ import pyarrow as pa
 
 from dora import Node
 
-from lerobot.common.robot_devices.motors.feetech import FeetechBus, TorqueMode, retrieve_ids_and_command, u32_to_i32, \
+from dora_lerobot.common.robot_devices.motors.feetech import FeetechBus, TorqueMode, retrieve_ids_and_command, u32_to_i32, \
     i32_to_u32
 
 

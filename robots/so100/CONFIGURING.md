@@ -33,7 +33,7 @@ recommend using our on-board tool to set all of that automatically:
 - Run the wizard with the following command and follow the instructions:
 
 ```bash
-cd dora-lerobot/
+cd dora-dora_lerobot/
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate

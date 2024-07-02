@@ -18,7 +18,7 @@ import time
 
 import numpy as np
 
-from lerobot.common.robot_devices.motors.feetech import FeetechBus, OperatingMode, DriveMode, u32_to_i32, i32_to_u32, \
+from dora_lerobot.common.robot_devices.motors.feetech import FeetechBus, OperatingMode, DriveMode, u32_to_i32, i32_to_u32, \
     retrieve_ids_and_command, TorqueMode
 
 
@@ -79,7 +79,7 @@ def prepare_configuration(arm: FeetechBus):
     arm.sync_write_homing_offset(0)
 
     # We need to work with 'normal drive mode' (0) for all servos
-    arm.sync_write_drive_mode(DriveMode.NON_INVERTED.value)
+    arm.sync_write_drive_mode(DriveMode.POSITIVE_CURRENT.value)
 
 
 def invert_appropriate_positions(positions: np.array, inverted: list[bool]) -> np.array:

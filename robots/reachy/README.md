@@ -31,10 +31,10 @@ git clone https://github.com/pollen-robotics/reachy2_hdf5_recorder/
 ```bash
 ## Create new python environment
 
-git clone git@github.com:huggingface/lerobot.git
-pip install -e lerobot
-git clone git@github.com:dora-rs/dora-lerobot.git --branch WORKING-REACHY
-pip install -e dora-lerobot/gym_dora
+git clone git@github.com:huggingface/dora_lerobot.git
+pip install -e dora_lerobot
+git clone git@github.com:dora-rs/dora-dora_lerobot.git --branch WORKING-REACHY
+pip install -e dora-dora_lerobot/gym_dora
 
 cargo install dora-rs --locked
 pip install dora-rs
@@ -69,7 +69,7 @@ huggingface-cli upload \
 ### Training
 
 ```bash
-python lerobot/scripts/train.py \
+python dora_lerobot/scripts/train.py \
     policy=act_real \
     env=aloha_real \
     env.task=Reachy-v0 \

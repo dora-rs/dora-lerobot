@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pyarrow as pa
 from dora import Node
-from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
+from dora_lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 
 # import h5py
 from pollen_vision.camera_wrappers.depthai import SDKWrapper

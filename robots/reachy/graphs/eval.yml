@@ -19,7 +19,7 @@ nodes:
 
   - id: eval
     custom:
-      source: /home/antoine/Pollen/lerobot/lerobot/scripts/eval.py
+      source: /home/antoine/Pollen/dora_lerobot/dora_lerobot/scripts/eval.py
       args: -p cadene/2024_06_06_act_reachy2_mobile_base_3_060000 eval.n_episodes=1 eval.batch_size=1 env.episode_length=20000 policy.n_action_steps=100
       # source: ../nodes/gym_dora_node.py
       inputs:

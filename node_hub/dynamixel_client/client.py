@@ -12,7 +12,7 @@ import pyarrow as pa
 
 from dora import Node
 
-from lerobot.common.robot_devices.motors.dynamixel import DynamixelBus, TorqueMode, retrieve_ids_and_command, \
+from dora_lerobot import DynamixelBus, TorqueMode, retrieve_ids_and_command, \
     u32_to_i32, i32_to_u32
 
 

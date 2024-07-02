@@ -18,8 +18,8 @@ import time
 
 import numpy as np
 
-from lerobot.common.robot_devices.motors.dynamixel import DynamixelBus, OperatingMode, DriveMode, u32_to_i32, \
-    i32_to_u32, retrieve_ids_and_command, TorqueMode
+from dora_lerobot.dynamixel_bus import DynamixelBus, TorqueMode, OperatingMode
+from dora_lerobot.position_control.utils import physical_to_logical, DriveMode
 
 
 def pause():
@@ -29,162 +29,89 @@ def pause():
     input("Press Enter to continue...")
 
 
-def apply_homing_offset(values: np.array, homing_offset: np.array) -> np.array:
-    for i in range(len(values)):
-        if values[i] is not None:
-            values[i] += homing_offset[i]
-
-    return values
-
-
-def apply_inverted(values: np.array, inverted: np.array) -> np.array:
-    for i in range(len(values)):
-        if values[i] is not None and inverted[i]:
-            values[i] = -values[i]
-
-    return values
-
-
-def apply_configuration(values: np.array, homing_offset: np.array, inverted: np.array) -> np.array:
-    return apply_homing_offset(
-        apply_inverted(
-            values,
-            inverted
-        ),
-        homing_offset
-    )
-
-
-def prepare_configuration(arm: DynamixelBus):
+def configure_servos(bus: DynamixelBus):
     """
-    Prepare the configuration for the LCR.
-    :param arm: DynamixelBus
+    Configure the servos for the LCR.
+    :param bus: DynamixelBus
     """
+    bus.sync_write_torque_enable(TorqueMode.DISABLED)
 
-    # To be configured, all servos must be in "torque disable" mode
-    arm.sync_write_torque_enable(TorqueMode.DISABLED.value)
+    bus.sync_write_operating_mode(OperatingMode.EXTENDED_POSITION, [
+        "shoulder_pan",
+        "shoulder_lift",
+        "elbow_flex",
+        "wrist_flex",
+        "wrist_roll",
+    ])
 
-    # We need to work with 'extended position mode' (4) for all servos, because in joint mode (1) the servos can't
-    # rotate more than 360 degrees (from 0 to 4095) And some mistake can happen while assembling the arm,
-    # you could end up with a servo with a position 0 or 4095 at a crucial point See [
-    # https://emanual.robotis.com/docs/en/dxl/x/x_series/#operating-mode11]
-    arm.sync_write_operating_mode(OperatingMode.EXTENDED_POSITION.value, [1, 2, 3, 4, 5])
-
-    # Gripper is always 'position control current based' (5)
-    arm.write_operating_mode(OperatingMode.CURRENT_CONTROLLED_POSITION.value, 6)
-
-    # We need to reset the homing offset for all servos
-    arm.sync_write_homing_offset(0)
-
-    # We need to work with 'normal drive mode' (0) for all servos
-    arm.sync_write_drive_mode(DriveMode.NON_INVERTED.value)
+    bus.write_operating_mode(OperatingMode.CURRENT_CONTROLLED_POSITION, "gripper")
 
 
-def invert_appropriate_positions(positions: np.array, inverted: list[bool]) -> np.array:
+def rounded_values(values: np.array) -> np.array:
     """
-    Invert the appropriate positions.
-    :param positions: numpy array of positions
-    :param inverted: list of booleans to determine if the position should be inverted
-    :return: numpy array of inverted positions
-    """
-    for i, invert in enumerate(inverted):
-        if not invert and positions[i] is not None:
-            positions[i] = -positions[i]
-
-    return positions
-
-
-def calculate_corrections(positions: np.array, inverted: list[bool], wanted: np.array) -> np.array:
-    """
-    Calculate the corrections for the positions.
-    :param positions: numpy array of positions
-    :param inverted: list of booleans to determine if the position should be inverted
-    :param wanted: numpy array of wanted positions
-    :return: numpy array of corrections
-    """
-
-    correction = invert_appropriate_positions(positions, inverted)
-
-    for i in range(len(positions)):
-        if correction[i] is not None:
-            if inverted[i]:
-                correction[i] -= wanted[i]
-            else:
-                correction[i] += wanted[i]
-
-    return correction
-
-
-def calculate_nearest_rounded_positions(positions: np.array) -> np.array:
-    """
-    Calculate the nearest rounded positions.
-    :param positions: numpy array of positions
+    Calculate the nearest rounded values.
+    :param values: numpy array of values
     :return: numpy array of nearest rounded positions
     """
 
     return np.array(
-        [round(positions[i] / 1024) * 1024 if positions[i] is not None else None for i in range(len(positions))])
+        [round(values[i] / 1024) * 1024 if values[i] is not None else None for i in range(len(values))])
 
 
-def configure_homing(arm: DynamixelBus, inverted: list[bool], wanted: np.array) -> np.array:
+def calculate_offsets(bus: DynamixelBus, drive_modes: np.array, wanted: np.array) -> np.array:
     """
-    Configure the homing for the LCR.
-    :param arm: DynamixelBus
-    :param inverted: list of booleans to determine if the position should be inverted
+    Calculate the offset you need to apply to the positions in order to reach the wanted positions.
+    :param bus: DynamixelBus
+    :param drive_modes: numpy array of DriveMode
+    :param wanted: numpy array of wanted positions
+    :return: numpy array of offsets
     """
 
-    # Get the present positions of the servos
-
-    present_positions = apply_configuration(
-        arm.sync_read_present_position_i32(),
+    # Get the present rounded positions of the servos
+    present_positions = rounded_values(physical_to_logical(
+        bus.sync_read_position(),
         np.array([0, 0, 0, 0, 0, 0]),
-        inverted)
+        drive_modes
+    ))
 
-    nearest_positions = calculate_nearest_rounded_positions(present_positions)
+    offsets = np.array([None, None, None, None, None, None])
 
-    correction = calculate_corrections(nearest_positions, inverted, wanted)
+    for i in range(len(present_positions)):
+        if present_positions[i] is not None:
+            offsets[i] = wanted[i] - present_positions[i]
 
-    return correction
+    return offsets
 
 
-def configure_drive_mode(arm: DynamixelBus, homing: np.array):
+def compute_drive_modes(bus: DynamixelBus, offsets: np.array, wanted: np.array) -> np.array:
     """
-    Configure the drive mode for the LCR.
-    :param arm: DynamixelBus
-    :param homing: numpy array of homing
+    Compute the drive mode of the servos.
+    :param bus: DynamixelBus
+    :param offsets: numpy array of offsets
+    :param wanted: numpy array of wanted positions
+    :return: list of booleans to determine the drive mode of the servos
     """
-    # Get current positions
-    present_positions = apply_configuration(
-        arm.sync_read_present_position_i32(),
-        homing,
-        np.array([False, False, False, False, False, False]))
 
-    nearest_positions = calculate_nearest_rounded_positions(present_positions)
+    # Get the present rounded positions of the servos
+    present_positions = rounded_values(physical_to_logical(
+        bus.sync_read_position(),
+        offsets,
+        np.array([DriveMode.POSITIVE_CURRENT] * 6)
+    ))
 
-    # construct 'inverted' list comparing nearest_positions and wanted_position_2
-    inverted = []
+    drive_modes = np.array([None, None, None, None, None, None])
 
-    for i in range(len(nearest_positions)):
-        inverted.append(nearest_positions[i] != wanted_position_2()[i])
+    for i in range(len(present_positions)):
+        if present_positions[i] is not None:
+            if present_positions[i] != wanted[i]:
+                drive_modes[i] = DriveMode.NEGATIVE_CURRENT
+            else:
+                drive_modes[i] = DriveMode.POSITIVE_CURRENT
 
-    return inverted
-
-
-def wanted_position_1() -> np.array:
-    """
-    The present position wanted in position 1 for the arm
-    """
-    return np.array([0, -1024, 1024, 0, -1024, 0])
+    return drive_modes
 
 
-def wanted_position_2() -> np.array:
-    """
-    The present position wanted in position 2 for the arm
-    """
-    return np.array([1024, 0, 0, 1024, 0, -1024])
-
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         description="LCR Auto Configure: This program is used to automatically configure the Low Cost Robot (LCR) for "
                     "the user.")
@@ -193,51 +120,72 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    wanted_position_1 = np.array([0, -1024, 1024, 0, -1024, 0]).astype(np.int32)
+    wanted_position_2 = np.array([1024, 0, 0, 1024, 0, -1024]).astype(np.int32)
+
     arm = DynamixelBus(
         args.port, {
-            1: "x_series",
-            2: "x_series",
-            3: "x_series",
-            4: "x_series",
-            5: "x_series",
-            6: "x_series",
+            "shoulder_pan": (1, "x_series"),
+            "shoulder_lift": (2, "x_series"),
+            "elbow_flex": (3, "x_series"),
+            "wrist_flex": (4, "x_series"),
+            "wrist_roll": (5, "x_series"),
+            "gripper": (6, "x_series")
         }
     )
 
-    prepare_configuration(arm)
+    configure_servos(arm)
 
     # Ask the user to move the LCR to the position 1
     print("Please move the LCR to the position 1")
     pause()
 
-    homing = configure_homing(arm, [False, False, False, False, False, False], wanted_position_1())
+    offsets = calculate_offsets(
+        arm,
+        np.array([DriveMode.POSITIVE_CURRENT] * 6),
+        wanted_position_1
+    )
 
     # Ask the user to move the LCR to the position 2
     print("Please move the LCR to the position 2")
     pause()
 
-    inverted = configure_drive_mode(arm, homing)
-    homing = configure_homing(arm, inverted, wanted_position_2())
+    drive_modes = compute_drive_modes(
+        arm,
+        offsets,
+        wanted_position_2
+    )
 
-    # Invert offset for all inverted servos
-    for i in range(len(inverted)):
-        if inverted[i]:
-            homing[i] = -homing[i]
+    offsets = calculate_offsets(
+        arm,
+        drive_modes,
+        wanted_position_2
+    )
 
     print("Configuration done!")
 
     print("Here is the configuration, you can copy this in your environment variables for client graph:")
 
     print("=====================================")
-    print("      HOMING_OFFSET: ", " ".join([str(i) for i in homing]))
-    print("      INVERTED: ", " ".join([str(i) for i in inverted]))
+    print("      OFFSETS: ", " ".join([str(i) for i in offsets]))
+    print("      DRIVE_MODES: ", " ".join(
+        ["NEG" if drive_mode == DriveMode.NEGATIVE_CURRENT else "POS" for drive_mode in drive_modes]))
     print("=====================================")
 
     print("Make sure everything is working properly:")
     pause()
 
     while True:
-        positions = apply_configuration(arm.sync_read_present_position_i32(), homing, inverted)
-        print("Positions: ", " ".join([str(i) for i in positions]))
+        positions = physical_to_logical(
+            arm.sync_read_position(),
+            offsets,
+            drive_modes
+        )
 
-        time.sleep(1)
+        print("Positions: ", positions)
+
+        time.sleep(1.0)
+
+
+if __name__ == "__main__":
+    main()
