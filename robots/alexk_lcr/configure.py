@@ -21,6 +21,25 @@ import numpy as np
 from dora_lerobot.dynamixel_bus import DynamixelBus, TorqueMode, OperatingMode
 from dora_lerobot.position_control.utils import physical_to_logical, DriveMode
 
+FULL_ARM = np.array([
+    "shoulder_pan",
+    "shoulder_lift",
+    "elbow_flex",
+    "wrist_flex",
+    "wrist_roll",
+    "gripper"
+])
+
+ARM_WITHOUT_GRIPPER = np.array([
+    "shoulder_pan",
+    "shoulder_lift",
+    "elbow_flex",
+    "wrist_flex",
+    "wrist_roll"
+])
+
+GRIPPER = "gripper"
+
 
 def pause():
     """
@@ -34,17 +53,11 @@ def configure_servos(bus: DynamixelBus):
     Configure the servos for the LCR.
     :param bus: DynamixelBus
     """
-    bus.sync_write_torque_enable(TorqueMode.DISABLED)
+    bus.sync_write_torque_enable(TorqueMode.DISABLED, FULL_ARM)
 
-    bus.sync_write_operating_mode(OperatingMode.EXTENDED_POSITION, [
-        "shoulder_pan",
-        "shoulder_lift",
-        "elbow_flex",
-        "wrist_flex",
-        "wrist_roll",
-    ])
+    bus.sync_write_operating_mode(OperatingMode.EXTENDED_POSITION, ARM_WITHOUT_GRIPPER)
 
-    bus.write_operating_mode(OperatingMode.CURRENT_CONTROLLED_POSITION, "gripper")
+    bus.write_operating_mode(OperatingMode.CURRENT_CONTROLLED_POSITION, GRIPPER)
 
 
 def rounded_values(values: np.array) -> np.array:
@@ -69,7 +82,7 @@ def calculate_offsets(bus: DynamixelBus, drive_modes: np.array, wanted: np.array
 
     # Get the present rounded positions of the servos
     present_positions = rounded_values(physical_to_logical(
-        bus.sync_read_position(),
+        bus.sync_read_position(FULL_ARM),
         np.array([0, 0, 0, 0, 0, 0]),
         drive_modes
     ))
@@ -94,7 +107,7 @@ def compute_drive_modes(bus: DynamixelBus, offsets: np.array, wanted: np.array) 
 
     # Get the present rounded positions of the servos
     present_positions = rounded_values(physical_to_logical(
-        bus.sync_read_position(),
+        bus.sync_read_position(FULL_ARM),
         offsets,
         np.array([DriveMode.POSITIVE_CURRENT] * 6)
     ))
@@ -177,12 +190,12 @@ def main():
 
     while True:
         positions = physical_to_logical(
-            arm.sync_read_position(),
+            arm.sync_read_position(FULL_ARM),
             offsets,
             drive_modes
         )
 
-        print("Positions: ", positions)
+        print("Positions: ", " ".join([str(i) for i in positions]))
 
         time.sleep(1.0)
 
