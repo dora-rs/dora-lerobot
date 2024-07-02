@@ -42,8 +42,9 @@ def main():
             event_id = event["id"]
 
             if event_id == "leader_position":
+                leader_position = event["value"][0]["positions"].values.to_numpy()
+                leader_joints = event["value"][0]["joints"].values.to_numpy(zero_copy_only=False)
 
-                leader_position = event["value"].to_numpy()
                 leader_position = in_range_position(leader_position.copy())
 
                 goal_position = leader_position
@@ -63,14 +64,19 @@ def main():
                 else:
                     goal_position[5] = goal_position[5] * (700.0 / 450.0) - (-follower_position[5] // 4096) * 4096
 
+                goal_position_with_joints = {
+                    "joints": leader_joints,
+                    "positions": goal_position
+                }
+
                 node.send_output(
                     "goal_position",
-                    pa.array(goal_position.ravel()),
+                    pa.array([goal_position_with_joints]),
                     event["metadata"]
                 )
 
             elif event_id == "follower_position":
-                follower_position = event["value"].to_numpy()
+                follower_position = event["value"][0]["positions"].values.to_numpy()
         elif event_type == "STOP":
             break
         elif event_type == "ERROR":

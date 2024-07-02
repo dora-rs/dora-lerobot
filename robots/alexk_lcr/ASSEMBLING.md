@@ -21,13 +21,13 @@ You then need to print the Follower arm and the Leader arm. The STL files are:
 
 Some parts **must** be replaced by the ones in this repository:
 
-- [Dora-LeRobot Base Leader Low Cost Robot](stl/LEADER_Base.stl)
+- [Dora-LeRobot Base Leader Low Cost Robot](assets/stl/LEADER_Base.stl)
 
 If you struggle buying XL330 Frame or XL330/XL430 Idler Wheel, here are STL files that can be printed instead:
 
-- [XL330 Frame](stl/XL330_Frame.stl)
-- [XL330 Idler Wheel](stl/XL330_Idler_Wheel.stl)
-- [XL430 Idler Wheel](stl/XL430_Idler_Wheel.stl)
+- [XL330 Frame](assets/stl/XL330_Frame.stl)
+- [XL330 Idler Wheel](assets/stl/XL330_Idler_Wheel.stl)
+- [XL430 Idler Wheel](assets/stl/XL430_Idler_Wheel.stl)
 
 Please then follow the [YouTube Tutorial by Alexander Koch](https://youtu.be/RckrXOEoWrk?si=ZXDnnlF6BQd_o7v8) to
 assemble the arm correctly.

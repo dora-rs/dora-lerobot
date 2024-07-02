@@ -1,5 +1,5 @@
 """
-Dynamixel Client: This node is used to represent a chain of dynamixel motors. It can be used to read positions,
+Feetech Client: This node is used to represent a chain of feetech motors. It can be used to read positions,
 velocities, currents, and set goal positions and currents.
 """
 
@@ -33,7 +33,7 @@ class Client:
         # Set initial values
 
         try:
-            self.bus.sync_write_torque_enable(config["torque"])
+            self.bus.sync_write_torque_enable(config["torque"], self.config["joints"])
         except Exception as e:
             print("Error writing torque status:", e)
 
@@ -43,7 +43,7 @@ class Client:
                 self.offsets,
                 self.drive_modes)
 
-            self.bus.sync_write_goal_position(positions)
+            self.bus.sync_write_goal_position(positions, self.config["joints"])
         except Exception as e:
             print("Error writing goal position:", e)
 
@@ -63,7 +63,7 @@ class Client:
                 elif event_id == "pull_current":
                     self.pull_current(self.node, event["metadata"])
                 elif event_id == "write_goal_position":
-                    self.write_goal_position(event["value"].to_numpy())
+                    self.write_goal_position(event["value"])
 
             elif event_type == "STOP":
                 break
@@ -71,18 +71,23 @@ class Client:
                 raise ValueError("An error occurred in the dataflow: " + event["error"])
 
     def close(self):
-        self.bus.sync_write_torque_enable(TorqueMode.DISABLED)
+        self.bus.sync_write_torque_enable(TorqueMode.DISABLED, self.config["joints"])
 
     def pull_position(self, node, metadata):
         try:
             position = physical_to_logical(
-                self.bus.sync_read_position(),
+                self.bus.sync_read_position(self.config["joints"]),
                 self.offsets,
                 self.drive_modes)
 
+            position_with_joints = {
+                "joints": self.config["joints"],
+                "positions": position
+            }
+
             node.send_output(
                 "position",
-                pa.array(position.ravel()),
+                pa.array([position_with_joints]),
                 metadata
             )
 
@@ -91,11 +96,16 @@ class Client:
 
     def pull_velocity(self, node, metadata):
         try:
-            velocity = self.bus.sync_read_velocity()
+            velocity = self.bus.sync_read_velocity(self.config["joints"])
+
+            velocity_with_joints = {
+                "joints": self.config["joints"],
+                "velocities": velocity
+            }
 
             node.send_output(
                 "velocity",
-                pa.array(velocity.ravel()),
+                pa.array([velocity_with_joints]),
                 metadata
             )
         except ConnectionError as e:
@@ -103,19 +113,28 @@ class Client:
 
     def pull_current(self, node, metadata):
         try:
-            current = self.bus.sync_read_current()
+            current = self.bus.sync_read_current(self.config["joints"])
+
+            current_with_joints = {
+                "joints": self.config["joints"],
+                "currents": current
+            }
 
             node.send_output(
                 "current",
-                pa.array(current.ravel()),
+                pa.array([current_with_joints]),
                 metadata
             )
         except ConnectionError as e:
             print("Error reading current:", e)
 
-    def write_goal_position(self, goal_position: np.array):
+    def write_goal_position(self, goal_position_with_joints: {}):
         try:
-            self.bus.sync_write_goal_position(logical_to_physical(goal_position, self.offsets, self.drive_modes))
+            joints = goal_position_with_joints[0]["joints"].values.to_numpy(zero_copy_only=False)
+            goal_position = goal_position_with_joints[0]["positions"].values.to_numpy()
+
+            self.bus.sync_write_goal_position(logical_to_physical(goal_position, self.offsets, self.drive_modes),
+                                              joints)
         except ConnectionError as e:
             print("Error writing goal position:", e)
 
@@ -123,7 +142,7 @@ class Client:
 def main():
     # Handle dynamic nodes, ask for the name of the node in the dataflow
     parser = argparse.ArgumentParser(
-        description="Feetech Client: This node is used to represent a chain of dynamixel motors. "
+        description="Feetech Client: This node is used to represent a chain of feetech motors. "
                     "It can be used to read "
                     "positions, velocities, currents, and set goal positions and currents.")
 
@@ -134,7 +153,7 @@ def main():
 
     # Check if port is set
     if not os.environ.get("PORT"):
-        raise ValueError("The port is not set. Please set the port of the dynamixel motors.")
+        raise ValueError("The port is not set. Please set the port of the feetech motors.")
 
     # Create configuration
     config = {
@@ -142,10 +161,11 @@ def main():
         "port": os.environ.get("PORT"),  # (e.g. "/dev/ttyUSB0", "COM3")
 
         "ids": list(map(np.uint8, os.environ.get("IDS", "1 2 3 4 5 6").split())),
-        "joints": list(map(str, os.environ.get("JOINTS", "shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll "
-                                                         "gripper").split())),
+        "joints": np.array(
+            list(map(str, os.environ.get("JOINTS", "shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll "
+                                                   "gripper").split()))),
         "models": list(
-            map(str, os.environ.get("MODELS", "scs_series scs_series scs_series scs_series scs_series scs_series").split())),
+            map(str, os.environ.get("MODELS", "x_series x_series x_series x_series x_series x_series").split())),
 
         "torque": np.array([TorqueMode.ENABLED if value == "True" else TorqueMode.DISABLED for value in
                             list(os.getenv("TORQUE", "True True True True True True").split())]),
@@ -161,7 +181,7 @@ def main():
              list(os.getenv("DRIVE_MODES", "False False False False False False").split())])
     }
 
-    print("Dynamixel Client Configuration: ", config, flush=True)
+    print("Feetech Client Configuration: ", config, flush=True)
 
     client = Client(config)
     client.run()

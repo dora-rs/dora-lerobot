@@ -185,7 +185,7 @@ class FeetechBus:
         return np.uint32(value).astype(np.int32)
 
     def sync_write(self, data_name: str, values: Union[np.uint32, np.int32, np.array],
-                   motor_names: Union[list[str], None] = None):
+                   motor_names: list[str]):
         motor_ids = [self.motor_ctrl[motor_name]["id"] for motor_name in
                      motor_names] if motor_names is not None else self.motor_ids
 
@@ -244,7 +244,7 @@ class FeetechBus:
                 f"{self.packet_handler.getTxRxResult(comm)}"
             )
 
-    def sync_read(self, data_name: str, motor_names: Union[list[str], None] = None) -> np.array:
+    def sync_read(self, data_name: str, motor_names: list[str]) -> np.array:
         """
         You should use this method only if the motors you selected have the same address and bytes size for the data
         you want to read.
@@ -287,7 +287,7 @@ class FeetechBus:
         self.write("Torque_Enable", torque_mode.value, motor_name)
 
     def sync_write_torque_enable(self, torque_mode: Union[TorqueMode, list[TorqueMode]],
-                                 motor_names: Union[list[str], None] = None):
+                                 motor_names: list[str]):
         self.sync_write("Torque_Enable", torque_mode.value if isinstance(torque_mode, TorqueMode) else np.array(
             [mode.value for mode in torque_mode]),
                         motor_names)
@@ -296,7 +296,7 @@ class FeetechBus:
         self.write("Operating_Mode", operating_mode.value, motor_name)
 
     def sync_write_operating_mode(self, operating_mode: Union[OperatingMode, list[OperatingMode]],
-                                  motor_names: Union[list[str], None] = None):
+                                  motor_names: list[str]):
         self.sync_write("Operating_Mode",
                         operating_mode.value if isinstance(operating_mode, OperatingMode) else np.array(
                             [mode.value for mode in operating_mode]),
@@ -305,24 +305,24 @@ class FeetechBus:
     def read_position(self, motor_name: str) -> np.int32:
         return self.read("Present_Position", motor_name)
 
-    def sync_read_position(self, motor_names: Union[list[str], None] = None) -> np.array:
+    def sync_read_position(self, motor_names: list[str]) -> np.array:
         return self.sync_read("Present_Position", motor_names)
 
     def read_velocity(self, motor_name: str) -> np.int32:
         return self.read("Present_Speed", motor_name)
 
-    def sync_read_velocity(self, motor_names: Union[list[str], None] = None) -> np.array:
+    def sync_read_velocity(self, motor_names: list[str]) -> np.array:
         return self.sync_read("Present_Speed", motor_names)
 
     def read_current(self, motor_name: str) -> np.int32:
         return self.read("Present_Current", motor_name)
 
-    def sync_read_current(self, motor_names: Union[list[str], None] = None) -> np.array:
+    def sync_read_current(self, motor_names: list[str]) -> np.array:
         return self.sync_read("Present_Current", motor_names)
 
     def write_goal_position(self, goal_position: Union[np.int32, np.uint32], motor_name: str):
         self.write("Goal_Position", goal_position, motor_name)
 
     def sync_write_goal_position(self, goal_position: Union[np.int32, np.uint32, np.array],
-                                 motor_names: Union[list[str], None] = None):
+                                 motor_names: list[str]):
         self.sync_write("Goal_Position", goal_position, motor_names)

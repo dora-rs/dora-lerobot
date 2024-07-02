@@ -33,7 +33,7 @@ class Client:
         # Set initial values
 
         try:
-            self.bus.sync_write_torque_enable(config["torque"])
+            self.bus.sync_write_torque_enable(config["torque"], self.config["joints"])
         except Exception as e:
             print("Error writing torque status:", e)
 
@@ -43,12 +43,12 @@ class Client:
                 self.offsets,
                 self.drive_modes)
 
-            self.bus.sync_write_goal_position(positions)
+            self.bus.sync_write_goal_position(positions, self.config["joints"])
         except Exception as e:
             print("Error writing goal position:", e)
 
         try:
-            self.bus.sync_write_goal_current(config["initial_goal_current"])
+            self.bus.sync_write_goal_current(config["initial_goal_current"], self.config["joints"])
         except Exception as e:
             print("Error writing goal current:", e)
 
@@ -68,9 +68,9 @@ class Client:
                 elif event_id == "pull_current":
                     self.pull_current(self.node, event["metadata"])
                 elif event_id == "write_goal_position":
-                    self.write_goal_position(event["value"].to_numpy())
+                    self.write_goal_position(event["value"])
                 elif event_id == "write_goal_current":
-                    self.write_goal_current(event["value"].to_numpy())
+                    self.write_goal_current(event["value"])
 
             elif event_type == "STOP":
                 break
@@ -78,18 +78,23 @@ class Client:
                 raise ValueError("An error occurred in the dataflow: " + event["error"])
 
     def close(self):
-        self.bus.sync_write_torque_enable(TorqueMode.DISABLED)
+        self.bus.sync_write_torque_enable(TorqueMode.DISABLED, self.config["joints"])
 
     def pull_position(self, node, metadata):
         try:
             position = physical_to_logical(
-                self.bus.sync_read_position(),
+                self.bus.sync_read_position(self.config["joints"]),
                 self.offsets,
                 self.drive_modes)
 
+            position_with_joints = {
+                "joints": self.config["joints"],
+                "positions": position
+            }
+
             node.send_output(
                 "position",
-                pa.array(position.ravel()),
+                pa.array([position_with_joints]),
                 metadata
             )
 
@@ -98,11 +103,16 @@ class Client:
 
     def pull_velocity(self, node, metadata):
         try:
-            velocity = self.bus.sync_read_velocity()
+            velocity = self.bus.sync_read_velocity(self.config["joints"])
+
+            velocity_with_joints = {
+                "joints": self.config["joints"],
+                "velocities": velocity
+            }
 
             node.send_output(
                 "velocity",
-                pa.array(velocity.ravel()),
+                pa.array([velocity_with_joints]),
                 metadata
             )
         except ConnectionError as e:
@@ -110,25 +120,37 @@ class Client:
 
     def pull_current(self, node, metadata):
         try:
-            current = self.bus.sync_read_current()
+            current = self.bus.sync_read_current(self.config["joints"])
+
+            current_with_joints = {
+                "joints": self.config["joints"],
+                "currents": current
+            }
 
             node.send_output(
                 "current",
-                pa.array(current.ravel()),
+                pa.array([current_with_joints]),
                 metadata
             )
         except ConnectionError as e:
             print("Error reading current:", e)
 
-    def write_goal_position(self, goal_position: np.array):
+    def write_goal_position(self, goal_position_with_joints: {}):
         try:
-            self.bus.sync_write_goal_position(logical_to_physical(goal_position, self.offsets, self.drive_modes))
+            joints = goal_position_with_joints[0]["joints"].values.to_numpy(zero_copy_only=False)
+            goal_position = goal_position_with_joints[0]["positions"].values.to_numpy()
+
+            self.bus.sync_write_goal_position(logical_to_physical(goal_position, self.offsets, self.drive_modes),
+                                              joints)
         except ConnectionError as e:
             print("Error writing goal position:", e)
 
-    def write_goal_current(self, goal_current: np.array):
+    def write_goal_current(self, goal_current_with_joints: np.array):
         try:
-            self.bus.sync_write_goal_current(goal_current)
+            joints = goal_current_with_joints[0]["joints"].values.to_numpy(zero_copy_only=False)
+            goal_current = goal_current_with_joints[0]["currents"].values.to_numpy()
+
+            self.bus.sync_write_goal_current(goal_current, joints)
         except ConnectionError as e:
             print("Error writing goal current:", e)
 
@@ -155,8 +177,9 @@ def main():
         "port": os.environ.get("PORT"),  # (e.g. "/dev/ttyUSB0", "COM3")
 
         "ids": list(map(np.uint8, os.environ.get("IDS", "1 2 3 4 5 6").split())),
-        "joints": list(map(str, os.environ.get("JOINTS", "shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll "
-                                                         "gripper").split())),
+        "joints": np.array(
+            list(map(str, os.environ.get("JOINTS", "shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll "
+                                                   "gripper").split()))),
         "models": list(
             map(str, os.environ.get("MODELS", "x_series x_series x_series x_series x_series x_series").split())),
 

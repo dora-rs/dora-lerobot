@@ -40,12 +40,30 @@ def main():
             event_id = event["id"]
 
             if event_id == "leader_position":
-                leader_position = event["value"].to_numpy()
+                leader_joints = event["value"][0]["joints"].values.to_numpy(zero_copy_only=False)
+                leader_position = event["value"][0]["positions"].values.to_numpy()
+
                 leader_position = in_range_position(leader_position.copy())
+
+                # rotate the wrist_roll_joint by 90 degrees
+                leader_position[4] = leader_position[4] + 1024
+
+                leader_position[5] = 700.0/450.0 * leader_position[5]
+
+                # transform to radians:
+                leader_position = leader_position * np.pi / 2048
+
+                # add '_joint' to the joint names
+                leader_joints = np.array([joint + "_joint" for joint in leader_joints])
+
+                goal_position_with_joints = {
+                    "joints": leader_joints,
+                    "positions": leader_position
+                }
 
                 node.send_output(
                     "goal_position",
-                    pa.array(leader_position.ravel()),
+                    pa.array([goal_position_with_joints]),
                     event["metadata"]
                 )
 
