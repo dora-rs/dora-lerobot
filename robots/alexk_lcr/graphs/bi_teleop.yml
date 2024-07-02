@@ -2,14 +2,15 @@ nodes:
   - id: lcr_left_leader
     path: ../../../node_hub/dynamixel_client/client.py
     inputs:
-      pull_present_position: dora/timer/millis/10 # pull the position every 10ms
+      pull_position: dora/timer/millis/10 # pull the position every 10ms
     outputs:
-      - present_position
+      - position
     env:
       PORT: /dev/tty.usbmodem575E0030111
 
       IDS: 1 2 3 4 5 6
       JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
+      MODELS: x_series x_series x_series x_series x_series x_series
 
       TORQUE: False False False False False True
 
@@ -22,23 +23,24 @@ nodes:
   - id: lcr_left_interpolate
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
-      leader_position: lcr_leader/present_position
-      follower_position: lcr_follower/present_position
+      leader_position: lcr_left_leader/position
+      follower_position: lcr_left_follower/position
     outputs:
       - goal_position
 
   - id: lcr_left_follower
     path: ../../../node_hub/dynamixel_client/client.py
     inputs:
-      pull_present_position: dora/timer/millis/10
-      write_goal_position: lcr_interpolate/goal_position
+      pull_position: dora/timer/millis/10
+      write_goal_position: lcr_left_interpolate/goal_position
     outputs:
-      - present_position
+      - position
     env:
       PORT: /dev/tty.usbmodem575E0031141
 
       IDS: 1 2 3 4 5 6
       JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
+      MODELS: x_series x_series x_series x_series x_series x_series
 
       TORQUE: True True True True True True
 
@@ -51,14 +53,15 @@ nodes:
   - id: lcr_right_leader
     path: ../../../node_hub/dynamixel_client/client.py
     inputs:
-      pull_present_position: dora/timer/millis/10 # pull the position every 10ms
+      pull_position: dora/timer/millis/10 # pull the position every 10ms
     outputs:
-      - present_position
+      - position
     env:
       PORT: /dev/tty.usbmodem575E0030531
 
       IDS: 1 2 3 4 5 6
       JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
+      MODELS: x_series x_series x_series x_series x_series x_series
 
       TORQUE: False False False False False True
 
@@ -71,23 +74,24 @@ nodes:
   - id: lcr_right_interpolate
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
-      leader_position: lcr_leader/present_position
-      follower_position: lcr_follower/present_position
+      leader_position: lcr_right_leader/position
+      follower_position: lcr_right_follower/position
     outputs:
       - goal_position
 
   - id: lcr_right_follower
     path: ../../../node_hub/dynamixel_client/client.py
     inputs:
-      pull_present_position: dora/timer/millis/10
-      write_goal_position: lcr_interpolate/goal_position
+      pull_position: dora/timer/millis/10
+      write_goal_position: lcr_right_interpolate/goal_position
     outputs:
-      - present_position
+      - position
     env:
       PORT: /dev/tty.usbmodem575E0032531
 
       IDS: 1 2 3 4 5 6
       JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
+      MODELS: x_series x_series x_series x_series x_series x_series
 
       TORQUE: True True True True True True
 

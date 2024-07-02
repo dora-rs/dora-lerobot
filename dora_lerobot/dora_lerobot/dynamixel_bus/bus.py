@@ -323,6 +323,18 @@ class DynamixelBus:
     def sync_read_position(self, motor_names: Union[list[str], None] = None) -> np.array:
         return self.sync_read("Present_Position", motor_names)
 
+    def read_velocity(self, motor_name: str) -> np.int32:
+        return self.read("Present_Velocity", motor_name)
+
+    def sync_read_velocity(self, motor_names: Union[list[str], None] = None) -> np.array:
+        return self.sync_read("Present_Velocity", motor_names)
+
+    def read_current(self, motor_name: str) -> np.int32:
+        return self.read("Present_Current", motor_name)
+
+    def sync_read_current(self, motor_names: Union[list[str], None] = None) -> np.array:
+        return self.sync_read("Present_Current", motor_names)
+
     def write_goal_position(self, goal_position: Union[np.int32, np.uint32], motor_name: str):
         self.write("Goal_Position", goal_position, motor_name)
 

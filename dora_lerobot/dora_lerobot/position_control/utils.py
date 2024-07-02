@@ -16,18 +16,21 @@ def physical_to_logical(values: np.array, offsets: np.array, drive_modes: np.arr
     :param drive_modes: numpy array of DriveMode
     :return: numpy array of logical values
     """
+    result = np.array([None] * len(values))
 
-    values = values.astype(np.int32)
+    for i in range(len(values)):
+        if values[i] is not None:
+            result[i] = np.int32(values[i])
 
     for i, drive_mode in enumerate(drive_modes):
-        if drive_mode is not None and values[i] is not None and drive_mode == DriveMode.NEGATIVE_CURRENT:
-            values[i] = -values[i]
+        if drive_mode is not None and result[i] is not None and drive_mode == DriveMode.NEGATIVE_CURRENT:
+            result[i] = -result[i]
 
     for i, offset in enumerate(offsets):
-        if offset is not None and values[i] is not None:
-            values[i] += offset
+        if offset is not None and result[i] is not None:
+            result[i] += offset
 
-    return values
+    return result
 
 
 def logical_to_physical(values: np.array, offsets: np.array, drive_modes: np.array) -> np.array:
@@ -39,14 +42,18 @@ def logical_to_physical(values: np.array, offsets: np.array, drive_modes: np.arr
     :return: numpy array of physical values
     """
 
-    values = values.astype(np.int32)
+    result = np.array([None] * len(values))
+
+    for i in range(len(values)):
+        if values[i] is not None:
+            result[i] = np.int32(values[i])
 
     for i, offset in enumerate(offsets):
-        if offset is not None and values[i] is not None:
-            values[i] -= offset
+        if offset is not None and result[i] is not None:
+            result[i] -= offset
 
     for i, drive_mode in enumerate(drive_modes):
-        if drive_mode is not None and values[i] is not None and drive_mode == DriveMode.NEGATIVE_CURRENT:
-            values[i] = -values[i]
+        if drive_mode is not None and result[i] is not None and drive_mode == DriveMode.NEGATIVE_CURRENT:
+            result[i] = -result[i]
 
-    return values
+    return result
