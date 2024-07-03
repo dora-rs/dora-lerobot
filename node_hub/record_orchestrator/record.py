@@ -11,7 +11,7 @@ def main():
         description="Camera Client: This node is used to represent a camera. ")
 
     parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="lerobot_record")
+                        default="record_orchestrator")
 
     args = parser.parse_args()
 
@@ -32,7 +32,7 @@ def main():
 
             if event_id == "key_pressed":
                 key = event["value"][0].as_py()
-                print(key, flush=True)
+
                 if key == "space":
                     recording = not recording
                     if recording:
@@ -94,8 +94,6 @@ def main():
                             pa.array([episode_index - 1]),
                             event["metadata"],
                         )
-            elif event_id == "key_released":
-                pass
 
         elif event_type == "STOP":
             break

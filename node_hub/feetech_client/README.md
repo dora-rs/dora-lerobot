@@ -15,7 +15,6 @@ nodes:
       pull_current: dora/timer/millis/10 # pull the present current every 10ms
 
       # write_goal_position: some goal position from other node
-      # write_goal_current: some goal current from other node
     outputs:
       - position # regarding 'pull_position' input, it will output the position every 10ms
       - velocity # regarding 'pull_velocity' input, it will output the velocity every 10ms

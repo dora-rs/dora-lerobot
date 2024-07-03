@@ -64,10 +64,10 @@ nodes:
       CAMERA_HEIGHT: 480 # camera height
 
   - id: pygame_interface
-    path: ../../../node_hub/pygame_minimalistic_interface/interface.py # modify this to the relative path from the graph file to the client script
+    path: ../../../node_hub/pygame_interface/interface.py # modify this to the relative path from the graph file to the client script
     inputs:
       write_image_left: opencv_camera/image # write the image to the left side of the interface
-      write_text: lerobot_record/text
+      write_text: record_orchestrator/text
     outputs:
       - key_pressed
       - key_released
@@ -76,8 +76,8 @@ nodes:
       CAMERA_WIDTH: 640 # camera width
       CAMERA_HEIGHT: 480 # camera height
 
-  - id: lerobot_record
-    path: ../../../node_hub/lerobot_record/record.py
+  - id: record_orchestrator
+    path: ../../../node_hub/record_orchestrator/record.py
     inputs:
       key_pressed: pygame_interface/key_pressed
     outputs:
@@ -88,8 +88,8 @@ nodes:
   - id: dora_record
     path: dora-record
     inputs:
-      action: lcr_leader/position
+      action: lcr_interpolate/goal_position
       observation.state: lcr_follower/position
-      episode_index: lerobot_record/episode
-      failed_episode_index: lerobot_record/failed
-      observation.images.cam: opencv_camera/image
+      episode_index: record_orchestrator/episode
+      failed_episode_index: record_orchestrator/failed
+      observation.images.cam_up: opencv_camera/image

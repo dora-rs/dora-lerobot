@@ -19,7 +19,6 @@ nodes:
     outputs:
       - key_pressed
       - key_released
-      - stop
 
     env:
       CAMERA_WIDTH: 640 # camera width
