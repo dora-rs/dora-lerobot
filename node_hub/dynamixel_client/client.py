@@ -71,6 +71,8 @@ class Client:
                     self.write_goal_position(event["value"])
                 elif event_id == "write_goal_current":
                     self.write_goal_current(event["value"])
+                elif event_id == "stop":
+                    break
 
             elif event_type == "STOP":
                 break

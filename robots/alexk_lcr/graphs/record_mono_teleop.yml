@@ -2,53 +2,59 @@ nodes:
   - id: lcr_leader
     path: ../../../node_hub/dynamixel_client/client.py
     inputs:
-      pull_present_position: dora/timer/millis/10 # pull the position every 10ms
+      pull_position: dora/timer/millis/10 # pull the position every 10ms
     outputs:
-      - present_position
+      - position
     env:
-      PORT: COM9
+      PORT: /dev/tty.usbmodem575E0030111
+
       IDS: 1 2 3 4 5 6
+      JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
+      MODELS: x_series x_series x_series x_series x_series x_series
 
       TORQUE: False False False False False True
 
       INITIAL_GOAL_POSITION: None None None None None -450
       INITIAL_GOAL_CURRENT: None None None None None 40
 
-      HOMING_OFFSET: -2048 2048 2048 -2048 0 2048
-      INVERTED: False True True False True True
+      OFFSETS: -2048 -3072 1024 -2048 1024 2048
+      DRIVE_MODES: POS POS NEG POS NEG NEG
 
   - id: lcr_interpolate
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
-      leader_position: lcr_leader/present_position
-      follower_position: lcr_follower/present_position
+      leader_position: lcr_leader/position
+      follower_position: lcr_follower/position
     outputs:
       - goal_position
 
   - id: lcr_follower
     path: ../../../node_hub/dynamixel_client/client.py
     inputs:
-      pull_present_position: dora/timer/millis/10
+      pull_position: dora/timer/millis/10
       write_goal_position: lcr_interpolate/goal_position
+
     outputs:
-      - present_position
+      - position
     env:
-      PORT: COM7
+      PORT: /dev/tty.usbmodem575E0031141
+
       IDS: 1 2 3 4 5 6
+      JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
+      MODELS: x_series x_series x_series x_series x_series x_series
 
       TORQUE: True True True True True True
 
       INITIAL_GOAL_POSITION: None None None None None None
       INITIAL_GOAL_CURRENT: None None None None None 500
 
-      HOMING_OFFSET: 0 -2048 -1024 -2048 3072 -2048
-      INVERTED: False False False False True False
+      OFFSETS: -2048 2048 2048 2048 1024 2048
+      DRIVE_MODES: POS NEG NEG NEG NEG NEG
 
   - id: opencv_camera
     path: ../../../node_hub/opencv_camera/camera.py
     inputs:
       pull_image: dora/timer/millis/16 # pull the image every 10ms
-      stop: pygame_interface/stop # stop the camera when the interface stops
     outputs:
       - image # push the image to the dataflow
 
@@ -60,14 +66,11 @@ nodes:
   - id: pygame_interface
     path: ../../../node_hub/pygame_minimalistic_interface/interface.py # modify this to the relative path from the graph file to the client script
     inputs:
-      tick: dora/timer/millis/16 # update the interface every 16ms (= 60fps)
-
       write_image_left: opencv_camera/image # write the image to the left side of the interface
       write_text: lerobot_record/text
     outputs:
       - key_pressed
       - key_released
-      - stop
 
     env:
       CAMERA_WIDTH: 640 # camera width
@@ -76,13 +79,17 @@ nodes:
   - id: lerobot_record
     path: ../../../node_hub/lerobot_record/record.py
     inputs:
-      tick: dora/timer/millis/33
-
       key_pressed: pygame_interface/key_pressed
-      key_released: pygame_interface/key_released
-
-      action: lcr_leader/present_position
-      observation.state: lcr_follower/present_position
-      observation.images.cam: opencv_camera/image
     outputs:
       - text
+      - episode
+      - failed
+
+  - id: dora_record
+    path: dora-record
+    inputs:
+      action: lcr_leader/position
+      observation.state: lcr_follower/position
+      episode_index: lerobot_record/episode
+      failed_episode_index: lerobot_record/failed
+      observation.images.cam: opencv_camera/image

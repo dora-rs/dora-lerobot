@@ -31,8 +31,8 @@ def main():
         raise ValueError("Please set the CAMERA_ID, CAMERA_WIDTH, and CAMERA_HEIGHT environment variables")
 
     camera_id = os.getenv("CAMERA_ID")
-    camera_width = os.getenv("CAMERA_WIDTH")
-    camera_height = os.getenv("CAMERA_HEIGHT")
+    camera_width = int(os.getenv("CAMERA_WIDTH"))
+    camera_height = int(os.getenv("CAMERA_HEIGHT"))
 
     node = Node(args.name)
 
@@ -77,8 +77,6 @@ def main():
             break
         elif event_type == "ERROR":
             raise ValueError("An error occurred in the dataflow: " + event["error"])
-
-    video_capture.release()
 
 
 if __name__ == "__main__":

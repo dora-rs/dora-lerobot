@@ -74,6 +74,12 @@ venv\Scripts\activate.ps1 # On Windows PowerShell
 pip install ./dora_lerobot
 ```
 
+You need to install our dora tool for precisely recording data with timestamps:
+    
+```bash
+cargo install --git https://github.com/dora-rs/dora dora-record
+```
+
 In order to record episodes, you need ffmpeg installed on your system. You can download it from
 the [official website](https://ffmpeg.org/download.html).
 

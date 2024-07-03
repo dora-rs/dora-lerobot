@@ -32,6 +32,7 @@ def main():
 
             if event_id == "key_pressed":
                 key = event["value"][0].as_py()
+                print(key, flush=True)
                 if key == "space":
                     recording = not recording
                     if recording:
@@ -40,13 +41,59 @@ def main():
                             pa.array([f"Recording episode {episode_index}"]),
                             event["metadata"],
                         )
+                        node.send_output(
+                            "episode",
+                            pa.array([episode_index]),
+                            event["metadata"],
+                        )
                     else:
                         node.send_output(
                             "text",
                             pa.array([f"Stopped recording episode {episode_index}"]),
                             event["metadata"],
                         )
+
+                        node.send_output(
+                            "episode",
+                            pa.array([-1]),
+                            event["metadata"],
+                        )
+
                         episode_index += 1
+
+                elif key == "return":
+                    if recording:
+                        recording = not recording
+                        node.send_output(
+                            "text",
+                            pa.array([f"Failed episode {episode_index}"]),
+                            event["metadata"],
+                        )
+
+                        node.send_output(
+                            "failed",
+                            pa.array([episode_index]),
+                            event["metadata"],
+                        )
+                        episode_index += 1
+                        node.send_output(
+                            "episode",
+                            pa.array([-1]),
+                            event["metadata"],
+                        )
+
+                    elif episode_index >= 2:
+                        node.send_output(
+                            "text",
+                            pa.array([f"Failed episode {episode_index - 1}"]),
+                            event["metadata"],
+                        )
+
+                        node.send_output(
+                            "failed",
+                            pa.array([episode_index - 1]),
+                            event["metadata"],
+                        )
             elif event_id == "key_released":
                 pass
 

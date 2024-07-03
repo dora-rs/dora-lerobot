@@ -42,51 +42,22 @@ def main():
 
     node = Node(args.name)
 
-    for event in node:
-        event_type = event["type"]
+    running = True
 
-        if event_type == "INPUT":
+    event = node.next(16.0 / 1000.0)
+
+    while running:
+        if event is None:
+            continue
+
+        event_type = event["type"]
+        if event_type == "STOP":
+            break
+
+        elif event_type == "INPUT":
             event_id = event["id"]
 
-            if event_id == "tick":
-                quit = False
-
-                for pygame_event in pygame.event.get():
-                    if pygame_event.type == pygame.QUIT:
-                        quit = True
-                    if pygame_event.type == pygame.KEYDOWN:
-                        key_str = pygame.key.name(pygame_event.key)
-                        node.send_output(
-                            "key_pressed",
-                            pa.array([key_str], type=pa.string()),
-                            event["metadata"]
-                        )
-                    if pygame_event.type == pygame.KEYUP:
-                        key_str = pygame.key.name(pygame_event.key)
-                        node.send_output(
-                            "key_released",
-                            pa.array([key_str], type=pa.string()),
-                            event["metadata"]
-                        )
-
-                screen.fill((0, 0, 0))
-
-                # Draw the left image
-                screen.blit(image_left, (0, 0))
-
-                # Draw the right image
-                screen.blit(image_right, (int(camera_width), 0))
-
-                # Draw the text bottom center
-                screen.blit(text,
-                            (int(camera_width) - text.get_width() // 2, int(camera_height) + text.get_height()))
-
-                pygame.display.flip()
-
-                if quit:
-                    break
-
-            elif event_id == "write_image_left":
+            if event_id == "write_image_left":
                 raw_data = event["value"].to_numpy()
                 image_left = pygame.image.frombuffer(raw_data, (int(camera_width), int(camera_height)), "BGR")
 
@@ -97,17 +68,37 @@ def main():
             elif event_id == "write_text":
                 text = font.render(event["value"][0].as_py(), True, (255, 255, 255))
 
-        elif event_type == "STOP":
-            break
-        elif event_type == "ERROR":
-            raise ValueError("An error occurred in the dataflow: " + event["error"])
+        for pygame_event in pygame.event.get():
+            if pygame_event.type == pygame.KEYDOWN:
+                key_str = pygame.key.name(pygame_event.key)
+                node.send_output(
+                    "key_pressed",
+                    pa.array([key_str], type=pa.string()),
+                    event["metadata"]
+                )
+            elif pygame_event.type == pygame.KEYUP:
+                key_str = pygame.key.name(pygame_event.key)
+                node.send_output(
+                    "key_released",
+                    pa.array([key_str], type=pa.string()),
+                    event["metadata"]
+                )
 
-    node.send_output(
-        "stop",
-        pa.array([1], type=pa.int64())
-    )
+        screen.fill((0, 0, 0))
 
-    pygame.quit()
+        # Draw the left image
+        screen.blit(image_left, (0, 0))
+
+        # Draw the right image
+        screen.blit(image_right, (int(camera_width), 0))
+
+        # Draw the text bottom center
+        screen.blit(text,
+                    (int(camera_width) - text.get_width() // 2, int(camera_height) + text.get_height()))
+
+        pygame.display.flip()
+
+        event = node.next(16.0 / 1000.0)
 
 
 if __name__ == "__main__":
