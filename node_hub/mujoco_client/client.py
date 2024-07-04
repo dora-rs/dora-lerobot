@@ -35,6 +35,12 @@ class Client:
                     event_id = event["id"]
 
                     if event_id == "tick":
+                        self.node.send_output(
+                            "tick",
+                            pa.array([]),
+                            event["metadata"]
+                        )
+
                         if not viewer.is_running():
                             break
 
@@ -64,6 +70,11 @@ class Client:
                     break
                 elif event_type == "ERROR":
                     raise ValueError("An error occurred in the dataflow: " + event["error"])
+
+            self.node.send_output(
+                "end",
+                pa.array([])
+            )
 
     def pull_position(self, node, metadata):
         pass

@@ -48,7 +48,7 @@ venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
 dora up
-dora start ./robots/alexk_lcr/graphs/mono_teleop.yml
+dora start ./robots/alexk_lcr/graphs/mono_teleop_real.yml
 ```
 
 - `bi_teleop.yml`: A simple teleoperation pipeline that allows you to control two follower arm using two leader arm
@@ -70,7 +70,7 @@ venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
 dora up
-dora start ./robots/alexk_lcr/graphs/bi_teleop.yml
+dora start ./robots/alexk_lcr/graphs/bi_teleop_real.yml
 ```
 
 ## License
