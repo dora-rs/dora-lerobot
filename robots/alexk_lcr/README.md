@@ -21,7 +21,10 @@ LeRobot and teleoperate the robot.
 
 ## Recording
 
-This section is under construction.
+It's probably better to check the [examples](#examples) below before trying to record episodes. It will give you a better
+understanding of how Dora works.
+
+Check the [RECORDING.md](RECORDING.md) file for instructions on how to record episodes for LeRobot.
 
 ## Examples
 
@@ -29,11 +32,12 @@ There are also some other example applications in the `graphs` folder. Have fun!
 
 Here is a list of the available examples:
 
-- `mono_teleop.yml`: A simple teleoperation pipeline that allows you to control a follower arm using a leader arm. It
+- `mono_teleop_real.yml`: A simple real teleoperation pipeline that allows you to control a follower arm using a leader
+  arm. It
   does not record the episodes, so you don't need to have a camera.
 
-You must configure the arms, retrieve the device port, and modify the file `mono_teleop.yml` to set the correct
-environment variables. (e.g. `PORT`, `HOMING_OFFSETS`, `INVERTED`)
+You must configure the arms, retrieve the device port, and modify the file `mono_teleop_real.yml` to set the correct
+environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
 
 ```bash
 cd dora-dora_lerobot/
@@ -51,11 +55,12 @@ dora up
 dora start ./robots/alexk_lcr/graphs/mono_teleop_real.yml
 ```
 
-- `bi_teleop.yml`: A simple teleoperation pipeline that allows you to control two follower arm using two leader arm
+- `bi_teleop_real.yml`: A simple real tele operation pipeline that allows you to control two follower arm using two
+  leader arm
   (left and right). It does not record the episodes, so you don't need to have a camera.
 
-You must configure the arms, retrieve the device port, and modify the file `bi_teleop.yml` to set the correct
-environment variables. (e.g. `PORT`, `HOMING_OFFSETS`, `INVERTED`)
+You must configure the arms, retrieve the device port, and modify the file `bi_teleop_real.yml` to set the correct
+environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
 
 ```bash
 cd dora-dora_lerobot/
@@ -71,6 +76,50 @@ venv\Scripts\activate.ps1 # On Windows PowerShell
 
 dora up
 dora start ./robots/alexk_lcr/graphs/bi_teleop_real.yml
+```
+
+- `mono_teleop_simu.yml`: A simple simulation tele operation pipeline that allows you to control a simulated follower
+  arm using a leader arm. It does not record the episodes, so you don't need to have a camera.
+
+You must configure the arms, retrieve the device port, and modify the file `mono_teleop_simu.yml` to set the correct
+environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
+
+```bash
+cd dora-dora_lerobot/
+
+
+# If you are using a custom environment, you will have to activate it before running the command
+source [your_custom_env_bin]/activate
+
+# If you followed the installation instructions, you can run the following command
+source venv/bin/activate # On Linux
+source venv/Scripts/activate # On Windows bash
+venv\Scripts\activate.bat # On Windows cmd
+venv\Scripts\activate.ps1 # On Windows PowerShell
+
+dora up
+dora start ./robots/alexk_lcr/graphs/mono_teleop_simu.yml
+```
+
+- `mono_teleop_real_and_simu.yml`: A simple real and simulation tele operation pipeline that allows you to control a
+  simulated and real follower arm using a real leader arm. It does not record the episodes, so you don't need to have a
+  camera.
+
+```bash
+cd dora-dora_lerobot/
+
+
+# If you are using a custom environment, you will have to activate it before running the command
+source [your_custom_env_bin]/activate
+
+# If you followed the installation instructions, you can run the following command
+source venv/bin/activate # On Linux
+source venv/Scripts/activate # On Windows bash
+venv\Scripts\activate.bat # On Windows cmd
+venv\Scripts\activate.ps1 # On Windows PowerShell
+
+dora up
+dora start ./robots/alexk_lcr/graphs/mono_teleop_real_and_simu.yml
 ```
 
 ## License
