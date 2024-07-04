@@ -2,7 +2,7 @@ nodes:
   - id: lcr_leader
     path: ../../../node_hub/dynamixel_client/client.py
     inputs:
-      pull_position: dora/timer/millis/10 # pull the position every 10ms
+      pull_position: lcr_follower/ticks
     outputs:
       - position
     env:
@@ -37,6 +37,8 @@ nodes:
       tick: dora/timer/millis/10
     outputs:
       - position
+      - ticks
+
     env:
       SCENE: ../assets/simulation/reach_cube.xml
 
