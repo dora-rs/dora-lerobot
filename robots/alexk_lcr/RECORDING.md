@@ -7,7 +7,7 @@ the Dora pipeline to manipulate the arms, the camera, and record/replay episodes
 
 This section explains how to record episodes for LeRobot using the AlexK Low Cost Robot.
 
-Recording is the process of teleoperating the robot and saving the episodes to a dataset. The dataset is used to train
+Recording is the process of tele operating the robot and saving the episodes to a dataset. The dataset is used to train
 the robot to perform tasks autonomously.
 
 To record episodes with Dora, you have to configure the Dataflow `record_mono_teleop_real.yml` file to integrate the
@@ -46,6 +46,8 @@ Then, you can tele operate the follower with the leader. A window will pop up sh
 3. Close the window to stop the recording
 4. Write down the location of the logs (e.g `018fc3a8-3b76-70f5-84a2-22b84df24739`), this is where the
    dataset (and logs) are stored.
+
+
 
 You can now use our script to convert the logs to a dataset:
 

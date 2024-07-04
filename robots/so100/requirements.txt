@@ -1,5 +1,6 @@
 -r ../../node_hub/feetech_client/requirements.txt
 -r ../../node_hub/dynamixel_client/requirements.txt
 -r ../../node_hub/mujoco_client/requirements.txt
+-r ../../node_hub/replay_client/requirements.txt
 -r ../../node_hub/opencv_camera/requirements.txt
 -r ../../node_hub/lerobot_record/requirements.txt
