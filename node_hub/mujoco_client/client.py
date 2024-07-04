@@ -57,6 +57,8 @@ class Client:
                         self.pull_current(self.node, event["metadata"])
                     elif event_id == "write_goal_position":
                         self.write_goal_position(event["value"])
+                    elif event_id == "end":
+                        break
 
                 elif event_type == "STOP":
                     break

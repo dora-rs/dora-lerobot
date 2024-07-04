@@ -75,7 +75,7 @@ pip install ./dora_lerobot
 ```
 
 You need to install our dora tool for precisely recording data with timestamps:
-    
+
 ```bash
 cargo install --git https://github.com/dora-rs/dora dora-record
 ```
@@ -86,7 +86,7 @@ the [official website](https://ffmpeg.org/download.html).
 If you're on Windows, you can download the latest build from [here](https://www.gyan.dev/ffmpeg/builds/). You can
 extract the zip file and add the `bin` folder to your PATH.
 If you're on Linux, you can install ffmpeg using the package manager of your distribution. (
-e.g `sudo apt install ffmpeg` on Ubuntu)
+e.g `sudo apt install ffmpeg` on Ubuntu, `brew install ffmpeg` on macOS)
 
 ## License
 

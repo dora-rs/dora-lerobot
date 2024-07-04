@@ -62,6 +62,9 @@ def main():
                     out_dir = base / f"{video_name}_episode_{episode_index:06d}"
                     name = f"{video_name}_episode_{episode_index:06d}.mp4"
 
+                    if not out_dir.exists():
+                        out_dir.mkdir(parents=True)
+
                     node.send_output(
                         "image",
                         pa.array([{"path": f"videos/{name}", "timestamp": float(frame_count) / fps}]),
@@ -80,8 +83,7 @@ def main():
 
                 if recording:
                     episode_index = episode
-
-                if not recording:
+                else:
                     # save all the frames into a video
                     base = Path("out") / dataflow_id / "videos"
                     out_dir = base / f"{video_name}_episode_{episode_index:06d}"
@@ -102,8 +104,7 @@ def main():
 
                     subprocess.Popen([ffmpeg_cmd], start_new_session=True, shell=True)
 
-                    #
-                    episode_index += 1
+                    frame_count = 0
 
         elif event_type == "STOP":
             break

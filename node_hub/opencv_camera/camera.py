@@ -52,7 +52,7 @@ def main():
                 ret, frame = video_capture.read()
 
                 if not ret:
-                    frame = np.zeros((camera_height, camera_width, 3), dtype=np.uint8)
+                    frame = np.zeros((camera_width, camera_height, 3), dtype=np.uint8)
                     cv2.putText(
                         frame,
                         "No Webcam was found at index %s" % camera_id,
@@ -63,6 +63,8 @@ def main():
                         2,
                         1,
                     )
+
+                frame = cv2.resize(frame, (camera_width, camera_height))
 
                 node.send_output(
                     "image",

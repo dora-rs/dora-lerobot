@@ -18,6 +18,8 @@ nodes:
 
     env:
       VIDEO_NAME: cam_up
+      VIDEO_WIDTH: 640
+      VIDEO_HEIGHT: 480
       FPS: 30
 ````
 

@@ -2,7 +2,7 @@ nodes:
   - id: lcr_leader
     path: ../../../node_hub/dynamixel_client/client.py
     inputs:
-      pull_position: dora/timer/millis/10 # pull the position every 10ms
+      pull_position: lerobot_record/tick
     outputs:
       - position
     env:
@@ -31,8 +31,9 @@ nodes:
   - id: lcr_follower
     path: ../../../node_hub/dynamixel_client/client.py
     inputs:
-      pull_position: dora/timer/millis/10
+      pull_position: lerobot_record/tick
       write_goal_position: lcr_interpolate/goal_position
+      end: lerobot_record/end
 
     outputs:
       - position
@@ -54,42 +55,54 @@ nodes:
   - id: opencv_camera
     path: ../../../node_hub/opencv_camera/camera.py
     inputs:
-      pull_image: dora/timer/millis/16 # pull the image every 10ms
+      pull_image:
+        source: lerobot_record/tick
+        queue_size: 1
     outputs:
-      - image # push the image to the dataflow
+      - image
 
     env:
-      CAMERA_ID: 0 # camera id to use, change this to the camera id you want to use (e.g 0, 1, /dev/video0, /dev/video1)
-      CAMERA_WIDTH: 640 # camera width
-      CAMERA_HEIGHT: 480 # camera height
+      CAMERA_ID: 0
+      CAMERA_WIDTH: 860
+      CAMERA_HEIGHT: 540
 
-  - id: pygame_interface
-    path: ../../../node_hub/pygame_interface/interface.py # modify this to the relative path from the graph file to the client script
+  - id: video_encoder
+    path: ../../../node_hub/video_encoder/encoder.py
     inputs:
-      write_image_left: opencv_camera/image # write the image to the left side of the interface
-      write_text: record_orchestrator/text
+      image: opencv_camera/image
+      episode_index: lerobot_record/episode
     outputs:
-      - key_pressed
-      - key_released
+      - image
 
     env:
-      CAMERA_WIDTH: 640 # camera width
-      CAMERA_HEIGHT: 480 # camera height
+      VIDEO_NAME: cam_up
+      VIDEO_WIDTH: 860
+      VIDEO_HEIGHT: 540
+      FPS: 30
 
-  - id: record_orchestrator
-    path: ../../../node_hub/record_orchestrator/record.py
+  - id: lerobot_record
+    path: ../../../node_hub/lerobot_record/record.py
     inputs:
-      key_pressed: pygame_interface/key_pressed
+      tick:
+        source: dora/timer/millis/10
+        queue_size: 1
+
+      image_left: opencv_camera/image
     outputs:
-      - text
+      - tick
       - episode
       - failed
+      - end
+
+    env:
+      CAMERA_WIDTH: 860
+      CAMERA_HEIGHT: 540
 
   - id: dora_record
     path: dora-record
     inputs:
       action: lcr_interpolate/goal_position
       observation.state: lcr_follower/position
-      episode_index: record_orchestrator/episode
-      failed_episode_index: record_orchestrator/failed
-      observation.images.cam_up: opencv_camera/image
+      episode_index: lerobot_record/episode
+      failed_episode_index: lerobot_record/failed
+      observation.images.cam_up: video_encoder/image
