@@ -8,6 +8,7 @@ LCR webcam: this Dora node reads the webcam feed of CAMERA_ID and propagates in 
 This node also shows the webcam feed in a window.
 """
 import os
+import time
 import cv2
 import argparse
 
@@ -31,8 +32,8 @@ def main():
         raise ValueError("Please set the CAMERA_ID, CAMERA_WIDTH, and CAMERA_HEIGHT environment variables")
 
     camera_id = os.getenv("CAMERA_ID")
-    camera_width = os.getenv("CAMERA_WIDTH")
-    camera_height = os.getenv("CAMERA_HEIGHT")
+    camera_width = int(os.getenv("CAMERA_WIDTH"))
+    camera_height = int(os.getenv("CAMERA_HEIGHT"))
 
     node = Node(args.name)
 
@@ -52,7 +53,7 @@ def main():
                 ret, frame = video_capture.read()
 
                 if not ret:
-                    frame = np.zeros((camera_height, camera_width, 3), dtype=np.uint8)
+                    frame = np.zeros((camera_width, camera_height, 3), dtype=np.uint8)
                     cv2.putText(
                         frame,
                         "No Webcam was found at index %s" % camera_id,
@@ -64,21 +65,23 @@ def main():
                         1,
                     )
 
+                frame = cv2.resize(frame, (camera_width, camera_height))
+
+                node.send_output(
+                    "image",
+                    pa.array(frame.ravel()),
+                    event["metadata"],
+                )
                 node.send_output(
                     "image",
                     pa.array(frame.ravel()),
                     event["metadata"],
                 )
 
-            if event_id == "stop":
-                break
-
         elif event_type == "STOP":
             break
         elif event_type == "ERROR":
             raise ValueError("An error occurred in the dataflow: " + event["error"])
-
-    video_capture.release()
 
 
 if __name__ == "__main__":

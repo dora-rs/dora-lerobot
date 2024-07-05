@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "aloha/nodes/aloha-teleop",
-    "aloha/nodes/aloha-client",
+    "robots/aloha/nodes/aloha-teleop",
+    "robots/aloha/nodes/aloha-client",
 ]
 
 resolver = "2"

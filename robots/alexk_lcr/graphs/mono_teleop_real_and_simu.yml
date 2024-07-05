@@ -1,0 +1,80 @@
+nodes:
+  - id: lcr_leader
+    path: ../../../node_hub/dynamixel_client/client.py
+    inputs:
+      pull_position: lcr_follower_simu/tick
+    outputs:
+      - position
+    env:
+      PORT: /dev/tty.usbmodem575E0030111
+
+      IDS: 1 2 3 4 5 6
+      JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
+      MODELS: x_series x_series x_series x_series x_series x_series
+
+      TORQUE: False False False False False True
+
+      INITIAL_GOAL_POSITION: None None None None None -450
+      INITIAL_GOAL_CURRENT: None None None None None 40
+
+      OFFSETS: -2048 -3072 1024 -2048 1024 2048
+      DRIVE_MODES: POS POS NEG POS NEG NEG
+
+  - id: lcr_interpolate
+    path: ../nodes/interpolate_lcr_to_lcr.py
+    inputs:
+      leader_position: lcr_leader/position
+      follower_position: lcr_follower/position
+    outputs:
+      - goal_position
+
+  - id: lcr_follower
+    path: ../../../node_hub/dynamixel_client/client.py
+    inputs:
+      pull_position: dora/timer/millis/10
+      write_goal_position: lcr_interpolate/goal_position
+
+      end: lcr_follower_simu/end
+    outputs:
+      - position
+    env:
+      PORT: /dev/tty.usbmodem575E0031141
+
+      IDS: 1 2 3 4 5 6
+      JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
+      MODELS: x_series x_series x_series x_series x_series x_series
+
+      TORQUE: True True True True True True
+
+      INITIAL_GOAL_POSITION: None None None None None None
+      INITIAL_GOAL_CURRENT: None None None None None 500
+
+      OFFSETS: -2048 2048 2048 2048 1024 2048
+      DRIVE_MODES: POS NEG NEG NEG NEG NEG
+
+  - id: lcr_interpolate_simu
+    path: ../nodes/interpolate_lcr_to_simu_lcr.py
+    inputs:
+      leader_position: lcr_leader/position
+    outputs:
+      - goal_position
+
+  - id: lcr_follower_simu
+    path: mjpython
+    args: ../../../node_hub/mujoco_client/client.py
+    inputs:
+      pull_position: dora/timer/millis/10
+      write_goal_position: lcr_interpolate_simu/goal_position
+
+      tick: dora/timer/millis/10
+    outputs:
+      - position
+      - tick
+      - end
+
+    env:
+      SCENE: ../assets/simulation/reach_cube.xml
+
+      JOINTS: shoulder_pan_joint shoulder_lift_joint elbow_flex_joint wrist_flex_joint wrist_roll_joint gripper_joint
+
+      INITIAL_GOAL_POSITION: None None None None None None

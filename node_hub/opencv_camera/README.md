@@ -12,7 +12,6 @@ nodes:
     path: camera.py # modify this to the relative path from the graph file to the client script
     inputs:
       pull_image: dora/timer/millis/10 # pull the image every 10ms
-      # stop: some stop signal
     outputs:
       - image # push the image to the dataflow 
 
