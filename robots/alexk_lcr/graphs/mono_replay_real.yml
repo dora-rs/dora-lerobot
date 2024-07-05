@@ -2,14 +2,14 @@ nodes:
   - id: replay_client
     path: ../../../node_hub/replay_client/client.py
     inputs:
-      pull_position: dora/timer/millis/10
+      pull_position: dora/timer/millis/33
 
     outputs:
       - position
 
     env:
-      PATH: ./out/01907e99-03bc-7ebe-a6af-d2eb5092e1a7
-      EPISODE: 1
+      PATH: ../../../datasets/move_up_right_left
+      EPISODE: 3
 
   - id: lcr_follower
     path: ../../../node_hub/dynamixel_client/client.py

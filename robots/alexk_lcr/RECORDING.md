@@ -47,20 +47,30 @@ Then, you can tele operate the follower with the leader. A window will pop up sh
 4. Write down the location of the logs (e.g `018fc3a8-3b76-70f5-84a2-22b84df24739`), this is where the
    dataset (and logs) are stored.
 
-
-
-You can now use our script to convert the logs to a dataset:
+You can now use our script to convert the logs to an understandable dataset:
 
 ```bash
 cd dora-dora_lerobot
 
-TODO: Add the script to convert the logs to a valid dataset
+# If you are using a custom environment, you will have to activate it before running the command
+source [your_custom_env_bin]/activate
 
+# If you followed the installation instructions, you can run the following command
+source venv/bin/activate # On Linux
+source venv/Scripts/activate # On Windows bash
+venv\Scripts\activate.bat # On Windows cmd
+venv\Scripts\activate.ps1 # On Windows PowerShell
+
+python ./datasets/build_dataset.py --record-path [path_to_recorded_logs] --dataset-name [dataset_name]
 ```
+
+**Note:** When recording episodes the arms are tele operated at 60Hz, and the camera is recorded at 30Hz. We duplicate
+the camera in order to be able to shrink the dataset to 30Hz without losing information. 
 
 ## The dora graph
 
 [![](https://mermaid.ink/img/pako:eNqdVMFu2zAM_RVB57berjn0MOzaU3eLCoGR6ESobBqSnK4o-u-j5NizE6Np64NBPfE9Us-03qQhi3IjxempPb2YA4Qk_vxSrRDeBO0RLIZx5dqEoSMPCUeoJs-0IYU6bM1RG2gwQAaOziJpBmkUwUA7SjqgoWAzYinAabmtZgulnlQb-90-QHcQWuuyp7XY5uApU-e7yXHN0zsnlahkDSWqAlSN897F6uePrVJTXJU8bLmf8jpvU9zeiuTMs4Aout573VF0yVHLG_crLo2WZN6UytwRv-Sv-DpInksM6HWBi_75YFPy_JN99aQL7rJwJu8JZiRWeQkuoV7C3-jDNbDHQryYsZWzdi7ywGXyKeQ2Lf4t_IuRXAhm-v9an83lQiXgj1an4Xirc34-hNMx1ymf8RfMZOn85_m6L1fZNTiPtsxxifRVjYV9C7doFzEcIbd-V8B4x57qvltt5YNfai4U02DSQkDeSLa8AWf5onvLckqmAzao5IZDC-FZSdW-cx70iR5fWyM3KfR4IwP1-4Pc1OAjr_rOsvxvB3zlNBOK1iUKD8M9Wq7T93-SiOfx?type=png)](https://mermaid.live/edit#pako:eNqdVMFu2zAM_RVB57berjn0MOzaU3eLCoGR6ESobBqSnK4o-u-j5NizE6Np64NBPfE9Us-03qQhi3IjxempPb2YA4Qk_vxSrRDeBO0RLIZx5dqEoSMPCUeoJs-0IYU6bM1RG2gwQAaOziJpBmkUwUA7SjqgoWAzYinAabmtZgulnlQb-90-QHcQWuuyp7XY5uApU-e7yXHN0zsnlahkDSWqAlSN897F6uePrVJTXJU8bLmf8jpvU9zeiuTMs4Aout573VF0yVHLG_crLo2WZN6UytwRv-Sv-DpInksM6HWBi_75YFPy_JN99aQL7rJwJu8JZiRWeQkuoV7C3-jDNbDHQryYsZWzdi7ywGXyKeQ2Lf4t_IuRXAhm-v9an83lQiXgj1an4Xirc34-hNMx1ymf8RfMZOn85_m6L1fZNTiPtsxxifRVjYV9C7doFzEcIbd-V8B4x57qvltt5YNfai4U02DSQkDeSLa8AWf5onvLckqmAzao5IZDC-FZSdW-cx70iR5fWyM3KfR4IwP1-4Pc1OAjr_rOsvxvB3zlNBOK1iUKD8M9Wq7T93-SiOfx)
+
 ## License
 
 This library is licensed under the [Apache License 2.0](../../LICENSE).

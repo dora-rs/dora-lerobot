@@ -23,10 +23,11 @@ from dora import Node
 def main():
     # Handle dynamic nodes, ask for the name of the node in the dataflow
     parser = argparse.ArgumentParser(
-        description="Camera Client: This node is used to represent a camera. ")
+        description="Video Encoder: This node is used to record episodes of a robot interacting with the environment."
+    )
 
     parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="opencv_camera")
+                        default="video_encoder")
 
     if not os.getenv("VIDEO_NAME") or not os.getenv("FPS"):
         raise ValueError("Please set the VIDEO_NAME and FPS environment variables.")
@@ -48,6 +49,13 @@ def main():
     episode_index = 1
 
     dataflow_id = node.dataflow_id()
+
+    base = Path("out") / dataflow_id / "videos"
+    out_dir = base / f"{video_name}_episode_{episode_index:06d}"
+    name = f"{video_name}_episode_{episode_index:06d}.mp4"
+
+    if not out_dir.exists():
+        out_dir.mkdir(parents=True)
 
     frame_count = 0
     for event in node:

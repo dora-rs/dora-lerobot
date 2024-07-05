@@ -14,10 +14,10 @@ from dora import Node
 def main():
     # Handle dynamic nodes, ask for the name of the node in the dataflow
     parser = argparse.ArgumentParser(
-        description="Camera Client: This node is used to represent a camera. ")
+        description="LeRobot Record: This node is used to record episodes of a robot interacting with the environment.")
 
     parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="opencv_camera")
+                        default="lerobot_record")
 
     args = parser.parse_args()
 

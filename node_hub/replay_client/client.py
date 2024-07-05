@@ -21,23 +21,13 @@ class Client:
 
         self.node = Node(config["name"])
 
-        action_file = pd.read_parquet(config["episode_path"] + "/action.parquet")
-        episode_file = pd.read_parquet(config["episode_path"] + "/episode_index.parquet")
+        dataset = pd.read_parquet(config["episode_path"] + "/dataset.parquet")
 
-        # find in episode_file, the row with value of [config["episode_id"]]
-        episode = episode_file[episode_file["episode_index"] == config["episode_id"]]
+        # Filter the dataset to only keep rows from the episode
+        dataset = dataset[dataset["episode_index"] == config["episode_id"]]
 
-        # find in episode_file the next row after the episode_id
-        next_episode = episode_file[episode_file.index > episode.index[0]].head(1)
-
-        # deduce the start and end index of the action file thanks to "timestamp_utc" column
-        start_timestamp = episode["timestamp_utc"].iloc[0]
-        end_timestamp = next_episode["timestamp_utc"].iloc[0]
-
-        # filter action file that are between start and end timestamp
-        self.action = action_file[
-            (action_file["timestamp_utc"] >= start_timestamp) & (action_file["timestamp_utc"] < end_timestamp)]
-
+        self.action = dataset["action"]
+        print ("Action: ", self.action, flush=True)
         self.frame = 0
 
     def run(self):
@@ -65,7 +55,7 @@ class Client:
         action = self.action.iloc[self.frame]
         self.frame += 1
 
-        node.send_output("position", pa.array(action["action"]), metadata)
+        node.send_output("position", pa.array(action), metadata)
 
 
 def main():

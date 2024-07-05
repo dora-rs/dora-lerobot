@@ -8,6 +8,7 @@ LCR webcam: this Dora node reads the webcam feed of CAMERA_ID and propagates in 
 This node also shows the webcam feed in a window.
 """
 import os
+import time
 import cv2
 import argparse
 
@@ -66,6 +67,11 @@ def main():
 
                 frame = cv2.resize(frame, (camera_width, camera_height))
 
+                node.send_output(
+                    "image",
+                    pa.array(frame.ravel()),
+                    event["metadata"],
+                )
                 node.send_output(
                     "image",
                     pa.array(frame.ravel()),

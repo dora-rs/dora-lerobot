@@ -96,9 +96,9 @@ class Client:
 def main():
     # Handle dynamic nodes, ask for the name of the node in the dataflow
     parser = argparse.ArgumentParser(
-        description="Feetech Client: This node is used to represent a chain of dynamixel motors. "
-                    "It can be used to read "
-                    "positions, velocities, currents, and set goal positions and currents.")
+        description="MujoCo Client: This node is used to represent a MuJoCo simulation. It can be used instead of a "
+                    "follower arm to test the dataflow."
+    )
 
     parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
                         default="mujoco_client")
