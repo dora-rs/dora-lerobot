@@ -6,7 +6,7 @@ import numpy as np
 import pyarrow as pa
 from dora import Node
 from gymnasium import spaces
-from dora_lerobot.common.datasets.lerobot_dataset import LeRobotDataset
+from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 
 EPISODE = 19
 REPO_ID = "cadene/reachy2_mobile_base"

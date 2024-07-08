@@ -41,7 +41,7 @@ You must configure the arms, retrieve the device port, and modify the file `mono
 environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
 
 ```bash
-cd dora-dora_lerobot/
+cd dora-lerobot/
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
@@ -66,7 +66,7 @@ You must configure the arms, retrieve the device port, and modify the file `bi_t
 environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
 
 ```bash
-cd dora-dora_lerobot/
+cd dora-lerobot/
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
@@ -90,7 +90,7 @@ You must configure the arms, retrieve the device port, and modify the file `mono
 environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
 
 ```bash
-cd dora-dora_lerobot/
+cd dora-lerobot/
 
 
 # If you are using a custom environment, you will have to activate it before running the command
@@ -117,7 +117,7 @@ correct
 environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
 
 ```bash
-cd dora-dora_lerobot/
+cd dora-lerobot/
 
 
 # If you are using a custom environment, you will have to activate it before running the command
@@ -142,7 +142,7 @@ environment variables. (e.g. `PATH`, `EPISODE`). You must also configure the fol
 modify the file `mono_replay_real.yml` to set the correct environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
 
 ```bash
-cd dora-dora_lerobot/
+cd dora-lerobot/
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate

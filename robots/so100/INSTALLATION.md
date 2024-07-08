@@ -33,7 +33,7 @@ git clone https://github.com/dora-rs/dora-lerobot
 - Open a bash terminal and navigate to the repository by running the following command:
 
 ```bash
-cd dora-dora_lerobot
+cd dora-lerobot
 ```
 
 - Create a virtual environment by running the following command:
@@ -63,7 +63,7 @@ your custom python environment before running `dora up && dora start [graph].yml
 Now you installed the Dora pipeline, you need to install the DoraLerobot library:
 
 ```bash
-cd dora-dora_lerobot
+cd dora-lerobot
 
 source venv/bin/activate # On Linux
 source venv/Scripts/activate # On Windows bash

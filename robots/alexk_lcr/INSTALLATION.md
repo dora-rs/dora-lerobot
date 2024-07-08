@@ -33,7 +33,7 @@ git clone https://github.com/dora-rs/dora-lerobot
 - Open a bash terminal and navigate to the repository by running the following command:
 
 ```bash
-cd dora-dora_lerobot
+cd dora-lerobot
 ```
 
 - Create a virtual environment by running the following command:
@@ -60,6 +60,25 @@ pip install robots/alexk_lcr
 **Note**: You're totally free to use your own Python environment, a Conda environment, or whatever you prefer, you will
 have to activate
 your custom python environment before running `dora up && dora start [graph].yml`.
+
+Now you installed the Dora pipeline, you need to install the DoraLerobot library:
+
+```bash
+cd dora-lerobot
+
+source venv/bin/activate # On Linux
+source venv/Scripts/activate # On Windows bash
+venv\Scripts\activate.bat # On Windows cmd
+venv\Scripts\activate.ps1 # On Windows PowerShell
+s
+pip install ./dora_lerobot
+```
+
+You need to install our dora tool for precisely recording data with timestamps:
+
+```bash
+cargo install --git https://github.com/dora-rs/dora dora-record
+```
 
 In order to record episodes, you need ffmpeg installed on your system. You can download it from
 the [official website](https://ffmpeg.org/download.html). If you're on Windows, you can download the latest build
