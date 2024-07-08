@@ -1,8 +1,8 @@
 nodes:
-  - id: lcr_leader
-    path: ../../../node_hub/dynamixel_client/client.py
+  - id: lcr-leader
+    path: dynamixel-client
     inputs:
-      pull_position: lerobot_record/tick
+      pull_position: lerobot-dashboard/tick
     outputs:
       - position
     env:
@@ -20,20 +20,20 @@ nodes:
       OFFSETS: -2048 -3072 1024 -2048 1024 2048
       DRIVE_MODES: POS POS NEG POS NEG NEG
 
-  - id: lcr_interpolate
+  - id: lcr-interpolate
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
-      leader_position: lcr_leader/position
-      follower_position: lcr_follower/position
+      leader_position: lcr-leader/position
+      follower_position: lcr-follower/position
     outputs:
       - goal_position
 
-  - id: lcr_follower
-    path: ../../../node_hub/dynamixel_client/client.py
+  - id: lcr-follower
+    path: dynamixel-client
     inputs:
-      pull_position: lerobot_record/tick
-      write_goal_position: lcr_interpolate/goal_position
-      end: lerobot_record/end
+      pull_position: lerobot-dashboard/tick
+      write_goal_position: lcr-interpolate/goal_position
+      end: lerobot-dashboard/end
 
     outputs:
       - position
@@ -52,11 +52,11 @@ nodes:
       OFFSETS: -2048 2048 2048 2048 1024 2048
       DRIVE_MODES: POS NEG NEG NEG NEG NEG
 
-  - id: opencv_camera
-    path: ../../../node_hub/opencv_camera/camera.py
+  - id: opencv-camera
+    path: opencv-camera
     inputs:
       pull_image:
-        source: lerobot_record/tick
+        source: lerobot-dashboard/tick
         queue_size: 1
     outputs:
       - image
@@ -66,11 +66,11 @@ nodes:
       CAMERA_WIDTH: 860
       CAMERA_HEIGHT: 540
 
-  - id: video_encoder
-    path: ../../../node_hub/video_encoder/encoder.py
+  - id: video-encoder
+    path: video-encoder
     inputs:
-      image: opencv_camera/image
-      episode_index: lerobot_record/episode
+      image: opencv-camera/image
+      episode_index: lerobot-dashboard/episode
     outputs:
       - image
 
@@ -80,14 +80,14 @@ nodes:
       VIDEO_HEIGHT: 540
       FPS: 30
 
-  - id: lerobot_record
-    path: ../../../node_hub/lerobot_record/record.py
+  - id: lerobot-dashboard
+    path: lerobot-dashboard
     inputs:
       tick:
         source: dora/timer/millis/16
         queue_size: 1
 
-      image_left: opencv_camera/image
+      image_left: opencv-camera/image
     outputs:
       - tick
       - episode
@@ -98,11 +98,11 @@ nodes:
       CAMERA_WIDTH: 860
       CAMERA_HEIGHT: 540
 
-  - id: dora_record
+  - id: dora-record
     path: dora-record
     inputs:
-      action: lcr_interpolate/goal_position
-      observation.state: lcr_follower/position
-      episode_index: lerobot_record/episode
-      failed_episode_index: lerobot_record/failed
-      observation.images.cam_up: video_encoder/image
+      action: lcr-interpolate/goal_position
+      observation.state: lcr-follower/position
+      episode_index: lerobot-dashboard/episode
+      failed_episode_index: lerobot-dashboard/failed
+      observation.images.cam_up: video-encoder/image

@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "alexk-lcr"
+version = "0.1"
+authors = ["Hennzau <dev@enzo-le-van.fr>"]
+description = "Dora LeRobot Alexander Koch's LCR arm."
+readme = "README.md"
+
+packages = [
+    { include = "interpolate_lcr_to_lcr.py", from = "nodes" },
+    { include = "interpolate_lcr_to_simu_lcr.py", from = "nodes" }
+]
+
+[tool.poetry.dependencies]
+dynamixel-client = { path = "../../node_hub/dynamixel-client" }
+feetech-client = { path = "../../node_hub/feetech-client" }
+mujoco-client = { path = "../../node_hub/mujoco-client" }
+replay-client = { path = "../../node_hub/replay-client" }
+lerobot-dashboard = { path = "../../node_hub/lerobot-dashboard" }
+opencv-camera = { path = "../../node_hub/opencv-camera" }
+video-encoder = { path = "../../node_hub/video-encoder" }
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,6 +1,6 @@
 nodes:
-  - id: replay_client
-    path: ../../../node_hub/replay_client/client.py
+  - id: replay-client
+    path: replay-client
     inputs:
       pull_position: dora/timer/millis/33
 
@@ -11,10 +11,10 @@ nodes:
       PATH: ../../../datasets/move_up_right_left
       EPISODE: 3
 
-  - id: lcr_follower
-    path: ../../../node_hub/dynamixel_client/client.py
+  - id: lcr-follower
+    path: dynamixel-client
     inputs:
-      write_goal_position: replay_client/position
+      write_goal_position: replay-client/position
     outputs:
       - position
     env:

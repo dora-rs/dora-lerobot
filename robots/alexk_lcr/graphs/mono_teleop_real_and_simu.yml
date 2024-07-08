@@ -1,8 +1,8 @@
 nodes:
-  - id: lcr_leader
-    path: ../../../node_hub/dynamixel_client/client.py
+  - id: lcr-leader
+    path: dynamixel-client
     inputs:
-      pull_position: lcr_follower_simu/tick
+      pull_position: lcr-follower_simu/tick
     outputs:
       - position
     env:
@@ -20,21 +20,21 @@ nodes:
       OFFSETS: -2048 -3072 1024 -2048 1024 2048
       DRIVE_MODES: POS POS NEG POS NEG NEG
 
-  - id: lcr_interpolate
+  - id: lcr-interpolate
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
-      leader_position: lcr_leader/position
-      follower_position: lcr_follower/position
+      leader_position: lcr-leader/position
+      follower_position: lcr-follower/position
     outputs:
       - goal_position
 
-  - id: lcr_follower
-    path: ../../../node_hub/dynamixel_client/client.py
+  - id: lcr-follower
+    path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10
-      write_goal_position: lcr_interpolate/goal_position
+      write_goal_position: lcr-interpolate/goal_position
 
-      end: lcr_follower_simu/end
+      end: lcr-follower_simu/end
     outputs:
       - position
     env:
@@ -52,19 +52,22 @@ nodes:
       OFFSETS: -2048 2048 2048 2048 1024 2048
       DRIVE_MODES: POS NEG NEG NEG NEG NEG
 
-  - id: lcr_interpolate_simu
+  - id: lcr-interpolates-imu
     path: ../nodes/interpolate_lcr_to_simu_lcr.py
     inputs:
-      leader_position: lcr_leader/position
+      leader_position: lcr-leader/position
     outputs:
       - goal_position
 
-  - id: lcr_follower_simu
-    path: mjpython
-    args: ../../../node_hub/mujoco_client/client.py
+  - id: lcr-follower-simu
+    # for windows
+    path: mujoco-client
+    # for macos
+    # path: mjpython
+    # args: ../../node_hub/mujoco-client/main.py
     inputs:
       pull_position: dora/timer/millis/10
-      write_goal_position: lcr_interpolate_simu/goal_position
+      write_goal_position: lcr-interpolate_simu/goal_position
 
       tick: dora/timer/millis/10
     outputs:

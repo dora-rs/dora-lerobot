@@ -1,6 +1,6 @@
 nodes:
   - id: lcr_left_leader
-    path: ../../../node_hub/dynamixel_client/client.py
+    path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10 # pull the position every 10ms
     outputs:
@@ -29,7 +29,7 @@ nodes:
       - goal_position
 
   - id: lcr_left_follower
-    path: ../../../node_hub/dynamixel_client/client.py
+    path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10
       write_goal_position: lcr_left_interpolate/goal_position
@@ -51,7 +51,7 @@ nodes:
       DRIVE_MODES:  POS NEG NEG NEG NEG NEG
 
   - id: lcr_right_leader
-    path: ../../../node_hub/dynamixel_client/client.py
+    path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10 # pull the position every 10ms
     outputs:
@@ -80,7 +80,7 @@ nodes:
       - goal_position
 
   - id: lcr_right_follower
-    path: ../../../node_hub/dynamixel_client/client.py
+    path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10
       write_goal_position: lcr_right_interpolate/goal_position

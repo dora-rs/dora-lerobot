@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "dora_lerobot"
+version = "0.1"
+authors = ["Hennzau"]
+description = "This is a temporary package that will be replaced by the official LeRobot package when it's ready."
+readme = "README.md"
+
+packages = [
+    { include = "dora_lerobot" }
+]
+
+[tool.poetry.dependencies]
+numpy = "2.0.0"
+dynamixel-sdk = "3.7.31"
+feetech-servo-sdk = "1.0.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

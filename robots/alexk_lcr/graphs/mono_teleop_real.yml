@@ -1,6 +1,6 @@
 nodes:
-  - id: lcr_leader
-    path: ../../../node_hub/dynamixel_client/client.py
+  - id: lcr-leader
+    path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10 # pull the position every 10ms
     outputs:
@@ -20,16 +20,16 @@ nodes:
       OFFSETS:  -2048 -3072 1024 -2048 1024 2048
       DRIVE_MODES:  POS POS NEG POS NEG NEG
 
-  - id: lcr_interpolate
+  - id: lcr-interpolate
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
-      leader_position: lcr_leader/position
-      follower_position: lcr_follower/position
+      leader_position: lcr-leader/position
+      follower_position: lcr-follower/position
     outputs:
       - goal_position
 
-  - id: lcr_follower
-    path: ../../../node_hub/dynamixel_client/client.py
+  - id: lcr-follower
+    path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10
       write_goal_position: lcr_interpolate/goal_position

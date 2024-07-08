@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "node_hub"
+version = "0.1"
+authors = ["Hennzau <dev@enzo-le-van.fr>"]
+description = "Dora LeRobot node hub"
+readme = "README.md"
+
+packages = [
+    { include = "main.py", from = "dynamixel-client" },
+    { include = "main.py", from = "feetech-client" },
+    { include = "main.py", from = "mujoco-client" },
+    { include = "main.py", from = "replay-client" },
+    { include = "main.py", from = "lerobot-dashboard" },
+    { include = "main.py", from = "opencv-camera" },
+    { include = "main.py", from = "video-encoder" },
+]
+
+[tool.poetry.dependencies]
+dynamixel-client = { path = "dynamixel-client" }
+feetech-client = { path = "feetech-client" }
+mujoco-client = { path = "mujoco-client" }
+replay-client = { path = "replay-client" }
+lerobot-dashboard = { path = "lerobot-dashboard" }
+opencv-camera = { path = "opencv-camera" }
+video-encoder = { path = "video-encoder" }
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
