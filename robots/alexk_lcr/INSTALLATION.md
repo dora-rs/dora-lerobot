@@ -61,20 +61,7 @@ pip install robots/alexk_lcr
 have to activate
 your custom python environment before running `dora up && dora start [graph].yml`.
 
-Now you installed the Dora pipeline, you need to install the DoraLerobot library:
-
-```bash
-cd dora-lerobot
-
-source venv/bin/activate # On Linux
-source venv/Scripts/activate # On Windows bash
-venv\Scripts\activate.bat # On Windows cmd
-venv\Scripts\activate.ps1 # On Windows PowerShell
-s
-pip install ./dora_lerobot
-```
-
-You need to install our dora tool for precisely recording data with timestamps:
+You may need to install our dora tool for precisely recording data with timestamps:
 
 ```bash
 cargo install --git https://github.com/dora-rs/dora dora-record
