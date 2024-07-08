@@ -23,7 +23,7 @@ Make sure to:
 You can now start the Dora pipeline to record episodes for LeRobot:
 
 ```bash
-cd dora-dora_lerobot
+cd dora-lerobot
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
@@ -50,7 +50,7 @@ Then, you can tele operate the follower with the leader. A window will pop up sh
 You can now use our script to convert the logs to an understandable dataset:
 
 ```bash
-cd dora-dora_lerobot
+cd dora-lerobot
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
