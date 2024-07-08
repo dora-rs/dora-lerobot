@@ -1,6 +1,6 @@
 nodes:
   - id: replay-client
-    build: ../../../node_hub/replay-client
+    build: pip install ../../../node_hub/replay-client
     path: replay-client
     inputs:
       pull_position: dora/timer/millis/33
