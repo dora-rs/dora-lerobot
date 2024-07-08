@@ -9,8 +9,8 @@ nodes:
       - position
 
     env:
-      PATH: ../../../datasets/move_up_right_left
-      EPISODE: 3
+      PATH: ../../../datasets/test
+      EPISODE: 1
 
   - id: lcr-follower
     build: pip install ../../../node_hub/dynamixel-client

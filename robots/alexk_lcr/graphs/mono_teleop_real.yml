@@ -34,7 +34,7 @@ nodes:
     path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10
-      write_goal_position: lcr_interpolate/goal_position
+      write_goal_position: lcr-interpolate/goal_position
     outputs:
       - position
     env:

@@ -52,6 +52,8 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
+dora build ./robots/alexk_lcr/graphs/mono_teleop_real.yml # Only the first time, it will install all the requirements if needed
+
 dora up
 dora start ./robots/alexk_lcr/graphs/mono_teleop_real.yml
 ```
@@ -77,6 +79,8 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
+dora build ./robots/alexk_lcr/graphs/bi_teleop_real.yml # Only the first time, it will install all the requirements if needed
+
 dora up
 dora start ./robots/alexk_lcr/graphs/bi_teleop_real.yml
 ```
@@ -101,6 +105,8 @@ source venv/bin/activate # On Linux
 source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
+
+dora build ./robots/alexk_lcr/graphs/mono_teleop_simu.yml # Only the first time, it will install all the requirements if needed
 
 dora up
 dora start ./robots/alexk_lcr/graphs/mono_teleop_simu.yml
@@ -129,6 +135,8 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
+dora build ./robots/alexk_lcr/graphs/mono_teleop_real_and_simu.yml # Only the first time, it will install all the requirements if needed
+
 dora up
 dora start ./robots/alexk_lcr/graphs/mono_teleop_real_and_simu.yml
 ```
@@ -152,6 +160,8 @@ source venv/bin/activate # On Linux
 source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
+
+dora build ./robots/alexk_lcr/graphs/mono_replay_real.yml # Only the first time, it will install all the requirements if needed
 
 dora up
 dora start ./robots/alexk_lcr/graphs/mono_replay_real.yml

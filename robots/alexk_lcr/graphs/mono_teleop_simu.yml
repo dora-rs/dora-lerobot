@@ -31,10 +31,10 @@ nodes:
   - id: lcr-follower
     build: pip install ../../../node_hub/mujoco-client
     # for windows
-    path: mujoco-client
+    # path: mujoco-client
     # for macos
-    # path: mjpython
-    # args: ../../../node_hub/mujoco-client/main.py
+    path: mjpython
+    args: ../../../node_hub/mujoco-client/main.py
     inputs:
       pull_position: dora/timer/millis/10
       write_goal_position: lcr-interpolate/goal_position

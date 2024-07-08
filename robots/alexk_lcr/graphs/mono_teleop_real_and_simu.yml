@@ -3,7 +3,7 @@ nodes:
     build: pip install ../../../node_hub/dynamixel-client
     path: dynamixel-client
     inputs:
-      pull_position: lcr-follower_simu/tick
+      pull_position: lcr-follower-simu/tick
     outputs:
       - position
     env:
@@ -36,7 +36,7 @@ nodes:
       pull_position: dora/timer/millis/10
       write_goal_position: lcr-interpolate/goal_position
 
-      end: lcr-follower_simu/end
+      end: lcr-follower-simu/end
     outputs:
       - position
     env:
@@ -54,7 +54,7 @@ nodes:
       OFFSETS: -2048 2048 2048 2048 1024 2048
       DRIVE_MODES: POS NEG NEG NEG NEG NEG
 
-  - id: lcr-interpolates-imu
+  - id: lcr-interpolate-simu
     path: ../nodes/interpolate_lcr_to_simu_lcr.py
     inputs:
       leader_position: lcr-leader/position
@@ -64,13 +64,13 @@ nodes:
   - id: lcr-follower-simu
     build: pip install ../../../node_hub/mujoco-client
     # for windows
-    path: mujoco-client
+    # path: mujoco-client
     # for macos
-    # path: mjpython
-    # args: ../../../node_hub/mujoco-client/main.py
+    path: mjpython
+    args: ../../../node_hub/mujoco-client/main.py
     inputs:
       pull_position: dora/timer/millis/10
-      write_goal_position: lcr-interpolate_simu/goal_position
+      write_goal_position: lcr-interpolate-simu/goal_position
 
       tick: dora/timer/millis/10
     outputs:
