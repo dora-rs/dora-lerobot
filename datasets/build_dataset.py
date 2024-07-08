@@ -11,10 +11,15 @@ def main():
 
     parser.add_argument("--record-path", type=str, required=True, help="The path to the recording output.")
     parser.add_argument("--dataset-name", type=str, required=True, help="The name you want for the dataset.")
+    parser.add_argument("--framerate", type=int, required=False, default=30, help="The framerate of the video.")
 
     args = parser.parse_args()
 
-    print("Building a new dataset {} from the recording at {}".format(args.dataset_name, args.record_path))
+    print("Building a new dataset {} from the recording at {}, with framerate {}".format(args.dataset_name,
+                                                                                         args.record_path,
+                                                                                         args.framerate))
+
+    framerate = args.framerate
 
     args.dataset_name = args.dataset_name.replace(" ", "_")
     args.dataset_name = args.dataset_name.lower()
@@ -93,25 +98,6 @@ def main():
     for i in range(len(images)):
         dataset = pd.merge(dataset, images[i], on=["timestamp_utc", "episode_index"], how="outer")
 
-    """
-    # get the starting timestamp in millis of the first episode
-    start_timestamp = dataset["timestamp_utc"].min()
-    start_timestamp = pd.to_datetime(start_timestamp).timestamp() * 1000
-
-    # transform the timestamp_utc to millis
-    dataset["timestamp_utc"] = pd.to_datetime(dataset["timestamp_utc"]).apply(lambda x: x.timestamp() * 1000) - start_timestamp
-
-    # add a new column "frame" to the dataset that is the result of timestamp_utc // 33
-    dataset["frame"] = dataset["timestamp_utc"] // 33
-
-    dataset = dataset.groupby("frame").agg({
-        "action": "first",
-        "observation.state": "first",
-        "episode_index": "first",
-        "timestamp_utc": "first"
-    })
-    """
-
     # get the starting timestamp in millis for each episode
     start_timestamp = dataset.groupby("episode_index")["timestamp_utc"].min()
     start_timestamp = start_timestamp.apply(lambda x: pd.to_datetime(x).timestamp() * 1000)
@@ -119,27 +105,6 @@ def main():
     # transform the timestamp_utc to millis
     dataset["timestamp_utc"] = dataset.apply(
         lambda x: pd.to_datetime(x["timestamp_utc"]).timestamp() * 1000 - start_timestamp[x["episode_index"]], axis=1)
-
-    # add a new column "frame" to the dataset that is the result of timestamp_utc // 33
-    dataset["frame"] = dataset["timestamp_utc"] // 33
-
-    # group by same frame, and keep the first non None or Nan value for each column
-    aggregation = {
-        "action": "first",
-        "observation.state": "first"
-    }
-
-    for image in image_files:
-        aggregation[image] = "first"
-
-    dataset = dataset.groupby(["episode_index", "frame"]).agg(aggregation)
-
-    # remove the rows where image is None
-    dataset = dataset.dropna(subset=image_files)
-
-    # only keep episode_index, action, state, and images
-    dataset = dataset.reset_index()
-    dataset = dataset[["episode_index", "action", "observation.state"] + image_files]
 
     # load failed_episode_index.parquet
     if os.path.exists(args.record_path + "/failed_episode_index.parquet"):
@@ -151,8 +116,37 @@ def main():
         # remove the rows for which episode_index is in failed_episode_index
         dataset = dataset[~dataset["episode_index"].isin(failed_episode_index)]
 
-    # save the dataset: mkdir folder, save the dataset as parquet
+    # for each row with NaN values, fill the NaN values with the nearest non-NaN value
+    dataset.set_index(["timestamp_utc", "episode_index"], inplace=True)
 
+    dataset = dataset.ffill().bfill()
+
+    dataset.reset_index(inplace=True)
+
+    # add a new column "frame" to the dataset that is the result of timestamp_utc // framerate
+    dataset["frame"] = dataset["timestamp_utc"] // int(1000 / framerate)
+
+    # Only keep 1 row for each frame, keep the first row if there are multiple rows for the same frame
+    dataset = dataset.groupby(["episode_index", "frame"]).apply(lambda x: x.iloc[0], include_groups=False).reset_index()
+
+    # Remove timestamp_utc column
+    dataset.drop(columns=["timestamp_utc"], inplace=True)
+
+    # Add new column "timestamp" that is the result of frame * framerate
+    dataset["timestamp"] = dataset["frame"] * 1000 / framerate
+
+    # Drop the frame column
+    dataset.drop(columns=["frame"], inplace=True)
+
+    # only keep the array of positions for each action abd state
+    joints = dataset["action"][0][0]["joints"]
+    dataset["action"] = dataset["action"].apply(lambda x: x[0]["positions"])
+    dataset["observation.state"] = dataset["observation.state"].apply(lambda x: x[0]["positions"])
+
+    # Add a new column "joints" that is the array of joints with enough rows to match the number of rows in the dataset
+    dataset["joints"] = pd.Series([joints for _ in range(len(dataset))])
+
+    # save the dataset: mkdir folder, save the dataset as parquet
     if not os.path.exists("datasets/" + args.dataset_name):
         os.makedirs("datasets/" + args.dataset_name)
 
@@ -161,6 +155,8 @@ def main():
     # move the video folder to the dataset folder
     if os.path.exists(args.record_path + "/videos"):
         os.rename(args.record_path + "/videos", "datasets/" + args.dataset_name + "/videos")
+
+    print(dataset)
 
 
 if __name__ == '__main__':
