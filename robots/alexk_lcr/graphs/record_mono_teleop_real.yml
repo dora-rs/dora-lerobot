@@ -1,5 +1,6 @@
 nodes:
   - id: lcr-leader
+    build: pip install ../../../node_hub/dynamixel-client
     path: dynamixel-client
     inputs:
       pull_position: lerobot-dashboard/tick
@@ -29,6 +30,7 @@ nodes:
       - goal_position
 
   - id: lcr-follower
+    build: pip install ../../../node_hub/dynamixel-client
     path: dynamixel-client
     inputs:
       pull_position: lerobot-dashboard/tick
@@ -53,6 +55,7 @@ nodes:
       DRIVE_MODES: POS NEG NEG NEG NEG NEG
 
   - id: opencv-camera
+    build: pip install ../../../node_hub/opencv-camera
     path: opencv-camera
     inputs:
       pull_image:
@@ -67,6 +70,7 @@ nodes:
       CAMERA_HEIGHT: 540
 
   - id: video-encoder
+    build: pip install ../../../node_hub/video-encoder
     path: video-encoder
     inputs:
       image: opencv-camera/image
@@ -81,6 +85,7 @@ nodes:
       FPS: 30
 
   - id: lerobot-dashboard
+    build: pip install ../../../node_hub/lerobot-dashboard
     path: lerobot-dashboard
     inputs:
       tick:
@@ -99,6 +104,7 @@ nodes:
       CAMERA_HEIGHT: 540
 
   - id: dora-record
+    build: cargo install dora-record
     path: dora-record
     inputs:
       action: lcr-interpolate/goal_position

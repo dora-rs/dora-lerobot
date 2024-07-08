@@ -6,7 +6,7 @@ description = "Dora Node for video encoding (LeRobot compatible)."
 readme = "README.md"
 
 packages = [
-    { include = "main.py" }
+    { include = "main.py", to = "video_encoder" }
 ]
 
 [tool.poetry.dependencies]
@@ -15,9 +15,10 @@ dora-rs = "0.3.5"
 numpy = "2.0.0"
 pyarrow = "16.1.0"
 opencv-python = "4.10.0.84"
+python-ffmpeg = "2.0.12"
 
 [tool.poetry.scripts]
-video-encoder = "main:main"
+video-encoder = "video_encoder.main:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -6,7 +6,7 @@ description = "Dora Node client for dynamixel motors."
 readme = "README.md"
 
 packages = [
-    { include = "main.py" }
+    { include = "main.py", to = "dynamixel_client" }
 ]
 
 [tool.poetry.dependencies]
@@ -18,7 +18,7 @@ pyarrow = "16.1.0"
 dora_lerobot = { path = "../../dora-lerobot" }
 
 [tool.poetry.scripts]
-dynamixel-client = "main:main"
+dynamixel-client = "dynamixel_client.main:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

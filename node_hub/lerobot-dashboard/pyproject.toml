@@ -6,7 +6,7 @@ description = "Dora Node Dashboard for LeRobot dataset recording."
 readme = "README.md"
 
 packages = [
-    { include = "main.py" }
+    { include = "main.py", to = "lerobot_dashboard" }
 ]
 
 [tool.poetry.dependencies]
@@ -18,7 +18,7 @@ opencv-python = "4.10.0.84"
 pygame = "2.6.0"
 
 [tool.poetry.scripts]
-lerobot-dashboard = "main:main"
+lerobot-dashboard = "lerobot_dashboard.main:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

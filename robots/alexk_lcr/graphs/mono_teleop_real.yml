@@ -1,5 +1,6 @@
 nodes:
   - id: lcr-leader
+    build: pip install ../../../node_hub/dynamixel-client
     path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10 # pull the position every 10ms
@@ -29,6 +30,7 @@ nodes:
       - goal_position
 
   - id: lcr-follower
+    build: pip install ../../../node_hub/dynamixel-client
     path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10

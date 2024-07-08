@@ -18,6 +18,7 @@ import numpy as np
 import pyarrow as pa
 
 from dora import Node
+from ffmpeg import FFmpeg
 
 
 def main():
@@ -98,19 +99,14 @@ def main():
                     name = f"{video_name}_episode_{episode_index:06d}.mp4"
                     video_path = base / name
 
-                    ffmpeg_cmd = (
-                        f"ffmpeg -r {fps} "
-                        "-f image2 "
-                        "-loglevel error "
-                        f"-i {str(out_dir / 'frame_%06d.png')} "
-                        "-vcodec libx264 "
-                        "-g 2 "
-                        "-pix_fmt yuv444p "
-                        f"{str(video_path)} &&"
-                        f"rm -r {str(out_dir)}"
+                    ffmpeg = (
+                        FFmpeg()
+                        .option("y")
+                        .input(str(out_dir / "frame_%06d.png"), f='image2', r=fps)
+                        .output(str(video_path), vcodec='libx264', g=2, pix_fmt='yuv444p')
                     )
 
-                    subprocess.Popen([ffmpeg_cmd], start_new_session=True, shell=True)
+                    ffmpeg.execute()
 
                     frame_count = 0
 

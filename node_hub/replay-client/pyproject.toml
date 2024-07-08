@@ -6,7 +6,7 @@ description = "Dora Node client for replaying recorded data."
 readme = "README.md"
 
 packages = [
-    { include = "main.py" }
+    { include = "main.py", to = "replay_client" }
 ]
 
 [tool.poetry.dependencies]
@@ -17,7 +17,7 @@ pyarrow = "16.1.0"
 pandas = "2.2.2"
 
 [tool.poetry.scripts]
-replay-client = "main:main"
+replay-client = "replay_client.main:main"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
