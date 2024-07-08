@@ -55,7 +55,7 @@ version = "0.1.0"
 dependencies = [
  "dora-node-api",
  "eyre",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
+ "rustypot",
  "serialport",
 ]
 
@@ -67,7 +67,7 @@ dependencies = [
  "dora-node-api",
  "eyre",
  "lazy_static",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
+ "rustypot",
  "serialport",
 ]
 
@@ -1078,37 +1078,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
-name = "lcr-auto-configure"
-version = "0.1.0"
-dependencies = [
- "clap",
- "eyre",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
- "serialport",
-]
-
-[[package]]
-name = "lcr-client"
-version = "0.1.0"
-dependencies = [
- "dora-node-api",
- "eyre",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot)",
- "serialport",
-]
-
-[[package]]
-name = "lcr-teleop"
-version = "0.1.0"
-dependencies = [
- "clap",
- "dora-node-api",
- "eyre",
- "rustypot 0.4.2 (git+https://github.com/haixuanTao/rustypot?branch=angular-conversion)",
- "serialport",
-]
-
-[[package]]
 name = "lexical-core"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1764,17 +1733,6 @@ dependencies = [
 name = "rustypot"
 version = "0.4.2"
 source = "git+https://github.com/haixuanTao/rustypot?branch=angular-conversion#d35010e73b35decae69efb2f796d31be5b518b11"
-dependencies = [
- "clap",
- "log",
- "paste",
- "serialport",
-]
-
-[[package]]
-name = "rustypot"
-version = "0.4.2"
-source = "git+https://github.com/haixuanTao/rustypot#3b2930da529c2ed1f9e590e6cba84d06f3a40d0b"
 dependencies = [
  "clap",
  "log",
