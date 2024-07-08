@@ -6,13 +6,7 @@ description = "Dora LeRobot node hub"
 readme = "README.md"
 
 packages = [
-    { include = "main.py", from = "dynamixel-client" },
-    { include = "main.py", from = "feetech-client" },
-    { include = "main.py", from = "mujoco-client" },
-    { include = "main.py", from = "replay-client" },
-    { include = "main.py", from = "lerobot-dashboard" },
-    { include = "main.py", from = "opencv-camera" },
-    { include = "main.py", from = "video-encoder" },
+    { include = "main.py", from = "dynamixel-client", to = "node_hub" },
 ]
 
 [tool.poetry.dependencies]

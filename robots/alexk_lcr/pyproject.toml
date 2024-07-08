@@ -6,8 +6,8 @@ description = "Dora LeRobot Alexander Koch's LCR arm."
 readme = "README.md"
 
 packages = [
-    { include = "interpolate_lcr_to_lcr.py", from = "nodes" },
-    { include = "interpolate_lcr_to_simu_lcr.py", from = "nodes" }
+    { include = "interpolate_lcr_to_lcr.py", from = "nodes", to = "alexk_lcr" },
+    { include = "interpolate_lcr_to_simu_lcr.py", from = "nodes", to = "alexk_lcr" }
 ]
 
 [tool.poetry.dependencies]
