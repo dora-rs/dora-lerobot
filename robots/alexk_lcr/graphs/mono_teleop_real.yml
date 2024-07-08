@@ -18,7 +18,7 @@ nodes:
       INITIAL_GOAL_POSITION: None None None None None -450
       INITIAL_GOAL_CURRENT: None None None None None 40
 
-      OFFSETS:  -2048 -3072 1024 -2048 1024 2048
+      OFFSETS:  -2048 -3072 1024 2048 1024 2048
       DRIVE_MODES:  POS POS NEG POS NEG NEG
 
   - id: lcr-interpolate

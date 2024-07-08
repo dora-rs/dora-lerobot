@@ -8,26 +8,7 @@ import pyarrow as pa
 
 from dora import Node
 
-
-def in_range_position(values: np.array) -> np.array:
-    """
-    This function assures that the position values are in the range of the LCR standard [-2048, 2048] all servos.
-    This is important because an issue with communication can cause a +- 4095 offset value, so we need to assure
-    that the values are in the range.
-    """
-
-    for i in range(6):
-        if values[i] > 4096:
-            values[i] = values[i] % 4096
-        if values[i] < -4096:
-            values[i] = -(-values[i] % 4096)
-
-        if values[i] > 2048:
-            values[i] = - 2048 + (values[i] % 2048)
-        elif values[i] < -2048:
-            values[i] = 2048 - (-values[i] % 2048)
-
-    return values
+from dora_lerobot.position_control import in_range_position
 
 
 def main():
@@ -53,16 +34,13 @@ def main():
                 A communication issue with the follower can induces a +- 4095 offset in the position values.
                 So we need to assure that the goal_position is in the range of the Follower.
                 """
-                for i in range(len(goal_position) - 1):
-                    if follower_position[i] > 0:
-                        goal_position[i] = goal_position[i] + (follower_position[i] // 4096) * 4096
-                    else:
-                        goal_position[i] = goal_position[i] - (-follower_position[i] // 4096) * 4096
+
+                # TODO: protect 4096 rotation for follower
 
                 if follower_position[5] > 0:
-                    goal_position[5] = goal_position[5] * (700.0 / 450.0) + (follower_position[5] // 4096) * 4096
+                    goal_position[5] = goal_position[5] * (700.0 / 450.0)
                 else:
-                    goal_position[5] = goal_position[5] * (700.0 / 450.0) - (-follower_position[5] // 4096) * 4096
+                    goal_position[5] = goal_position[5] * (700.0 / 450.0)
 
                 goal_position_with_joints = {
                     "joints": leader_joints,

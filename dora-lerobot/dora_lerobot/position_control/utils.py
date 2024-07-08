@@ -57,3 +57,24 @@ def logical_to_physical(values: np.array, offsets: np.array, drive_modes: np.arr
             result[i] = -result[i]
 
     return result
+
+
+def in_range_position(values: np.array) -> np.array:
+    """
+    This function assures that the position values are in the range of the LCR standard [-2048, 2048] all servos.
+    This is important because an issue with communication can cause a +- 4095 offset value, so we need to assure
+    that the values are in the range.
+    """
+
+    for i in range(6):
+        if values[i] > 4096:
+            values[i] = values[i] % 4096
+        if values[i] < -4096:
+            values[i] = -(-values[i] % 4096)
+
+        if values[i] > 2048:
+            values[i] = - 2048 + (values[i] % 2048)
+        elif values[i] < -2048:
+            values[i] = 2048 - (-values[i] % 2048)
+
+    return values
