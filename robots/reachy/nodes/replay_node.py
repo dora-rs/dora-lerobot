@@ -1,4 +1,4 @@
-from dora_lerobot.common.datasets.lerobot_dataset import LeRobotDataset
+from lerobot.common.datasets.lerobot_dataset import LeRobotDataset
 import time
 from dora import Node
 import pyarrow as pa
