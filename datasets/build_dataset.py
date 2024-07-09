@@ -4,6 +4,16 @@ import argparse
 import pandas as pd
 
 
+def adapt_timestamps(dataset):
+    start_timestamp = dataset.groupby("episode_index")["timestamp_utc"].min()
+    start_timestamp = start_timestamp.apply(lambda x: pd.to_datetime(x).timestamp() * 1000)
+
+    dataset["timestamp_utc"] = dataset.apply(
+        lambda x: pd.to_datetime(x["timestamp_utc"]).timestamp() * 1000 - start_timestamp[x["episode_index"]], axis=1)
+
+    return dataset
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="This script is used to build a dataset from a recording of a set of episodes."
@@ -91,20 +101,20 @@ def main():
 
         images[i] = pd.concat(image, sort=False)
 
+    state = adapt_timestamps(state)
+    action = adapt_timestamps(action)
+
+    for i in range(len(images)):
+        # multiply the timestamp by the value of the image column
+        images[i]["timestamp_utc"] = images[i].apply(
+            lambda x: x[image_files[i]][0]["timestamp"] * 1000, axis=1)
+
     # we merge action, state, and images into a single dataframe, based on the timestamp_utc. Preserve the order of
     # the rows and 'episode_index' column
 
     dataset = pd.merge(action, state, on=["timestamp_utc", "episode_index"], how="outer")
     for i in range(len(images)):
         dataset = pd.merge(dataset, images[i], on=["timestamp_utc", "episode_index"], how="outer")
-
-    # get the starting timestamp in millis for each episode
-    start_timestamp = dataset.groupby("episode_index")["timestamp_utc"].min()
-    start_timestamp = start_timestamp.apply(lambda x: pd.to_datetime(x).timestamp() * 1000)
-
-    # transform the timestamp_utc to millis
-    dataset["timestamp_utc"] = dataset.apply(
-        lambda x: pd.to_datetime(x["timestamp_utc"]).timestamp() * 1000 - start_timestamp[x["episode_index"]], axis=1)
 
     # load failed_episode_index.parquet
     if os.path.exists(args.record_path + "/failed_episode_index.parquet"):
@@ -116,12 +126,21 @@ def main():
         # remove the rows for which episode_index is in failed_episode_index
         dataset = dataset[~dataset["episode_index"].isin(failed_episode_index)]
 
+    # create a raw.parquet file with the dataset
+    if not os.path.exists("datasets/" + args.dataset_name):
+        os.makedirs("datasets/" + args.dataset_name)
+
+    dataset.to_parquet("datasets/" + args.dataset_name + "/raw.parquet", index=False)
+
     # for each row with NaN values, fill the NaN values with the nearest non-NaN value
     dataset.set_index(["timestamp_utc", "episode_index"], inplace=True)
 
     dataset = dataset.ffill().bfill()
 
     dataset.reset_index(inplace=True)
+
+    # save the dataset to a parquet file
+    dataset.to_parquet("datasets/" + args.dataset_name + "/filled.parquet", index=False)
 
     # add a new column "frame" to the dataset that is the result of timestamp_utc // framerate
     dataset["frame"] = dataset["timestamp_utc"] // int(1000 / framerate)
@@ -146,10 +165,7 @@ def main():
     # Add a new column "joints" that is the array of joints with enough rows to match the number of rows in the dataset
     dataset["joints"] = pd.Series([joints for _ in range(len(dataset))])
 
-    # save the dataset: mkdir folder, save the dataset as parquet
-    if not os.path.exists("datasets/" + args.dataset_name):
-        os.makedirs("datasets/" + args.dataset_name)
-
+    # save the dataset to a parquet file
     dataset.to_parquet("datasets/" + args.dataset_name + "/dataset.parquet", index=False)
 
     # move the video folder to the dataset folder
