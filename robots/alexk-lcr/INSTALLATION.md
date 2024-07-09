@@ -54,7 +54,7 @@ venv\Scripts\activate.ps1 # On Windows PowerShell
 Finally, install the required Python packages by running the following command:
 
 ```bash
-pip install robots/alexk_lcr
+pip install robots/alexk-lcr
 ```
 
 **Note**: You're totally free to use your own Python environment, a Conda environment, or whatever you prefer, you will

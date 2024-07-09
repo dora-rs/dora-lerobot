@@ -1,11 +1,11 @@
 nodes:
-  - id: lcr_leader
-    path: ../../../node_hub/dynamixel_client/client.py
+  - id: lcr-leader
+    path: ../../../node-hub/dynamixel_client/client.py
     inputs:
       tick: dora/timer/millis/10
     outputs:
       - position
-    envs:
+    env:
       PORT: /dev/tty.usbmodem575E0030111
 
       IDS: 1 2 3 4 5 6
@@ -20,20 +20,20 @@ nodes:
       OFFSETS: -2048 2048 2048 2048 1024 2048
       DRIVE_MODES: POS NEG NEG NEG NEG NEG
 
-  - id: lcr_to_simu_so100_interpolate
+  - id: lcr-to-simu-so100
     path: ../nodes/interpolate_lcr_to_simu_so100.py
     inputs:
-      leader_position: lcr_leader/position
+      leader_position: lcr-leader/position
     outputs:
       - goal_position
 
-  - id: so100_follower
-    path: ../../../node_hub/feetech_client/client.py
+  - id: simu-so100-follower
+    path: ../../../node-hub/feetech_client/client.py
     inputs:
-      goal_position: lcr_to_so100_interpolate/goal_position
+      goal_position: lcr-to-simu-so100/goal_position
     outputs:
       - position
-    envs:
+    env:
       PORT: COM7
 
       JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper

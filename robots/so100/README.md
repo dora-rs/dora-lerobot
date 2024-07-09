@@ -20,7 +20,11 @@ LeRobot and teleoperate the robot.
 
 ## Recording
 
-This section is under construction.
+It's probably better to check the [examples](#examples) below before trying to record episodes. It will give you a
+better
+understanding of how Dora works.
+
+Check the [RECORDING.md](RECORDING.md) file for instructions on how to record episodes for LeRobot.
 
 ## Examples
 

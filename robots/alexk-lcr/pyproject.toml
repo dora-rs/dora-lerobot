@@ -12,7 +12,6 @@ packages = [
 
 [tool.poetry.dependencies]
 dynamixel-client = { path = "../../node_hub/dynamixel-client" }
-feetech-client = { path = "../../node_hub/feetech-client" }
 mujoco-client = { path = "../../node_hub/mujoco-client" }
 replay-client = { path = "../../node_hub/replay-client" }
 lerobot-dashboard = { path = "../../node_hub/lerobot-dashboard" }

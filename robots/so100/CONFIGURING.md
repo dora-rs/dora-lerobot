@@ -53,19 +53,6 @@ python ./robots/so100/configure.py --port /dev/ttyUSB0
 
 ![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_positions.png)
 
-- Repeat the same steps for the Leader arm:
-
-```bash
-python ./robots/so100/configure.py --port /dev/ttyUSB1
-```
-
-**Note:** change `/dev/ttyUSB1` to the device port you retrieved from the official wizard (like `COM4` on Windows).
-**Note:** The wizard will disable all torque so you can move the arm freely to the Position 1.
-
-After following the guide, you should have the following configuration:
-
-TODO: Add the configuration here
-
 This configuration has to be exported into environment variables inside the graph file. Here is an example of the
 configuration:
 

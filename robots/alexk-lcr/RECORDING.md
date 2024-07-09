@@ -35,10 +35,10 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
-dora build ./robots/alexk_lcr/graphs/record_mono_teleop_real.yml # Only the first time, it will install all the requirements if needed
+dora build ./robots/alexk-lcr/graphs/record_mono_teleop_real.yml # Only the first time, it will install all the requirements if needed
 
 dora up
-dora start ./robots/alexk_lcr/graphs/record_mono_teleop_real.yml
+dora start ./robots/alexk-lcr/graphs/record_mono_teleop_real.yml
 ```
 
 Then, you can tele operate the follower with the leader. A window will pop up showing the camera feed, and some text.

@@ -1,6 +1,6 @@
 nodes:
-  - id: lcr_left_leader
-    build: pip install ../../../node_hub/dynamixel-client
+  - id: lcr-left-leader
+    build: pip install ../../../node-hub/dynamixel-client
     path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10 # pull the position every 10ms
@@ -21,20 +21,20 @@ nodes:
       OFFSETS:  -2048 -3072 1024 -2048 1024 2048
       DRIVE_MODES:  POS POS NEG POS NEG NEG
 
-  - id: lcr_left_interpolate
+  - id: lcr-to-lcr-left
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
-      leader_position: lcr_left_leader/position
-      follower_position: lcr_left_follower/position
+      leader_position: lcr-left-leader/position
+      follower_position: lcr-left-follower/position
     outputs:
       - goal_position
 
-  - id: lcr_left_follower
-    build: pip install ../../../node_hub/dynamixel-client
+  - id: lcr-left-follower
+    build: pip install ../../../node-hub/dynamixel-client
     path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10
-      write_goal_position: lcr_left_interpolate/goal_position
+      write_goal_position: lcr-to-lcr-left/goal_position
     outputs:
       - position
     env:
@@ -52,8 +52,8 @@ nodes:
       OFFSETS:  -2048 2048 2048 2048 1024 2048
       DRIVE_MODES:  POS NEG NEG NEG NEG NEG
 
-  - id: lcr_right_leader
-    build: pip install ../../../node_hub/dynamixel-client
+  - id: lcr-right-leader
+    build: pip install ../../../node-hub/dynamixel-client
     path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10 # pull the position every 10ms
@@ -74,20 +74,20 @@ nodes:
       OFFSETS:  -2048 1024 2048 -1024 1024 2048
       DRIVE_MODES:  POS NEG NEG POS NEG NEG
 
-  - id: lcr_right_interpolate
+  - id: lcr-to-lcr-right
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
-      leader_position: lcr_right_leader/position
-      follower_position: lcr_right_follower/position
+      leader_position: lcr-right-leader/position
+      follower_position: lcr-right-follower/position
     outputs:
       - goal_position
 
-  - id: lcr_right_follower
-    build: pip install ../../../node_hub/dynamixel-client
+  - id: lcr-right-follower
+    build: pip install ../../../node-hub/dynamixel-client
     path: dynamixel-client
     inputs:
       pull_position: dora/timer/millis/10
-      write_goal_position: lcr_right_interpolate/goal_position
+      write_goal_position: lcr-to-lcr-right/goal_position
     outputs:
       - position
     env:

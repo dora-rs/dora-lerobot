@@ -1,6 +1,6 @@
 nodes:
   - id: replay-client
-    build: pip install ../../../node_hub/replay-client
+    build: pip install ../../../node-hub/replay-client
     path: replay-client
     inputs:
       pull_position: dora/timer/millis/33
@@ -12,9 +12,9 @@ nodes:
       PATH: ../../../datasets/test
       EPISODE: 1
 
-  - id: lcr-follower
-    build: pip install ../../../node_hub/dynamixel-client
-    path: dynamixel-client
+  - id: so100-follower
+    build: pip install ../../../node-hub/feetech-client
+    path: feetech-client
     inputs:
       write_goal_position: replay-client/position
     outputs:
@@ -29,7 +29,6 @@ nodes:
       TORQUE: True True True True True True
 
       INITIAL_GOAL_POSITION: None None None None None None
-      INITIAL_GOAL_CURRENT: None None None None None 500
 
       OFFSETS: -2048 2048 2048 2048 1024 2048
       DRIVE_MODES: POS NEG NEG NEG NEG NEG

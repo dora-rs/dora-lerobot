@@ -1,9 +1,9 @@
 nodes:
   - id: lcr-leader
-    build: pip install ../../../node_hub/dynamixel-client
+    build: pip install ../../../node-hub/dynamixel-client
     path: dynamixel-client
     inputs:
-      pull_position: lcr-follower/tick
+      pull_position: simu-lcr-follower/tick
     outputs:
       - position
     env:
@@ -21,28 +21,28 @@ nodes:
       OFFSETS: -2048 -3072 1024 -2048 1024 2048
       DRIVE_MODES: POS POS NEG POS NEG NEG
 
-  - id: lcr-interpolate
+  - id: lcr-to-lcr
     path: ../nodes/interpolate_lcr_to_simu_lcr.py
     inputs:
       leader_position: lcr-leader/position
     outputs:
       - goal_position
 
-  - id: lcr-follower
-    build: pip install ../../../node_hub/mujoco-client
+  - id: simu-lcr-follower
+    build: pip install ../../../node-hub/mujoco-client
     # for windows
     # path: mujoco-client
     # for macos
     path: mjpython
-    args: ../../../node_hub/mujoco-client/main.py
+    args: ../../../node-hub/mujoco-client/main.py
     inputs:
-      pull_position: dora/timer/millis/10
-      write_goal_position: lcr-interpolate/goal_position
+      write_goal_position: lcr-to-lcr/goal_position
 
       tick: dora/timer/millis/10
     outputs:
       - position
       - tick
+      - end
 
     env:
       SCENE: ../assets/simulation/reach_cube.xml
