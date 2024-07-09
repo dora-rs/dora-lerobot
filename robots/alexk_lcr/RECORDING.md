@@ -18,6 +18,7 @@ Make sure to:
 - Adjust the serial ports of `lcr_leader` and `lcr_follower` in the `record_mono_teleop_real.yml` file.
 - Adjust the camera ID in the `record_mono_teleop_real.yml` file.
 - Adjust camera and video WIDTH and HEIGHT in the `record_mono_teleop_real.yml` file, if needed.
+- Adjust recording framerate with your camera framerate in the `record_mono_teleop_real.yml` file.
 - Adjust OFFSETS and DRIVE_MODES environment variables in the `record_mono_teleop_real.yml` file for both arms.
 
 You can now start the Dora pipeline to record episodes for LeRobot:
@@ -63,11 +64,10 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
-python ./datasets/build_dataset.py --record-path [path_to_recorded_logs] --dataset-name [dataset_name]
+python ./datasets/build_dataset.py --record-path [path_to_recorded_logs] --dataset-name [dataset_name] --framerate [framerate]
 ```
 
-**Note:** When recording episodes the arms are tele operated at 60Hz, and the camera is recorded at 30Hz. We duplicate
-the camera in order to be able to shrink the dataset to 30Hz without losing information. 
+**Note:** On default, the framerate is 30. If you have recorded with a different framerate, you will have to adjust it.
 
 ## The dora graph
 

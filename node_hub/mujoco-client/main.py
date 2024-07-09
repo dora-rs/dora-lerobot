@@ -71,11 +71,6 @@ class Client:
                 elif event_type == "ERROR":
                     raise ValueError("An error occurred in the dataflow: " + event["error"])
 
-            self.node.send_output(
-                "end",
-                pa.array([])
-            )
-
     def pull_position(self, node, metadata):
         pass
 
