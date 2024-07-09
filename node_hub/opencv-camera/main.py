@@ -72,11 +72,6 @@ def main():
                     pa.array(frame.ravel()),
                     event["metadata"],
                 )
-                node.send_output(
-                    "image",
-                    pa.array(frame.ravel()),
-                    event["metadata"],
-                )
 
         elif event_type == "STOP":
             break

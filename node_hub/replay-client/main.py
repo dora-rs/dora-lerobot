@@ -27,7 +27,7 @@ class Client:
         dataset = dataset[dataset["episode_index"] == config["episode_id"]]
 
         self.action = dataset["action"]
-        print ("Action: ", self.action, flush=True)
+        self.joints = dataset["joints"]
         self.frame = 0
 
     def run(self):
@@ -53,9 +53,16 @@ class Client:
             return True
 
         action = self.action.iloc[self.frame]
+        joints = self.joints.iloc[self.frame]
+
+        position_with_joints = {
+            "positions": action,
+            "joints": joints
+        }
+
         self.frame += 1
 
-        node.send_output("position", pa.array(action), metadata)
+        node.send_output("position", pa.array([position_with_joints]), metadata)
 
 
 def main():

@@ -9,6 +9,7 @@ This node also shows the webcam feed in a window.
 """
 import os
 import subprocess
+import time
 from pathlib import Path
 
 import cv2
@@ -57,6 +58,12 @@ def main():
 
     if not out_dir.exists():
         out_dir.mkdir(parents=True)
+
+    # We initialize the output canal with a first data
+    node.send_output(
+        "image",
+        pa.array([{"path": f"videos/{name}", "timestamp": float(0) / fps}]),
+    )
 
     frame_count = 0
     for event in node:
