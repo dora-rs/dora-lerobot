@@ -13,7 +13,7 @@ import pyarrow as pa
 from dora import Node
 
 from common.feetech_bus import FeetechBus, TorqueMode
-from common.position_control import DriveMode, logical_to_physical, physical_to_logical
+from common.position_control import DriveMode, logical_to_physical, physical_to_logical, adapt_range_goal
 
 
 class Client:
@@ -41,9 +41,19 @@ class Client:
             positions = logical_to_physical(
                 config["initial_goal_position"],
                 self.offsets,
-                self.drive_modes)
+                self.drive_modes
+            )
 
-            self.bus.sync_write_goal_position(positions, self.config["joints"])
+            current_position = physical_to_logical(
+                self.bus.sync_read_position(self.config["joints"]),
+                self.offsets,
+                self.drive_modes
+            )
+
+            self.bus.sync_write_goal_position(
+                adapt_range_goal(positions, current_position),
+                self.config["joints"]
+            )
         except Exception as e:
             print("Error writing goal position:", e)
 

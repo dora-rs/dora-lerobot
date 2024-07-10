@@ -67,14 +67,14 @@ def in_range_position(values: np.array) -> np.array:
     """
 
     for i in range(len(values)):
-        if values[i] > 4096:
+        if values[i] is not None and values[i] > 4096:
             values[i] = values[i] % 4096
-        if values[i] < -4096:
+        if values[i] is not None and values[i] < -4096:
             values[i] = -(-values[i] % 4096)
 
-        if values[i] > 2048:
+        if values[i] is not None and values[i] > 2048:
             values[i] = - 2048 + (values[i] % 2048)
-        elif values[i] < -2048:
+        elif values[i] is not None and values[i] < -2048:
             values[i] = 2048 - (-values[i] % 2048)
 
     return values
@@ -88,9 +88,9 @@ def adapt_range_goal(goal: np.array, position: np.array) -> np.array:
     """
 
     for i in range(len(goal)):
-        if position[i] > 2048:
+        if position[i] is not None and goal[i] is not None and position[i] > 2048:
             goal[i] = goal[i] + ((position[i] + 2048) // 4096) * 4096
-        elif position[i] < -2048:
+        elif position[i] is not None and goal[i] is not None and position[i] < -2048:
             goal[i] = goal[i] - ((-position[i] + 2048) // 4096) * 4096
 
     return goal

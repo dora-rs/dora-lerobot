@@ -6,6 +6,7 @@ velocities, currents, and set goal positions and currents.
 import os
 import time
 import argparse
+import json
 
 import numpy as np
 import pyarrow as pa
@@ -13,7 +14,7 @@ import pyarrow as pa
 from dora import Node
 
 from common.dynamixel_bus import DynamixelBus, TorqueMode
-from common.position_control import DriveMode, logical_to_physical, physical_to_logical
+from common.position_control import DriveMode, logical_to_physical, physical_to_logical, adapt_range_goal
 
 
 class Client:
@@ -41,9 +42,19 @@ class Client:
             positions = logical_to_physical(
                 config["initial_goal_position"],
                 self.offsets,
-                self.drive_modes)
+                self.drive_modes
+            )
 
-            self.bus.sync_write_goal_position(positions, self.config["joints"])
+            current_position = physical_to_logical(
+                self.bus.sync_read_position(self.config["joints"]),
+                self.offsets,
+                self.drive_modes
+            )
+
+            self.bus.sync_write_goal_position(
+                adapt_range_goal(positions, current_position),
+                self.config["joints"]
+            )
         except Exception as e:
             print("Error writing goal position:", e)
 
@@ -87,7 +98,8 @@ class Client:
             position = physical_to_logical(
                 self.bus.sync_read_position(self.config["joints"]),
                 self.offsets,
-                self.drive_modes)
+                self.drive_modes
+            )
 
             position_with_joints = {
                 "joints": self.config["joints"],
@@ -166,45 +178,58 @@ def main():
 
     parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
                         default="dynamixel_client")
+    parser.add_argument("--port", type=str, required=False, help="The port of the dynamixel motors.", default=None)
+    parser.add_argument("--config", type=str, help="The configuration of the dynamixel motors.", default=None)
 
     args = parser.parse_args()
 
     # Check if port is set
-    if not os.environ.get("PORT"):
-        raise ValueError("The port is not set. Please set the port of the dynamixel motors.")
+    if not os.environ.get("PORT") and args.port is None:
+        raise ValueError(
+            "The port is not set. Please set the port of the dynamixel motors in the environment variables or as an "
+            "argument.")
+
+    port = os.environ.get("PORT") if args.port is None else args.port
+
+    # Check if config is set
+    if not os.environ.get("CONFIG") and args.config is None:
+        raise ValueError(
+            "The configuration is not set. Please set the configuration of the dynamixel motors in the environment "
+            "variables or as an argument.")
+
+    with open(os.environ.get("CONFIG") if args.config is None else args.config) as file:
+        config = json.load(file)["config"]
 
     # Create configuration
-    config = {
+    bus = {
         "name": args.name,
-        "port": os.environ.get("PORT"),  # (e.g. "/dev/ttyUSB0", "COM3")
+        "port": port,  # (e.g. "/dev/ttyUSB0", "COM3")
+        "ids": np.array([np.uint8(motor["id"]) for motor in config]),
+        "joints": np.array([motor["joint"] for motor in config]),
+        "models": np.array([motor["model"] for motor in config]),
 
-        "ids": list(map(np.uint8, os.environ.get("IDS", "1 2 3 4 5 6").split())),
-        "joints": np.array(
-            list(map(str, os.environ.get("JOINTS", "shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll "
-                                                   "gripper").split()))),
-        "models": list(
-            map(str, os.environ.get("MODELS", "x_series x_series x_series x_series x_series x_series").split())),
+        "torque": np.array(
+            [TorqueMode.ENABLED if motor["torque"] else TorqueMode.DISABLED for motor in config]),
 
-        "torque": np.array([TorqueMode.ENABLED if value == "True" else TorqueMode.DISABLED for value in
-                            list(os.getenv("TORQUE", "True True True True True True").split())]),
-
-        "initial_goal_position": np.array([np.int32(value) if 'None' not in value else None for value in
-                                           list(os.getenv("INITIAL_GOAL_POSITION",
-                                                          "None None None None None None").split())]),
-        "initial_goal_current": np.array([np.int32(value) if 'None' not in value else None for value in
-                                          list(os.getenv("INITIAL_GOAL_CURRENT",
-                                                         "None None None None None None").split())]),
-
-        "offsets": np.array(list(map(np.int32, os.environ.get("OFFSETS", "0, 0, 0, 0, 0, 0").split()))).astype(
-            np.int32),
+        "offsets": np.array([motor["offset"] for motor in config]).astype(np.int32),
         "drive_modes": np.array(
-            [DriveMode.POSITIVE_CURRENT if value == "POS" else DriveMode.NEGATIVE_CURRENT for value in
-             list(os.getenv("DRIVE_MODES", "False False False False False False").split())])
+            [DriveMode.POSITIVE_CURRENT if motor["drive_mode"] == "POS" else DriveMode.NEGATIVE_CURRENT for motor in
+             config]),
+
+        "initial_goal_position": np.array(
+            [np.int32(motor["initial_goal_position"]) if motor["initial_goal_position"] is not None else None for motor
+             in config]),
+        "initial_goal_current": np.array(
+            [np.uint32(motor["initial_goal_current"]) if motor["initial_goal_current"] is not None else None for motor
+             in config]),
+        "P": np.array([motor["P"] for motor in config]),
+        "I": np.array([motor["I"] for motor in config]),
+        "D": np.array([motor["D"] for motor in config])
     }
 
-    print("Dynamixel Client Configuration: ", config, flush=True)
+    print("Dynamixel Client Configuration: ", bus, flush=True)
 
-    client = Client(config)
+    client = Client(bus)
     client.run()
     client.close()
 
