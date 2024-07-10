@@ -8,7 +8,7 @@ import pyarrow as pa
 
 from dora import Node
 
-from common.position_control import in_range_position
+from common.position_control import in_range_position, adapt_range_goal
 
 
 def main():
@@ -26,21 +26,14 @@ def main():
                 leader_position = event["value"][0]["positions"].values.to_numpy()
                 leader_joints = event["value"][0]["joints"].values.to_numpy(zero_copy_only=False)
 
-                leader_position = in_range_position(leader_position.copy())
-
-                goal_position = leader_position
+                goal_position = in_range_position(leader_position.copy())
+                goal_position[5] = goal_position[5] * (700.0 / 450.0)
 
                 """
-                A communication issue with the follower can induces a +- 4095 offset in the position values.
+                A communication issue with the follower can induces a +- 4096 offset in the position values.
                 So we need to assure that the goal_position is in the range of the Follower.
                 """
-
-                # TODO: protect 4096 rotation for follower
-
-                if follower_position[5] > 0:
-                    goal_position[5] = goal_position[5] * (700.0 / 450.0)
-                else:
-                    goal_position[5] = goal_position[5] * (700.0 / 450.0)
+                goal_position = adapt_range_goal(goal_position, follower_position)
 
                 goal_position_with_joints = {
                     "joints": leader_joints,

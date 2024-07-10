@@ -66,7 +66,7 @@ def in_range_position(values: np.array) -> np.array:
     that the values are in the range.
     """
 
-    for i in range(6):
+    for i in range(len(values)):
         if values[i] > 4096:
             values[i] = values[i] % 4096
         if values[i] < -4096:
@@ -78,3 +78,19 @@ def in_range_position(values: np.array) -> np.array:
             values[i] = 2048 - (-values[i] % 2048)
 
     return values
+
+
+def adapt_range_goal(goal: np.array, position: np.array) -> np.array:
+    """
+    This function adapts the goal position to the current position of the robot.
+    This is important because an issue with communication can cause a +- 4095 offset value, se we need to adapt the goal
+    position to be coherent with the current position of the robot.
+    """
+
+    for i in range(len(goal)):
+        if position[i] > 2048:
+            goal[i] = goal[i] + ((position[i] + 2048) // 4096) * 4096
+        elif position[i] < -2048:
+            goal[i] = goal[i] - ((-position[i] + 2048) // 4096) * 4096
+
+    return goal

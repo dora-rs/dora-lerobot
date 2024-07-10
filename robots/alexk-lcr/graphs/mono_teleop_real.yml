@@ -3,7 +3,10 @@ nodes:
     build: pip install ../../../node-hub/dynamixel-client
     path: dynamixel-client
     inputs:
-      pull_position: dora/timer/millis/10 # pull the position every 10ms
+      pull_position:
+        source: dora/timer/millis/5 # pull the position every 10ms
+        queue_size: 1
+
     outputs:
       - position
     env:
@@ -18,14 +21,20 @@ nodes:
       INITIAL_GOAL_POSITION: None None None None None -450
       INITIAL_GOAL_CURRENT: None None None None None 40
 
-      OFFSETS:  -2048 -3072 1024 2048 1024 2048
-      DRIVE_MODES:  POS POS NEG POS NEG NEG
+      OFFSETS: -2048 -3072 1024 2048 1024 2048
+      DRIVE_MODES: POS POS NEG POS NEG NEG
 
   - id: lcr-to-lcr
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
-      leader_position: lcr-leader/position
-      follower_position: lcr-follower/position
+      leader_position:
+        source: lcr-leader/position
+        queue_size: 1
+
+      follower_position:
+        source: lcr-follower/position
+        queue_size: 1
+
     outputs:
       - goal_position
 
@@ -33,8 +42,14 @@ nodes:
     build: pip install ../../../node-hub/dynamixel-client
     path: dynamixel-client
     inputs:
-      pull_position: dora/timer/millis/10
-      write_goal_position: lcr-to-lcr/goal_position
+      pull_position:
+        source: dora/timer/millis/5
+        queue_size: 1
+
+      write_goal_position:
+        source: lcr-to-lcr/goal_position
+        queue_size: 1
+            
     outputs:
       - position
     env:
@@ -49,5 +64,5 @@ nodes:
       INITIAL_GOAL_POSITION: None None None None None None
       INITIAL_GOAL_CURRENT: None None None None None 500
 
-      OFFSETS:  -2048 2048 2048 2048 1024 2048
-      DRIVE_MODES:  POS NEG NEG NEG NEG NEG
+      OFFSETS: -2048 2048 2048 2048 1024 2048
+      DRIVE_MODES: POS NEG NEG NEG NEG NEG
