@@ -15,7 +15,7 @@ dora-rs = "0.3.5"
 numpy = "2.0.0"
 pyarrow = "16.1.0"
 
-dora_lerobot = { path = "../../dora-lerobot" }
+common = { path = "../../common" }
 
 [tool.poetry.scripts]
 dynamixel-client = "dynamixel_client.main:main"

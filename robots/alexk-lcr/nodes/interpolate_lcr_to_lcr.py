@@ -8,7 +8,7 @@ import pyarrow as pa
 
 from dora import Node
 
-from dora_lerobot.position_control import in_range_position
+from common.position_control import in_range_position
 
 
 def main():

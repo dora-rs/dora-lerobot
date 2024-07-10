@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "dora_lerobot"
+name = "common"
 version = "0.1"
-authors = ["Hennzau"]
-description = "This is a temporary package that will be replaced by the official LeRobot package when it's ready."
+authors = ["Enzo Le Van <dev@enzo-le-van.fr>"]
+description = "Common packages that contains useful functions / objects."
 readme = "README.md"
 
 packages = [
-    { include = "dora_lerobot" }
+    { include = "common" }
 ]
 
 [tool.poetry.dependencies]

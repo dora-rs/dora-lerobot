@@ -12,8 +12,8 @@ import pyarrow as pa
 
 from dora import Node
 
-from dora_lerobot.feetech_bus import FeetechBus, TorqueMode
-from dora_lerobot.position_control import DriveMode, logical_to_physical, physical_to_logical
+from common.feetech_bus import FeetechBus, TorqueMode
+from common.position_control import DriveMode, logical_to_physical, physical_to_logical
 
 
 class Client:

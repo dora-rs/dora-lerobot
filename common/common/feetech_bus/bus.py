@@ -322,3 +322,15 @@ class FeetechBus:
     def sync_write_goal_position(self, goal_position: Union[np.int32, np.uint32, np.array],
                                  motor_names: np.array):
         self.sync_write("Goal_Position", goal_position, motor_names)
+
+    def write_max_angle_limit(self, max_angle_limit: np.uint32, motor_name: str):
+        self.write("Max_Angle_Limit", max_angle_limit, motor_name)
+
+    def sync_write_max_angle_limit(self, max_angle_limit: Union[np.uint32, np.array], motor_names: np.array):
+        self.sync_write("Max_Angle_Limit", max_angle_limit, motor_names)
+
+    def write_min_angle_limit(self, min_angle_limit: np.uint32, motor_name: str):
+        self.write("Min_Angle_Limit", min_angle_limit, motor_name)
+
+    def sync_write_min_angle_limit(self, min_angle_limit: Union[np.uint32, np.array], motor_names: np.array):
+        self.sync_write("Min_Angle_Limit", min_angle_limit, motor_names)

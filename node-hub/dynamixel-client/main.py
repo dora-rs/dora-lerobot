@@ -12,8 +12,8 @@ import pyarrow as pa
 
 from dora import Node
 
-from dora_lerobot.dynamixel_bus import DynamixelBus, TorqueMode
-from dora_lerobot.position_control import DriveMode, logical_to_physical, physical_to_logical
+from common.dynamixel_bus import DynamixelBus, TorqueMode
+from common.position_control import DriveMode, logical_to_physical, physical_to_logical
 
 
 class Client:
