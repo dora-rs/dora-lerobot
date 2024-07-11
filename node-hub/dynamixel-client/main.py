@@ -62,6 +62,24 @@ class Client:
             self.bus.sync_write_goal_current(config["initial_goal_current"], self.config["joints"])
         except Exception as e:
             print("Error writing goal current:", e)
+        time.sleep(0.1)
+
+        try:
+            self.bus.sync_write_position_d_gain(config["D"], self.config["joints"])
+        except Exception as e:
+            print("Error writing gains:", e)
+        time.sleep(0.1)
+
+        try:
+            self.bus.sync_write_position_i_gain(config["I"], self.config["joints"])
+        except Exception as e:
+            print("Error writing gains:", e)
+        time.sleep(0.1)
+        
+        try:
+            self.bus.sync_write_position_p_gain(config["P"], self.config["joints"])
+        except Exception as e:
+            print("Error writing gains:", e)
 
         self.node = Node(config["name"])
 

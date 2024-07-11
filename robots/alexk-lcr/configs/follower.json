@@ -9,9 +9,9 @@
       "drive_mode": "POS",
       "initial_goal_position": null,
       "initial_goal_current": null,
-      "P": 0,
+      "P": 640,
       "I": 0,
-      "D": 0
+      "D": 3600
     },
     {
       "id": 2,
@@ -22,9 +22,9 @@
       "drive_mode": "NEG",
       "initial_goal_position": null,
       "initial_goal_current": null,
-      "P": 0,
+      "P": 640,
       "I": 0,
-      "D": 0
+      "D": 3600
     },
     {
       "id": 3,
@@ -35,7 +35,7 @@
       "drive_mode": "NEG",
       "initial_goal_position": null,
       "initial_goal_current": null,
-      "P": 0,
+      "P": 1000,
       "I": 0,
       "D": 0
     },
@@ -48,7 +48,7 @@
       "drive_mode": "NEG",
       "initial_goal_position": null,
       "initial_goal_current": null,
-      "P": 0,
+      "P": 400,
       "I": 0,
       "D": 0
     },
@@ -61,7 +61,7 @@
       "drive_mode": "NEG",
       "initial_goal_position": null,
       "initial_goal_current": null,
-      "P": 0,
+      "P": 400,
       "I": 0,
       "D": 0
     },
@@ -74,9 +74,9 @@
       "drive_mode": "NEG",
       "initial_goal_position": null,
       "initial_goal_current": 500,
-      "P": 0,
+      "P": 250,
       "I": 0,
-      "D": 0
+      "D": 600
     }
   ]
 }

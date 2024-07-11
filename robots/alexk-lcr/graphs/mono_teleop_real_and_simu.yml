@@ -57,7 +57,4 @@ nodes:
 
     env:
       SCENE: ../assets/simulation/reach_cube.xml
-
-      JOINTS: shoulder_pan_joint shoulder_lift_joint elbow_flex_joint wrist_flex_joint wrist_roll_joint gripper_joint
-
-      INITIAL_GOAL_POSITION: None None None None None None
+      CONFIG: ../configs/simu_follower.json

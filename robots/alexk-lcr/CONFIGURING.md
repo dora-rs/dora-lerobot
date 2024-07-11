@@ -44,7 +44,7 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
-python configure.py --port /dev/ttyUSB0
+python configure.py --port /dev/ttyUSB0 --type follower
 ```
 
 **Note:** change `/dev/ttyUSB0` to the device port you retrieved from the official wizard (like `COM3` on Windows).
@@ -53,28 +53,34 @@ python configure.py --port /dev/ttyUSB0
 
 ![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_positions.png)
 
+**Node:** You will be asked the path of the configuration file, please consider
+using `./robots/alexk-lcr/configs/follower.json`.
+
 - Repeat the same steps for the Leader arm:
 
 ```bash
-python configure.py --port /dev/ttyUSB1
+python configure.py --port /dev/ttyUSB1 --type leader
 ```
 
 **Note:** change `/dev/ttyUSB1` to the device port you retrieved from the official wizard (like `COM4` on Windows).
 **Note:** The wizard will disable all torque so you can move the arm freely to the Position 1.
+**Node:** You will be asked the path of the configuration file, please consider
+using `./robots/alexk-lcr/configs/leader.json`.
 
 After following the guide, you should have the following configuration:
 
 ![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_wanted_configuration.png)
 
-This configuration has to be exported into environment variables inside the graph file. Here is an example of the
-configuration:
+This configuration file has to be imported inside the ENV variable of the nodes in the graph file. By default it searches
+for `./robots/alexk-lcr/configs/leader.json` and `./robots/alexk-lcr/configs/follower.json`. If you want to change the
+path, you can do it by adding the `CONFIG` variable in the ENV of the nodes in the graph file.
 
 ```YAML
 nodes:
-  - id: lcr_leader
+  - id: lcr-follower
     env:
-      HOMING_OFFSET: -2048 2048 2048 -2048 5120 2048
-      INVERTED: False True True False True True
+      PORT: /dev/ttyUSB0
+      CONFIG: ../configs/follower.json # relative path to `./robots/alexk-lcr/configs/follower.json`
 ```
 
 ## License

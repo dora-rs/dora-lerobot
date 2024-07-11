@@ -345,3 +345,24 @@ class DynamixelBus:
     def sync_write_goal_current(self, goal_current: Union[np.int32, np.uint32, np.array],
                                 motor_names: np.array):
         self.sync_write("Goal_Current", goal_current, motor_names)
+
+    def write_position_p_gain(self, position_p_gain: Union[np.int32, np.uint32], motor_name: str):
+        self.write("Position_P_Gain", position_p_gain, motor_name)
+
+    def sync_write_position_p_gain(self, position_p_gain: Union[np.int32, np.uint32, np.array],
+                                   motor_names: np.array):
+        self.sync_write("Position_P_Gain", position_p_gain, motor_names)
+
+    def write_position_i_gain(self, position_i_gain: Union[np.int32, np.uint32], motor_name: str):
+        self.write("Position_I_Gain", position_i_gain, motor_name)
+
+    def sync_write_position_i_gain(self, position_i_gain: Union[np.int32, np.uint32, np.array],
+                                   motor_names: np.array):
+        self.sync_write("Position_I_Gain", position_i_gain, motor_names)
+
+    def write_position_d_gain(self, position_d_gain: Union[np.int32, np.uint32], motor_name: str):
+        self.write("Position_D_Gain", position_d_gain, motor_name)
+
+    def sync_write_position_d_gain(self, position_d_gain: Union[np.int32, np.uint32, np.array],
+                                   motor_names: np.array):
+        self.sync_write("Position_D_Gain", position_d_gain, motor_names)

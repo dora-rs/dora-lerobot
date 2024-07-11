@@ -38,7 +38,7 @@ Here is a list of the available examples:
   does not record the episodes, so you don't need to have a camera.
 
 You must configure the arms, retrieve the device port, and modify the file `mono_teleop_real.yml` to set the correct
-environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
+environment variables. (e.g. `PORT` and `CONFIG`)
 
 ```bash
 cd dora-lerobot/
@@ -65,7 +65,7 @@ dora start ./robots/alexk-lcr/graphs/mono_teleop_real.yml
   (left and right). It does not record the episodes, so you don't need to have a camera.
 
 You must configure the arms, retrieve the device port, and modify the file `bi_teleop_real.yml` to set the correct
-environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
+environment variables. (e.g. `PORT` and `CONFIG`)
 
 ```bash
 cd dora-lerobot/
@@ -91,7 +91,7 @@ dora start ./robots/alexk-lcr/graphs/bi_teleop_real.yml
   arm using a leader arm. It does not record the episodes, so you don't need to have a camera.
 
 You must configure the arms, retrieve the device port, and modify the file `mono_teleop_simu.yml` to set the correct
-environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
+environment variables. (e.g. `PORT` and `CONFIG`)
 
 ```bash
 cd dora-lerobot/
@@ -120,7 +120,7 @@ dora start ./robots/alexk-lcr/graphs/mono_teleop_simu.yml
 
 You must configure the arms, retrieve the device port, and modify the file `mono_teleop_real_and_simu.yml` to set the
 correct
-environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
+environment variables. (e.g. `PORT` and `CONFIG`)
 
 ```bash
 cd dora-lerobot/
@@ -147,7 +147,7 @@ dora start ./robots/alexk-lcr/graphs/mono_teleop_real_and_simu.yml
 
 You must configure the dataset path and episode index in the file `mono_replay_real.yml` to set the correct
 environment variables. (e.g. `PATH`, `EPISODE`). You must also configure the follower arm, retrieve the device port, and
-modify the file `mono_replay_real.yml` to set the correct environment variables. (e.g. `PORT`, `OFFSETS`, `DRIVE_MODES`)
+modify the file `mono_replay_real.yml` to set the correct environment variables. (e.g. `PORT` and `CONFIG`)
 
 ```bash
 cd dora-lerobot/

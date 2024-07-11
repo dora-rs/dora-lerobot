@@ -19,7 +19,7 @@ Make sure to:
 - Adjust the camera ID in the `record_mono_teleop_real.yml` file.
 - Adjust camera and video WIDTH and HEIGHT in the `record_mono_teleop_real.yml` file, if needed.
 - Adjust recording framerate with your camera framerate in the `record_mono_teleop_real.yml` file.
-- Adjust OFFSETS and DRIVE_MODES environment variables in the `record_mono_teleop_real.yml` file for both arms.
+- Adjust CONFIG path environment variables in the `record_mono_teleop_real.yml` file for both arms if needed.
 
 You can now start the Dora pipeline to record episodes for LeRobot:
 

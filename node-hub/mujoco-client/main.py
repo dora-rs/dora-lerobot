@@ -6,6 +6,7 @@ velocities, currents, and set goal positions and currents.
 import os
 import argparse
 import time
+import json
 
 import numpy as np
 import pyarrow as pa
@@ -102,26 +103,41 @@ def main():
 
     parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
                         default="mujoco_client")
+    parser.add_argument("--scene", type=str, required=False, help="The scene file of the MuJoCo simulation.");
+
+    parser.add_argument("--config", type=str, help="The configuration of the joints.", default=None)
 
     args = parser.parse_args()
 
+    if not os.getenv("SCENE") and args.scene is None:
+        raise ValueError("Please set the SCENE environment variable or pass the --scene argument.")
+
+    scene = os.getenv("SCENE", args.scene)
+
+    # Check if config is set
+    if not os.environ.get("CONFIG") and args.config is None:
+        raise ValueError(
+            "The configuration is not set. Please set the configuration of the dynamixel motors in the environment "
+            "variables or as an argument.")
+
+    with open(os.environ.get("CONFIG") if args.config is None else args.config) as file:
+        config = json.load(file)["config"]
+
     # Create configuration
-    config = {
+    bus = {
         "name": args.name,
+        "scene": scene,
 
-        "scene": os.environ.get("SCENE", "../assets/simulation/reach_cube.xml"),
+        "joints": np.array([motor["joint"] for motor in config]),
 
-        "joints": list(map(str, os.environ.get("JOINTS", "shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll "
-                                                         "gripper").split())),
-
-        "initial_goal_position": np.array([np.int32(value) if 'None' not in value else None for value in
-                                           list(os.getenv("INITIAL_GOAL_POSITION",
-                                                          "None None None None None None").split())]),
+        "initial_goal_position": np.array(
+            [np.int32(motor["initial_goal_position"]) if motor["initial_goal_position"] is not None else None for motor
+             in config]),
     }
 
-    print("Mujoco Client Configuration: ", config, flush=True)
+    print("Mujoco Client Configuration: ", bus, flush=True)
 
-    client = Client(config)
+    client = Client(bus)
     client.run()
 
 

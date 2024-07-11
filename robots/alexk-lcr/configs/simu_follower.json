@@ -2,35 +2,48 @@
   "config": [
     {
       "id": 1,
-      "joint": "shoulder_pan",
-      "model": "xl330-m077",
-      "torque": false,
+      "joint": "shoulder_pan_joint",
+      "model": "xl430-w250",
+      "torque": true,
       "offset": -2048,
       "drive_mode": "POS",
       "initial_goal_position": null,
       "initial_goal_current": null,
-      "P": 400,
+      "P": 640,
       "I": 0,
-      "D": 0
+      "D": 3600
     },
     {
       "id": 2,
-      "joint": "shoulder_lift",
-      "model": "xl330-m077",
-      "torque": false,
-      "offset": 1024,
+      "joint": "shoulder_lift_joint",
+      "model": "xl430-w250",
+      "torque": true,
+      "offset": 2048,
       "drive_mode": "NEG",
       "initial_goal_position": null,
       "initial_goal_current": null,
-      "P": 400,
+      "P": 640,
+      "I": 0,
+      "D": 3600
+    },
+    {
+      "id": 3,
+      "joint": "elbow_flex_joint",
+      "model": "xl330-m288",
+      "torque": true,
+      "offset": 2048,
+      "drive_mode": "NEG",
+      "initial_goal_position": null,
+      "initial_goal_current": null,
+      "P": 1000,
       "I": 0,
       "D": 0
     },
     {
-      "id": 3,
-      "joint": "elbow_flex",
-      "model": "xl330-m077",
-      "torque": false,
+      "id": 4,
+      "joint": "wrist_flex_joint",
+      "model": "xl330-m288",
+      "torque": true,
       "offset": 2048,
       "drive_mode": "NEG",
       "initial_goal_position": null,
@@ -40,23 +53,10 @@
       "D": 0
     },
     {
-      "id": 4,
-      "joint": "wrist_flex",
-      "model": "xl330-m077",
-      "torque": false,
-      "offset": -1024,
-      "drive_mode": "POS",
-      "initial_goal_position": null,
-      "initial_goal_current": null,
-      "P": 400,
-      "I": 0,
-      "D": 0
-    },
-    {
       "id": 5,
-      "joint": "wrist_roll",
-      "model": "xl330-m077",
-      "torque": false,
+      "joint": "wrist_roll_joint",
+      "model": "xl330-m288",
+      "torque": true,
       "offset": 1024,
       "drive_mode": "NEG",
       "initial_goal_position": null,
@@ -67,16 +67,16 @@
     },
     {
       "id": 6,
-      "joint": "gripper",
-      "model": "xl330-m077",
+      "joint": "gripper_joint",
+      "model": "xl330-m288",
       "torque": true,
       "offset": 2048,
       "drive_mode": "NEG",
-      "initial_goal_position": -450,
-      "initial_goal_current": 40,
-      "P": 200,
+      "initial_goal_position": null,
+      "initial_goal_current": 500,
+      "P": 250,
       "I": 0,
-      "D": 250
+      "D": 600
     }
   ]
 }

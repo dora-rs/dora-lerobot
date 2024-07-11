@@ -15,11 +15,12 @@ It will also enable all appropriate operating modes for the LCR.
 
 import argparse
 import time
+import json
 
 import numpy as np
 
-from dora_lerobot.dynamixel_bus import DynamixelBus, TorqueMode, OperatingMode
-from dora_lerobot.position_control.utils import physical_to_logical, DriveMode
+from common.dynamixel_bus import DynamixelBus, TorqueMode, OperatingMode
+from common.position_control.utils import physical_to_logical, DriveMode
 
 FULL_ARM = np.array([
     "shoulder_pan",
@@ -130,6 +131,7 @@ def main():
                     "the user.")
 
     parser.add_argument("--port", type=str, required=True, help="The port of the LCR.")
+    parser.add_argument("--type", type=str, required=True, help="The type of the LCR (leader or follower).")
 
     args = parser.parse_args()
 
@@ -177,13 +179,30 @@ def main():
 
     print("Configuration done!")
 
-    print("Here is the configuration, you can copy this in your environment variables for client graph:")
+    path = input("Please enter the path of the configuration file (e.g. ./robots/alexk-lcr/configs/leader.json): ")
+    json_config = {"config": []}
 
-    print("=====================================")
-    print("      OFFSETS: ", " ".join([str(i) for i in offsets]))
-    print("      DRIVE_MODES: ", " ".join(
-        ["NEG" if drive_mode == DriveMode.NEGATIVE_CURRENT else "POS" for drive_mode in drive_modes]))
-    print("=====================================")
+    for i in range(6):
+        model = "xl330-m077" if args.type == "leader" else ("xl430-w250" if i <= 1 else "xl330-m288")
+
+        json_config["config"].append({
+            "id": i + 1,
+            "joint": FULL_ARM[i],
+            "model": model,
+            "torque": True if args.type == "follower" or i == 5 else False,
+            "offset": int(offsets[i]),
+            "drive_mode": "POS" if drive_modes[i] == DriveMode.POSITIVE_CURRENT else "NEG",
+            "initial_goal_position": None if i != 5 or args.type == "follower" else -450,
+            "initial_goal_current": None if i != 5 else (500 if args.type == "follower" else 40),
+            "P": 640 if model == "xl430-w250" else (
+                400 if (model == "xl330-m077" or model == "xl330-m288") and i != 5 else 250),
+            "I": 0,
+            "D": 3600 if model == "xl430-w250" else (
+                0 if (model == "xl330-m077" or model == "xl330-m288") and i != 5 else 200)
+        })
+
+    with open(path, "w") as file:
+        json.dump(json_config, file)
 
     print("Make sure everything is working properly:")
     pause()
