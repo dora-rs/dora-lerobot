@@ -19,7 +19,6 @@ class TorqueMode(enum.Enum):
 
 class OperatingMode(enum.Enum):
     ONE_TURN = np.uint32(0)
-    MULTI_TURN = np.uint32(1)
 
 
 SCS_SERIES_CONTROL_TABLE = [
@@ -121,7 +120,8 @@ class FeetechBus:
         if value is None:
             return
 
-        value = value.astype(np.uint32)
+        if value < 0:
+            value = np.uint32(32767 - value)
 
         motor_id = self.motor_ctrl[motor_name]["id"]
         packet_address = self.motor_ctrl[motor_name][data_name]["addr"]
@@ -133,8 +133,6 @@ class FeetechBus:
             comm, err = self.packet_handler.write1ByteTxRx(*args)
         elif packet_bytes_size == 2:
             comm, err = self.packet_handler.write2ByteTxRx(*args)
-        elif packet_bytes_size == 4:
-            comm, err = self.packet_handler.write4ByteTxRx(*args)
         else:
             raise NotImplementedError(
                 f"Value of the number of bytes to be sent is expected to be in [1, 2, 4], but {packet_bytes_size} "
@@ -161,8 +159,6 @@ class FeetechBus:
             value, comm, err = self.packet_handler.read1ByteTxRx(*args)
         elif packet_bytes_size == 2:
             value, comm, err = self.packet_handler.read2ByteTxRx(*args)
-        elif packet_bytes_size == 4:
-            value, comm, err = self.packet_handler.read4ByteTxRx(*args)
         else:
             raise NotImplementedError(
                 f"Value of the number of bytes to be sent is expected to be in [1, 2, 4], but "
@@ -179,7 +175,7 @@ class FeetechBus:
                 f"{self.packet_handler.getTxRxResult(err)}"
             )
 
-        return np.uint32(value).astype(np.int32)
+        return np.int32(value) if value < 32767 else np.int32(32767 - value)
 
     def sync_write(self, data_name: str, values: Union[np.uint32, np.int32, np.array],
                    motor_names: np.array):
@@ -192,7 +188,7 @@ class FeetechBus:
         motor_ids, values = ([motor_ids[i] for i in range(len(motor_ids)) if values[i] is not None],
                              np.array([value for value in values if value is not None]))
 
-        values = values.astype(np.uint32)
+        values = [np.uint32(32767 - value) if value < 0 else np.uint32(value) for value in values]
 
         group_key = f"{data_name}_" + "_".join([str(idx) for idx in motor_ids])
 
@@ -277,7 +273,7 @@ class FeetechBus:
             value = np.uint32(self.group_readers[group_key].getData(idx, packet_address, packet_bytes_size))
             values.append(value)
 
-        return np.array(values).astype(np.int32)
+        return np.array([np.int32(value) if value < 32767 else np.int32(32767 - value) for value in values])
 
     def write_torque_enable(self, torque_mode: TorqueMode, motor_name: str):
         self.write("Torque_Enable", torque_mode.value, motor_name)

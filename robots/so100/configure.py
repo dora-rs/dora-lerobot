@@ -15,11 +15,12 @@ It will also enable all appropriate operating modes for the SO100.
 
 import argparse
 import time
+import json
 
 import numpy as np
 
-from dora_lerobot.feetech_bus import FeetechBus, TorqueMode, OperatingMode
-from dora_lerobot.position_control.utils import physical_to_logical, DriveMode
+from common.feetech_bus import FeetechBus, TorqueMode, OperatingMode
+from common.position_control.utils import physical_to_logical, DriveMode
 
 FULL_ARM = np.array([
     "shoulder_pan",
@@ -55,7 +56,9 @@ def configure_servos(bus: FeetechBus):
     """
     bus.sync_write_torque_enable(TorqueMode.DISABLED, FULL_ARM)
 
-    bus.sync_write_operating_mode(OperatingMode.MULTI_TURN, ARM_WITHOUT_GRIPPER)
+    bus.sync_write_operating_mode(OperatingMode.ONE_TURN, FULL_ARM)
+    bus.sync_write_min_angle_limit(np.uint32(0), FULL_ARM)
+    bus.sync_write_max_angle_limit(np.uint32(0), FULL_ARM)
 
 
 def rounded_values(values: np.array) -> np.array:
@@ -175,13 +178,22 @@ def main():
 
     print("Configuration done!")
 
-    print("Here is the configuration, you can copy this in your environment variables for client graph:")
+    path = input("Please enter the path of the configuration file (e.g. ./robots/alexk-lcr/configs/leader.json): ")
+    json_config = {"config": []}
 
-    print("=====================================")
-    print("      OFFSETS: ", " ".join([str(i) for i in offsets]))
-    print("      DRIVE_MODES: ", " ".join(
-        ["NEG" if drive_mode == DriveMode.NEGATIVE_CURRENT else "POS" for drive_mode in drive_modes]))
-    print("=====================================")
+    for i in range(6):
+        json_config["config"].append({
+            "id": i + 1,
+            "joint": FULL_ARM[i],
+            "model": "scs_series",
+            "torque": True,
+            "offset": int(offsets[i]),
+            "drive_mode": "POS" if drive_modes[i] == DriveMode.POSITIVE_CURRENT else "NEG",
+            "initial_goal_position": None,
+        })
+
+    with open(path, "w") as file:
+        json.dump(json_config, file)
 
     print("Make sure everything is working properly:")
     pause()
