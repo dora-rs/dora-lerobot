@@ -14,7 +14,6 @@ import pyarrow as pa
 from dora import Node
 
 from common.dynamixel_bus import DynamixelBus, TorqueMode
-from common.position_control import DriveMode, logical_to_physical, physical_to_logical, adapt_range_goal
 
 
 class Client:
@@ -28,9 +27,6 @@ class Client:
 
         self.bus = DynamixelBus(config["port"], description)
 
-        self.offsets = config["offsets"]
-        self.drive_modes = config["drive_modes"]
-
         # Set initial values
 
         try:
@@ -39,27 +35,7 @@ class Client:
             print("Error writing torque status:", e)
 
         try:
-            positions = logical_to_physical(
-                config["initial_goal_position"],
-                self.offsets,
-                self.drive_modes
-            )
-
-            current_position = physical_to_logical(
-                self.bus.sync_read_position(self.config["joints"]),
-                self.offsets,
-                self.drive_modes
-            )
-
-            self.bus.sync_write_goal_position(
-                adapt_range_goal(positions, current_position),
-                self.config["joints"]
-            )
-        except Exception as e:
-            print("Error writing goal position:", e)
-
-        try:
-            self.bus.sync_write_goal_current(config["initial_goal_current"], self.config["joints"])
+            self.bus.sync_write_goal_current(config["goal_current"], self.config["joints"])
         except Exception as e:
             print("Error writing goal current:", e)
         time.sleep(0.1)
@@ -75,7 +51,7 @@ class Client:
         except Exception as e:
             print("Error writing gains:", e)
         time.sleep(0.1)
-        
+
         try:
             self.bus.sync_write_position_p_gain(config["P"], self.config["joints"])
         except Exception as e:
@@ -113,11 +89,7 @@ class Client:
 
     def pull_position(self, node, metadata):
         try:
-            position = physical_to_logical(
-                self.bus.sync_read_position(self.config["joints"]),
-                self.offsets,
-                self.drive_modes
-            )
+            position = self.bus.sync_read_position(self.config["joints"])
 
             position_with_joints = {
                 "joints": self.config["joints"],
@@ -172,8 +144,7 @@ class Client:
             joints = goal_position_with_joints[0]["joints"].values.to_numpy(zero_copy_only=False)
             goal_position = goal_position_with_joints[0]["positions"].values.to_numpy()
 
-            self.bus.sync_write_goal_position(logical_to_physical(goal_position, self.offsets, self.drive_modes),
-                                              joints)
+            self.bus.sync_write_goal_position(goal_position, joints)
         except ConnectionError as e:
             print("Error writing goal position:", e)
 
@@ -229,17 +200,10 @@ def main():
         "torque": np.array(
             [TorqueMode.ENABLED if motor["torque"] else TorqueMode.DISABLED for motor in config]),
 
-        "offsets": np.array([motor["offset"] for motor in config]).astype(np.int32),
-        "drive_modes": np.array(
-            [DriveMode.POSITIVE_CURRENT if motor["drive_mode"] == "POS" else DriveMode.NEGATIVE_CURRENT for motor in
-             config]),
+        "goal_current": np.array(
+            [np.uint32(motor["goal_current"]) if motor["goal_current"] is not None else None for motor
+             in config]),
 
-        "initial_goal_position": np.array(
-            [np.int32(motor["initial_goal_position"]) if motor["initial_goal_position"] is not None else None for motor
-             in config]),
-        "initial_goal_current": np.array(
-            [np.uint32(motor["initial_goal_current"]) if motor["initial_goal_current"] is not None else None for motor
-             in config]),
         "P": np.array([motor["P"] for motor in config]),
         "I": np.array([motor["I"] for motor in config]),
         "D": np.array([motor["D"] for motor in config])

@@ -20,7 +20,7 @@ import json
 import numpy as np
 
 from common.dynamixel_bus import DynamixelBus, TorqueMode, OperatingMode
-from common.position_control.utils import physical_to_logical, DriveMode
+from common.position_control.utils import physical_to_logical, logical_to_physical
 
 FULL_ARM = np.array([
     "shoulder_pan",
@@ -57,7 +57,6 @@ def configure_servos(bus: DynamixelBus):
     bus.sync_write_torque_enable(TorqueMode.DISABLED, FULL_ARM)
 
     bus.sync_write_operating_mode(OperatingMode.EXTENDED_POSITION, ARM_WITHOUT_GRIPPER)
-
     bus.write_operating_mode(OperatingMode.CURRENT_CONTROLLED_POSITION, GRIPPER)
 
 
@@ -72,57 +71,81 @@ def rounded_values(values: np.array) -> np.array:
         [round(values[i] / 1024) * 1024 if values[i] is not None else None for i in range(len(values))])
 
 
-def calculate_offsets(bus: DynamixelBus, drive_modes: np.array, wanted: np.array) -> np.array:
+def calculate_physical_to_logical_tables(physical_position_1, physical_position_2, wanted):
     """
-    Calculate the offset you need to apply to the positions in order to reach the wanted positions.
-    :param bus: DynamixelBus
-    :param drive_modes: numpy array of DriveMode
-    :param wanted: numpy array of wanted positions
-    :return: numpy array of offsets
+    This function compute, for each joint, a dictionary of 4 key-value pairs. The key is the index of the quadrant
+    (0, 1, 2, 3) = (0-1024, 1024-2048, 2048-3072, 3072-4096) and the value is a tuple of the logical position. It's the
+    value for the interpolation of the physical position to the logical position.
     """
+    result = []
 
-    # Get the present rounded positions of the servos
-    present_positions = rounded_values(physical_to_logical(
-        bus.sync_read_position(FULL_ARM),
-        np.array([0, 0, 0, 0, 0, 0]),
-        drive_modes
-    ))
+    for i in range(len(physical_position_1)):
+        table = {}
 
-    offsets = np.array([None, None, None, None, None, None])
+        first, second = round((physical_position_1[i] % 4096) / 1024) * 1024 % 4096, round(
+            (physical_position_2[i] % 4096) / 1024) * 1024 % 4096
 
-    for i in range(len(present_positions)):
-        if present_positions[i] is not None:
-            offsets[i] = wanted[i] - present_positions[i]
+        if first == 3072 and second == 0:
+            second = 4096
+        elif second == 3072 and first == 0:
+            first = 4096
 
-    return offsets
+        if first < second:
+            index = first // 1024
+            table[str(index)] = (int(wanted[i][0]), int(wanted[i][1]))
+
+            for j in range(4):
+                if j != index:
+                    offset = (index - j) * (wanted[i][1] - wanted[i][0])
+                    table[str(j)] = (int(wanted[i][0] - offset), int(wanted[i][1] - offset))
+
+                    if not -2048 <= table[str(j)][0] <= 2048 or not -2048 <= table[str(j)][1] <= 2048:
+                        table[str(j)] = (table[str(j)][0] % 4096, table[str(j)][1] % 4096)
+        else:
+            index = second // 1024
+            table[str(index)] = (int(wanted[i][1]), int(wanted[i][0]))
+
+            for j in range(4):
+                if j != index:
+                    offset = (index - j) * (wanted[i][0] - wanted[i][1])
+                    table[str(j)] = (int(wanted[i][1] - offset), int(wanted[i][0] - offset))
+
+                    if not -2048 <= table[str(j)][0] <= 2048 or not -2048 <= table[str(j)][1] <= 2048:
+                        table[str(j)] = (table[str(j)][0] % 4096, table[str(j)][1] % 4096)
+
+        result.append(table)
+
+    return np.array(result)
 
 
-def compute_drive_modes(bus: DynamixelBus, offsets: np.array, wanted: np.array) -> np.array:
-    """
-    Compute the drive mode of the servos.
-    :param bus: DynamixelBus
-    :param offsets: numpy array of offsets
-    :param wanted: numpy array of wanted positions
-    :return: list of booleans to determine the drive mode of the servos
-    """
+def calculate_logical_to_physical_tables(physical_position_1, physical_position_2, wanted):
+    result = []
 
-    # Get the present rounded positions of the servos
-    present_positions = rounded_values(physical_to_logical(
-        bus.sync_read_position(FULL_ARM),
-        offsets,
-        np.array([DriveMode.POSITIVE_CURRENT] * 6)
-    ))
+    for i in range(len(physical_position_1)):
+        table = {}
 
-    drive_modes = np.array([None, None, None, None, None, None])
+        first, second = round(physical_position_1[i] / 1024) * 1024, round(physical_position_2[i] / 1024) * 1024
 
-    for i in range(len(present_positions)):
-        if present_positions[i] is not None:
-            if present_positions[i] != wanted[i]:
-                drive_modes[i] = DriveMode.NEGATIVE_CURRENT
-            else:
-                drive_modes[i] = DriveMode.POSITIVE_CURRENT
+        if wanted[i][0] < wanted[i][1]:
+            index = int((wanted[i][0] + 2048) // 1024)
+            table[str(index)] = (first, second)
 
-    return drive_modes
+            for j in range(4):
+                if j != index:
+                    offset = (index - j) * (second - first)
+                    table[str(j)] = (int(first - offset), int(second - offset))
+        else:
+            index = int((wanted[i][1] + 2048) // 1024)
+            table[str(index)] = (int(second), int(first))
+
+            for j in range(4):
+                if j != index:
+                    offset = (index - j) * (first - second)
+                    table[str(j)] = (int(second - offset), int(first - offset))
+
+        result.append(table)
+
+    return np.array(result)
 
 
 def main():
@@ -131,12 +154,17 @@ def main():
                     "the user.")
 
     parser.add_argument("--port", type=str, required=True, help="The port of the LCR.")
-    parser.add_argument("--type", type=str, required=True, help="The type of the LCR (leader or follower).")
 
     args = parser.parse_args()
 
     wanted_position_1 = np.array([0, -1024, 1024, 0, -1024, 0]).astype(np.int32)
     wanted_position_2 = np.array([1024, 0, 0, 1024, 0, -1024]).astype(np.int32)
+
+    wanted = np.array([
+        (wanted_position_1[i], wanted_position_2[i])
+
+        for i in range(len(wanted_position_1))
+    ])
 
     arm = DynamixelBus(
         args.port, {
@@ -151,72 +179,46 @@ def main():
 
     configure_servos(arm)
 
-    # Ask the user to move the LCR to the position 1
-    print("Please move the LCR to the position 1")
+    print("Please move the LCR to the first position.")
     pause()
+    physical_position_1 = arm.sync_read_position(FULL_ARM)
 
-    offsets = calculate_offsets(
-        arm,
-        np.array([DriveMode.POSITIVE_CURRENT] * 6),
-        wanted_position_1
-    )
-
-    # Ask the user to move the LCR to the position 2
-    print("Please move the LCR to the position 2")
+    print("Please move the LCR to the second position.")
     pause()
+    physical_position_2 = arm.sync_read_position(FULL_ARM)
 
-    drive_modes = compute_drive_modes(
-        arm,
-        offsets,
-        wanted_position_2
-    )
+    physical_to_logical_tables = calculate_physical_to_logical_tables(physical_position_1, physical_position_2, wanted)
+    logical_to_physical_tables = calculate_logical_to_physical_tables(physical_position_1, physical_position_2, wanted)
 
-    offsets = calculate_offsets(
-        arm,
-        drive_modes,
-        wanted_position_2
-    )
+    print("Configuration completed.")
 
-    print("Configuration done!")
-
-    path = input("Please enter the path of the configuration file (e.g. ./robots/alexk-lcr/configs/leader.json): ")
-    json_config = {"config": []}
+    path = input(
+        "Please enter the path of the configuration file (e.g. ./robots/alexk-lcr/configs/leader_control.json): ")
+    json_config = {}
 
     for i in range(6):
-        model = "xl330-m077" if args.type == "leader" else ("xl430-w250" if i <= 1 else "xl330-m288")
-
-        json_config["config"].append({
-            "id": i + 1,
-            "joint": FULL_ARM[i],
-            "model": model,
-            "torque": True if args.type == "follower" or i == 5 else False,
-            "offset": int(offsets[i]),
-            "drive_mode": "POS" if drive_modes[i] == DriveMode.POSITIVE_CURRENT else "NEG",
-            "initial_goal_position": None if i != 5 or args.type == "follower" else -450,
-            "initial_goal_current": None if i != 5 else (500 if args.type == "follower" else 40),
-            "P": 640 if model == "xl430-w250" else (
-                400 if (model == "xl330-m077" or model == "xl330-m288") and i != 5 else 250),
-            "I": 0,
-            "D": 3600 if model == "xl430-w250" else (
-                0 if (model == "xl330-m077" or model == "xl330-m288") and i != 5 else 200)
-        })
+        json_config[FULL_ARM[i]] = {
+            "physical_to_logical": physical_to_logical_tables[i],
+            "logical_to_physical": logical_to_physical_tables[i],
+            "initial_goal_position": None if i != 5 else -450,
+        }
 
     with open(path, "w") as file:
         json.dump(json_config, file)
 
-    print("Make sure everything is working properly:")
-    pause()
-
     while True:
-        positions = physical_to_logical(
-            arm.sync_read_position(FULL_ARM),
-            offsets,
-            drive_modes
-        )
+        try:
+            physical_position = arm.sync_read_position(FULL_ARM)
+            offset = physical_position - logical_to_physical(
+                physical_to_logical(physical_position, physical_to_logical_tables), logical_to_physical_tables)
 
-        print("Positions: ", " ".join([str(i) for i in positions]))
+            logical_position = physical_to_logical(physical_position, physical_to_logical_tables) - offset
 
-        time.sleep(1.0)
+            print(f"Position: {logical_position}")
+        except Exception as e:
+            print(f"Error: {e}")
+
+        time.sleep(0.1)
 
 
 if __name__ == "__main__":

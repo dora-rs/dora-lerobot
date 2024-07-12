@@ -172,7 +172,8 @@ class DynamixelBus:
         packet_address = self.motor_ctrl[motor_name][data_name]["addr"]
         packet_bytes_size = self.motor_ctrl[motor_name][data_name]["bytes_size"]
 
-        args = (self.port_handler, motor_id, packet_address, packet_bytes_size)
+        args = (self.port_handler, motor_id, packet_address)
+
         if packet_bytes_size == 1:
             value, comm, err = self.packet_handler.read1ByteTxRx(*args)
         elif packet_bytes_size == 2:

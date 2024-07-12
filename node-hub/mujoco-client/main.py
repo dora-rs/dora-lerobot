@@ -129,10 +129,6 @@ def main():
         "scene": scene,
 
         "joints": np.array([motor["joint"] for motor in config]),
-
-        "initial_goal_position": np.array(
-            [np.int32(motor["initial_goal_position"]) if motor["initial_goal_position"] is not None else None for motor
-             in config]),
     }
 
     print("Mujoco Client Configuration: ", bus, flush=True)

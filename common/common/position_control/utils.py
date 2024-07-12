@@ -3,94 +3,59 @@ import enum
 import numpy as np
 
 
-class DriveMode(enum.Enum):
-    POSITIVE_CURRENT = np.uint32(0)
-    NEGATIVE_CURRENT = np.uint32(1)
+def physical_to_logical(physical_position: np.array, table: [{}]):
+    result = []
+
+    for i in range(len(physical_position)):
+        if physical_position[i] is None:
+            result.append(None)
+            continue
+
+        ranged = physical_position[i] % 4096
+        index = ranged // 1024
+
+        a = index * 1024
+        b = (index + 1) * 1024
+
+        c = table[i][str(index)][0]
+        d = table[i][str(index)][1]
+
+        result.append(np.int32(c + (ranged - a) * (d - c) / (b - a)))
+
+    return np.array(result)
 
 
-def physical_to_logical(values: np.array, offsets: np.array, drive_modes: np.array) -> np.array:
-    """
-    Convert physical values to logical values.
-    :param values: numpy array of physical values
-    :param offsets: numpy array of offsets
-    :param drive_modes: numpy array of DriveMode
-    :return: numpy array of logical values
-    """
-    result = np.array([None] * len(values))
+def logical_to_physical(logical_position: np.array, table: [{}]):
+    result = []
 
-    for i in range(len(values)):
-        if values[i] is not None:
-            result[i] = np.int32(values[i])
+    for i in range(len(logical_position)):
+        if logical_position[i] is None:
+            result.append(None)
+            continue
 
-    for i, drive_mode in enumerate(drive_modes):
-        if drive_mode is not None and result[i] is not None and drive_mode == DriveMode.NEGATIVE_CURRENT:
-            result[i] = -result[i]
+        ranged = (logical_position[i] + 2048) % 4096
+        index = ranged // 1024
 
-    for i, offset in enumerate(offsets):
-        if offset is not None and result[i] is not None:
-            result[i] += offset
+        a = index * 1024
+        b = (index + 1) * 1024
 
-    return result
+        c = table[i][str(index)][0]
+        d = table[i][str(index)][1]
+
+        result.append(np.int32(c + (ranged - a) * (d - c) / (b - a)))
+
+    return np.array(result)
 
 
-def logical_to_physical(values: np.array, offsets: np.array, drive_modes: np.array) -> np.array:
-    """
-    Convert logical values to physical values.
-    :param values: numpy array of logical values
-    :param offsets: numpy array of offsets
-    :param drive_modes: numpy array of drive_mode (0 clockwise or 1 counterclockwise)
-    :return: numpy array of physical values
-    """
+def turn_offset(physical_position: np.array, physical_to_logical_table: [{}], logical_to_physical_table: [{}]):
+    result = []
 
-    result = np.array([None] * len(values))
+    for i in range(len(physical_position)):
+        if physical_position[i] is None:
+            result.append(None)
+            continue
 
-    for i in range(len(values)):
-        if values[i] is not None:
-            result[i] = np.int32(values[i])
+        result.append(np.int32(physical_position[i] - logical_to_physical(
+            physical_to_logical(physical_position, physical_to_logical_table), logical_to_physical_table)[i]))
 
-    for i, offset in enumerate(offsets):
-        if offset is not None and result[i] is not None:
-            result[i] -= offset
-
-    for i, drive_mode in enumerate(drive_modes):
-        if drive_mode is not None and result[i] is not None and drive_mode == DriveMode.NEGATIVE_CURRENT:
-            result[i] = -result[i]
-
-    return result
-
-
-def in_range_position(values: np.array) -> np.array:
-    """
-    This function assures that the position values are in the range of the LCR standard [-2048, 2048] all servos.
-    This is important because an issue with communication can cause a +- 4095 offset value, so we need to assure
-    that the values are in the range.
-    """
-
-    for i in range(len(values)):
-        if values[i] is not None and values[i] > 4096:
-            values[i] = values[i] % 4096
-        if values[i] is not None and values[i] < -4096:
-            values[i] = -(-values[i] % 4096)
-
-        if values[i] is not None and values[i] > 2048:
-            values[i] = - 2048 + (values[i] % 2048)
-        elif values[i] is not None and values[i] < -2048:
-            values[i] = 2048 - (-values[i] % 2048)
-
-    return values
-
-
-def adapt_range_goal(goal: np.array, position: np.array) -> np.array:
-    """
-    This function adapts the goal position to the current position of the robot.
-    This is important because an issue with communication can cause a +- 4095 offset value, se we need to adapt the goal
-    position to be coherent with the current position of the robot.
-    """
-
-    for i in range(len(goal)):
-        if position[i] is not None and goal[i] is not None and position[i] > 2048:
-            goal[i] = goal[i] + ((position[i] + 2048) // 4096) * 4096
-        elif position[i] is not None and goal[i] is not None and position[i] < -2048:
-            goal[i] = goal[i] - ((-position[i] + 2048) // 4096) * 4096
-
-    return goal
+    return np.array(result)
