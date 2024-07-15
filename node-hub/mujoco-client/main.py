@@ -87,11 +87,11 @@ class Client:
         pass
 
     def write_goal_position(self, goal_position_with_joints):
-        joints = goal_position_with_joints[0]["joints"].values.to_numpy(zero_copy_only=False)
-        goal_position = goal_position_with_joints[0]["positions"].values.to_numpy()
+        joints = goal_position_with_joints[0]["joints"].values
+        goal_position = goal_position_with_joints[0]["positions"].values
 
         for i, joint in enumerate(joints):
-            self.data.joint(joint).qpos[0] = goal_position[i]
+            self.data.joint(joint.as_py()).qpos[0] = goal_position[i].as_py()
 
 
 def main():
@@ -128,7 +128,7 @@ def main():
         "name": args.name,
         "scene": scene,
 
-        "joints": np.array([motor["joint"] for motor in config]),
+        "joints": pa.array([motor["joint"] for motor in config], type=pa.string()),
     }
 
     print("Mujoco Client Configuration: ", bus, flush=True)
