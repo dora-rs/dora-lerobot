@@ -4,6 +4,8 @@ This Dora node is a minimalistic interface that shows two images and text in a P
 
 import os
 import argparse
+
+import numpy as np
 import pygame
 
 import pyarrow as pa
@@ -54,12 +56,29 @@ def main():
             event_id = event["id"]
 
             if event_id == "image_left":
-                raw_data = event["value"].to_numpy()
-                image_left = pygame.image.frombuffer(raw_data, (int(camera_width), int(camera_height)), "BGR")
+                arrow_image = event["value"][0]
+
+                image = {
+                    "width": arrow_image["width"].as_py(),
+                    "height": arrow_image["height"].as_py(),
+                    "channels": arrow_image["channels"].as_py(),
+                    "data": arrow_image["data"].values.to_numpy()
+                }
+
+                image_left = pygame.image.frombuffer(image["data"], (image["width"], image["height"]),
+                                                     "BGR")
 
             elif event_id == "image_right":
-                raw_data = event["value"].to_numpy()
-                image_right = pygame.image.frombuffer(raw_data, (int(camera_width), int(camera_height)), "BGR")
+                arrow_image = event["value"][0]
+                image = {
+                    "width": arrow_image["width"].as_py(),
+                    "height": arrow_image["height"].as_py(),
+                    "channels": arrow_image["channels"].as_py(),
+                    "data": arrow_image["data"].values.to_numpy()
+                }
+
+                image_right = pygame.image.frombuffer(image["data"], (image["width"], image["height"]),
+                                                      "BGR")
 
             elif event_id == "tick":
                 node.send_output(

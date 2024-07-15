@@ -74,34 +74,32 @@ nodes:
       PORT: /dev/tty.usbmodem575E0031141
       CONFIG: ../configs/follower.startup
 
-  - id: opencv-camera
-    build: pip install ../../../node-hub/opencv-camera
-    path: opencv-camera
+  - id: opencv-video-capture
+    build: pip install ../../../node-hub/opencv-video-capture
+    path: opencv-video-capture
     inputs:
-      pull_image:
+      tick:
         source: lerobot-dashboard/tick
         queue_size: 1
     outputs:
       - image
 
     env:
-      CAMERA_ID: 0
-      CAMERA_WIDTH: 860
-      CAMERA_HEIGHT: 540
+      PATH: 0
+      IMAGE_WIDTH: 860
+      IMAGE_HEIGHT: 540
 
   - id: video-encoder
     build: pip install ../../../node-hub/video-encoder
     path: video-encoder
     inputs:
-      image: opencv-camera/image
+      image: opencv-video-capture/image
       episode_index: lerobot-dashboard/episode
     outputs:
       - image
 
     env:
       VIDEO_NAME: cam_up
-      VIDEO_WIDTH: 860
-      VIDEO_HEIGHT: 540
       FPS: 30
 
   - id: lerobot-dashboard
@@ -112,7 +110,7 @@ nodes:
         source: dora/timer/millis/16
         queue_size: 1
 
-      image_left: opencv-camera/image
+      image_left: opencv-video-capture/image
     outputs:
       - tick
       - episode

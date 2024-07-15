@@ -10,8 +10,8 @@ nodes:
       - end
 
     env:
-      PATH: ../../../datasets/test
-      EPISODE: 1
+      PATH: ../../../datasets/enzo1
+      EPISODE: 3
 
   - id: replay-to-lcr
     path: ../nodes/interpolate_replay_to_lcr.py

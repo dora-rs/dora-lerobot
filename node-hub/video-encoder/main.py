@@ -34,14 +34,8 @@ def main():
     if not os.getenv("VIDEO_NAME") or not os.getenv("FPS"):
         raise ValueError("Please set the VIDEO_NAME and FPS environment variables.")
 
-    if not os.getenv("VIDEO_WIDTH") or not os.getenv("VIDEO_HEIGHT"):
-        raise ValueError("Please set the VIDEO_WIDTH and VIDEO_HEIGHT environment variables.")
-
     video_name = os.getenv("VIDEO_NAME")
     fps = int(os.getenv("FPS"))
-
-    video_width = int(os.getenv("VIDEO_WIDTH"))
-    video_height = int(os.getenv("VIDEO_HEIGHT"))
 
     args = parser.parse_args()
 
@@ -87,9 +81,19 @@ def main():
                         event["metadata"],
                     )
 
-                    image = event["value"].to_numpy().reshape((video_height, video_width, 3))
+                    arrow_image = event["value"][0]
+                    image = {
+                        "width": arrow_image["width"].as_py(),
+                        "height": arrow_image["height"].as_py(),
+                        "channels": arrow_image["channels"].as_py(),
+                        "data": arrow_image["data"].values.to_numpy().astype(np.uint8)
+                    }
+
+                    data = image["data"].reshape(
+                        (image["height"], image["width"], image["channels"]))
+
                     path = str(out_dir / f"frame_{frame_count:06d}.png")
-                    cv2.imwrite(path, image)
+                    cv2.imwrite(path, data)
 
                     frame_count += 1
 
