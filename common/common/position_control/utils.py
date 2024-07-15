@@ -1,61 +1,92 @@
-import enum
+import pyarrow as pa
+import pyarrow.compute as pc
 
-import numpy as np
 
+def physical_to_logical(physical_positions: pa.Scalar, table: {str: {str: []}}) -> pa.Scalar:
+    result = {
+        str: pa.Array,
 
-def physical_to_logical(physical_position: np.array, table: [{}]):
-    result = []
+        "joints": physical_positions["joints"].values
+    }
 
-    for i in range(len(physical_position)):
-        if physical_position[i] is None:
-            result.append(None)
+    physical = physical_positions["positions"].values
+    logical = []
+
+    for i in range(len(physical)):
+        if physical[i].as_py() is None:
+            logical.append(None)
             continue
 
-        ranged = physical_position[i] % 4096
+        ranged = physical[i].as_py() % 4096
         index = ranged // 1024
 
         a = index * 1024
         b = (index + 1) * 1024
 
-        c = table[i][str(index)][0]
-        d = table[i][str(index)][1]
+        c = table[result["joints"][i].as_py()]["physical_to_logical"][str(index)][0]
+        d = table[result["joints"][i].as_py()]["physical_to_logical"][str(index)][1]
 
-        result.append(np.int32(c + (ranged - a) * (d - c) / (b - a)))
+        logical.append(pa.scalar(c + (ranged - a) * (d - c) / (b - a), type=pa.int32()))
 
-    return np.array(result)
+    result["positions"] = pa.array(logical, type=pa.int32())
+
+    return pa.scalar(result, type=pa.struct([
+        pa.field("joints", pa.list_(pa.string())),
+        pa.field("positions", pa.list_(pa.int32()))
+    ]))
 
 
-def logical_to_physical(logical_position: np.array, table: [{}]):
-    result = []
+def logical_to_physical(logical_positions: pa.Scalar, table: {str: {str: []}}) -> pa.Scalar:
+    result = {
+        str: pa.Array,
 
-    for i in range(len(logical_position)):
-        if logical_position[i] is None:
-            result.append(None)
+        "joints": logical_positions["joints"].values
+    }
+
+    logical = logical_positions["positions"].values
+    physical = []
+
+    for i in range(len(logical)):
+        if logical[i].as_py() is None:
+            physical.append(None)
             continue
 
-        ranged = (logical_position[i] + 2048) % 4096
+        ranged = (logical[i].as_py() + 2048) % 4096
         index = ranged // 1024
 
         a = index * 1024
         b = (index + 1) * 1024
 
-        c = table[i][str(index)][0]
-        d = table[i][str(index)][1]
+        c = table[result["joints"][i].as_py()]["logical_to_physical"][str(index)][0]
+        d = table[result["joints"][i].as_py()]["logical_to_physical"][str(index)][1]
 
-        result.append(np.int32(c + (ranged - a) * (d - c) / (b - a)))
+        physical.append(pa.scalar(c + (ranged - a) * (d - c) / (b - a), type=pa.int32()))
 
-    return np.array(result)
+    result["positions"] = pa.array(physical, type=pa.int32())
+
+    return pa.scalar(result, type=pa.struct([
+        pa.field("joints", pa.list_(pa.string())),
+        pa.field("positions", pa.list_(pa.int32()))
+    ]))
 
 
-def turn_offset(physical_position: np.array, physical_to_logical_table: [{}], logical_to_physical_table: [{}]):
-    result = []
+def calculate_offset(physical_positions: pa.Scalar, table: {str: {str: pa.Array}}) -> pa.Scalar:
+    result = {
+        str: pa.Array,
 
-    for i in range(len(physical_position)):
-        if physical_position[i] is None:
-            result.append(None)
-            continue
+        "joints": physical_positions["joints"].values
+    }
 
-        result.append(np.int32(physical_position[i] - logical_to_physical(
-            physical_to_logical(physical_position, physical_to_logical_table), logical_to_physical_table)[i]))
+    physical = physical_positions["positions"].values
 
-    return np.array(result)
+    logical = physical_to_logical(physical_positions, table)
+    base = logical_to_physical(logical, table)["positions"].values
+
+    offset = pc.subtract(physical, base)
+
+    result["positions"] = pa.array(offset, type=pa.int32())
+
+    return pa.scalar(result, type=pa.struct([
+        pa.field("joints", pa.list_(pa.string())),
+        pa.field("positions", pa.list_(pa.int32()))
+    ]))

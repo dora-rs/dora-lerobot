@@ -36,9 +36,9 @@
       "model": "xl330-m288",
       "torque": true,
       "goal_current": null,
-      "P": 400,
+      "P": 1500,
       "I": 0,
-      "D": 0
+      "D": 600
     },
     {
       "id": 5,
@@ -46,9 +46,9 @@
       "model": "xl330-m288",
       "torque": true,
       "goal_current": null,
-      "P": 400,
+      "P": 1500,
       "I": 0,
-      "D": 0
+      "D": 600
     },
     {
       "id": 6,

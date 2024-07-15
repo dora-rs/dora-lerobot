@@ -27,33 +27,33 @@ class Client:
 
         self.bus = DynamixelBus(config["port"], description)
 
-        # Set initial values
+        # Set client configuration values
 
         try:
-            self.bus.sync_write_torque_enable(config["torque"], self.config["joints"])
+            self.bus.write_torque_enable(config["torque"], self.config["joints"])
         except Exception as e:
             print("Error writing torque status:", e)
 
         try:
-            self.bus.sync_write_goal_current(config["goal_current"], self.config["joints"])
+            self.bus.write_goal_current(config["goal_current"], self.config["joints"])
         except Exception as e:
             print("Error writing goal current:", e)
         time.sleep(0.1)
 
         try:
-            self.bus.sync_write_position_d_gain(config["D"], self.config["joints"])
+            self.bus.write_position_d_gain(config["D"], self.config["joints"])
         except Exception as e:
             print("Error writing gains:", e)
         time.sleep(0.1)
 
         try:
-            self.bus.sync_write_position_i_gain(config["I"], self.config["joints"])
+            self.bus.write_position_i_gain(config["I"], self.config["joints"])
         except Exception as e:
             print("Error writing gains:", e)
         time.sleep(0.1)
 
         try:
-            self.bus.sync_write_position_p_gain(config["P"], self.config["joints"])
+            self.bus.write_position_p_gain(config["P"], self.config["joints"])
         except Exception as e:
             print("Error writing gains:", e)
 
@@ -85,20 +85,13 @@ class Client:
                 raise ValueError("An error occurred in the dataflow: " + event["error"])
 
     def close(self):
-        self.bus.sync_write_torque_enable(TorqueMode.DISABLED, self.config["joints"])
+        self.bus.write_torque_enable(TorqueMode.DISABLED, self.config["joints"])
 
     def pull_position(self, node, metadata):
         try:
-            position = self.bus.sync_read_position(self.config["joints"])
-
-            position_with_joints = {
-                "joints": self.config["joints"],
-                "positions": position
-            }
-
             node.send_output(
                 "position",
-                pa.array([position_with_joints]),
+                pa.array([self.bus.read_position(self.config["joints"])]),
                 metadata
             )
 
@@ -107,16 +100,9 @@ class Client:
 
     def pull_velocity(self, node, metadata):
         try:
-            velocity = self.bus.sync_read_velocity(self.config["joints"])
-
-            velocity_with_joints = {
-                "joints": self.config["joints"],
-                "velocities": velocity
-            }
-
             node.send_output(
                 "velocity",
-                pa.array([velocity_with_joints]),
+                pa.array([self.bus.read_velocity(self.config["joints"])]),
                 metadata
             )
         except ConnectionError as e:
@@ -124,36 +110,29 @@ class Client:
 
     def pull_current(self, node, metadata):
         try:
-            current = self.bus.sync_read_current(self.config["joints"])
-
-            current_with_joints = {
-                "joints": self.config["joints"],
-                "currents": current
-            }
-
             node.send_output(
                 "current",
-                pa.array([current_with_joints]),
+                pa.array([self.bus.read_current(self.config["joints"])]),
                 metadata
             )
         except ConnectionError as e:
             print("Error reading current:", e)
 
-    def write_goal_position(self, goal_position_with_joints: {}):
+    def write_goal_position(self, goal_position_with_joints: pa.Array):
         try:
-            joints = goal_position_with_joints[0]["joints"].values.to_numpy(zero_copy_only=False)
-            goal_position = goal_position_with_joints[0]["positions"].values.to_numpy()
+            joints = goal_position_with_joints[0]["joints"].values
+            goal_position = goal_position_with_joints[0]["positions"].values
 
-            self.bus.sync_write_goal_position(goal_position, joints)
+            self.bus.write_goal_position(goal_position, joints)
         except ConnectionError as e:
             print("Error writing goal position:", e)
 
-    def write_goal_current(self, goal_current_with_joints: np.array):
+    def write_goal_current(self, goal_current_with_joints: pa.Array):
         try:
-            joints = goal_current_with_joints[0]["joints"].values.to_numpy(zero_copy_only=False)
-            goal_current = goal_current_with_joints[0]["currents"].values.to_numpy()
+            joints = goal_current_with_joints[0]["joints"].values
+            goal_current = goal_current_with_joints[0]["currents"].values
 
-            self.bus.sync_write_goal_current(goal_current, joints)
+            self.bus.write_goal_current(goal_current, joints)
         except ConnectionError as e:
             print("Error writing goal current:", e)
 
@@ -193,20 +172,19 @@ def main():
     bus = {
         "name": args.name,
         "port": port,  # (e.g. "/dev/ttyUSB0", "COM3")
-        "ids": np.array([np.uint8(motor["id"]) for motor in config]),
-        "joints": np.array([motor["joint"] for motor in config]),
-        "models": np.array([motor["model"] for motor in config]),
+        "ids": [motor["id"] for motor in config],
+        "joints": pa.array([motor["joint"] for motor in config], pa.string()),
+        "models": [motor["model"] for motor in config],
 
-        "torque": np.array(
-            [TorqueMode.ENABLED if motor["torque"] else TorqueMode.DISABLED for motor in config]),
+        "torque": [TorqueMode.ENABLED if motor["torque"] else TorqueMode.DISABLED for motor in config],
 
-        "goal_current": np.array(
-            [np.uint32(motor["goal_current"]) if motor["goal_current"] is not None else None for motor
+        "goal_current": pa.array(
+            [pa.scalar(motor["goal_current"], pa.uint32()) if motor["goal_current"] is not None else None for motor
              in config]),
 
-        "P": np.array([motor["P"] for motor in config]),
-        "I": np.array([motor["I"] for motor in config]),
-        "D": np.array([motor["D"] for motor in config])
+        "P": pa.array([motor["P"] for motor in config], type=pa.int32()),
+        "I": pa.array([motor["I"] for motor in config], type=pa.int32()),
+        "D": pa.array([motor["D"] for motor in config], type=pa.int32())
     }
 
     print("Dynamixel Client Configuration: ", bus, flush=True)

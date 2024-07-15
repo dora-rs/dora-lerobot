@@ -11,6 +11,7 @@ packages = [
 
 [tool.poetry.dependencies]
 numpy = "2.0.0"
+pyarrow = "16.1.0"
 dynamixel-sdk = "3.7.31"
 feetech-servo-sdk = "1.0.0"
 

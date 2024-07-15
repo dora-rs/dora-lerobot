@@ -5,24 +5,30 @@ and Follower position
 import os
 import argparse
 import json
+import time
 
-import numpy as np
 import pyarrow as pa
+import pyarrow.compute as pc
 
 from dora import Node
 
-from common.position_control import logical_to_physical, physical_to_logical, turn_offset
+from common.position_control import logical_to_physical, physical_to_logical, calculate_offset
 
 
-def calculate_goal_position(physical_position: np.array, logical_position: np.array, physical_to_logical_table: [{}],
-                            logical_to_physical_table: [{}]):
-    offset = turn_offset(physical_position, physical_to_logical_table, logical_to_physical_table)
-    physical = logical_to_physical(logical_position, logical_to_physical_table)
+def calculate_goal_position(physical_position: pa.Scalar, logical_goal: pa.Scalar,
+                            table: {str: {str: pa.Array}}) -> pa.Scalar:
+    offset = calculate_offset(physical_position, table)
+    physical_goal = logical_to_physical(logical_goal, table)
 
-    return np.array([
-        physical[i] + offset[i] if physical[i] is not None and offset[i] is not None else None
-        for i in range(len(physical))
-    ])
+    return pa.scalar({
+        str: pa.Array,
+
+        "joints": physical_goal["joints"].values,
+        "positions": pc.add(physical_goal["positions"].values, offset["positions"].values)
+    }, type=pa.struct({
+        "joints": pa.list_(pa.string()),
+        "positions": pa.list_(pa.int32())
+    }))
 
 
 def main():
@@ -57,11 +63,29 @@ def main():
     with open(os.environ.get("FOLLOWER_CONTROL") if args.follower_control is None else args.follower_control) as file:
         follower_control = json.load(file)
 
-    node = Node("lcr_interpolate")
+    logical_leader_goal = pa.scalar({
+        "joints": pa.array(leader_control.keys(), type=pa.string()),
+        "positions": pa.array([leader_control[joint]["initial_goal_position"] for joint in leader_control.keys()],
+                              type=pa.int32())
+    }, type=pa.struct({
+        "joints": pa.list_(pa.string()),
+        "positions": pa.list_(pa.int32())
+    }))
 
-    follower_position = np.array([0, 0, 0, 0, 0, 0])
+    node = Node("lcr-to-lcr")
 
     leader_initialized = False
+    follower_initialized = False
+
+    follower_position = pa.scalar({}, type=pa.struct({
+        "joints": pa.list_(pa.string()),
+        "positions": pa.list_(pa.int32())
+    }))
+
+    leader_position = pa.scalar({}, type=pa.struct({
+        "joints": pa.list_(pa.string()),
+        "positions": pa.list_(pa.int32())
+    }))
 
     for event in node:
         event_type = event["type"]
@@ -70,85 +94,51 @@ def main():
             event_id = event["id"]
 
             if event_id == "leader_position":
-                leader_position = event["value"][0]["positions"].values.to_numpy()
-                leader_joints = event["value"][0]["joints"].values.to_numpy(zero_copy_only=False)
-
-                leader_physical_to_logical = [
-                    leader_control[joint]["physical_to_logical"]
-                    for joint in leader_joints
-                ]
-
-                leader_logical_to_physical = [
-                    leader_control[joint]["logical_to_physical"]
-                    for joint in leader_joints
-                ]
+                leader_position = event["value"][0]
 
                 if not leader_initialized:
                     leader_initialized = True
 
-                    initial_goal = [
-                        leader_control[joint]["initial_goal_position"]
-                        for joint in leader_joints
-                    ]
-
-                    goal_position = calculate_goal_position(leader_position, initial_goal, leader_physical_to_logical,
-                                                            leader_logical_to_physical)
-                    goal_position_with_joints = {
-                        "joints": [
-                            leader_joints[i]
-                            for i in range(len(leader_joints)) if goal_position[i] is not None
-                        ],
-                        "positions": np.array([
-                            goal_position[i]
-                            for i in range(len(leader_joints)) if goal_position[i] is not None
-                        ])
-                    }
+                    physical_goal = calculate_goal_position(leader_position, logical_leader_goal, leader_control)
 
                     node.send_output(
                         "leader_goal",
-                        pa.array([goal_position_with_joints]),
+                        pa.array([physical_goal]),
                         event["metadata"]
                     )
 
-                # Convert leader position to logical coordinates
-                leader_offset = turn_offset(leader_position, leader_physical_to_logical, leader_logical_to_physical)
-                leader_position = physical_to_logical(leader_position, leader_physical_to_logical) - leader_offset
+                if not follower_initialized:
+                    continue
 
-                print("Leader Position: ", leader_position)
+                leader_position = physical_to_logical(leader_position, leader_control)
 
-                follower_physical_to_logical = [
-                    follower_control[joint]["physical_to_logical"]
-                    for joint in leader_joints
-                ]
+                leader_position = pa.scalar({
+                    "joints": leader_position["joints"].values,
+                    "positions": pa.array(pc.floor(pc.multiply(leader_position["positions"].values,
+                                                               pa.array([1, 1, 1, 1, 1, 700 / 450],
+                                                                        type=pa.float32()))),
+                                          type=pa.int32())
+                }, type=pa.struct({
+                    "joints": pa.list_(pa.string()),
+                    "positions": pa.list_(pa.int32())
+                }))
 
-                follower_logical_to_physical = [
-                    follower_control[joint]["logical_to_physical"]
-                    for joint in leader_joints
-                ]
-
-                goal_position = calculate_goal_position(follower_position, leader_position,
-                                                        follower_physical_to_logical,
-                                                        follower_logical_to_physical)
-
-                goal_position_with_joints = {
-                    "joints": leader_joints,
-                    "positions": goal_position
-                }
+                physical_goal = calculate_goal_position(follower_position, leader_position, follower_control)
 
                 node.send_output(
                     "follower_goal",
-                    pa.array([goal_position_with_joints]),
+                    pa.array([physical_goal]),
                     event["metadata"]
                 )
-                """
-                """
 
             elif event_id == "follower_position":
-                follower_position = event["value"][0]["positions"].values.to_numpy()
+                follower_position = event["value"][0]
+                follower_initialized = True
+
         elif event_type == "STOP":
             break
         elif event_type == "ERROR":
-            print("[lcr_interpolate] error: ", event["error"])
+            print("[lcr-to-lcr] error: ", event["error"])
             break
 
 

@@ -4,7 +4,7 @@ nodes:
     path: dynamixel-client
     inputs:
       pull_position:
-        source: dora/timer/millis/5 # pull the position every 10ms
+        source: dora/timer/millis/10
         queue_size: 1
 
       write_goal_position: lcr-to-lcr/leader_goal
@@ -13,7 +13,7 @@ nodes:
       - position
     env:
       PORT: /dev/tty.usbmodem575E0030111
-      CONFIG: ../configs/leader_startup.json
+      CONFIG: ../configs/leader.startup
 
   - id: lcr-to-lcr
     path: ../nodes/interpolate_lcr_to_lcr.py
@@ -31,15 +31,15 @@ nodes:
       - leader_goal
 
     env:
-      LEADER_CONTROL: ../configs/leader_control.json
-      FOLLOWER_CONTROL: ../configs/follower_control.json
+      LEADER_CONTROL: ../configs/leader.left.control
+      FOLLOWER_CONTROL: ../configs/follower.left.control
 
   - id: lcr-follower
     build: pip install ../../../node-hub/dynamixel-client
     path: dynamixel-client
     inputs:
       pull_position:
-        source: dora/timer/millis/5
+        source: dora/timer/millis/10
         queue_size: 1
 
       write_goal_position:
@@ -50,4 +50,4 @@ nodes:
       - position
     env:
       PORT: /dev/tty.usbmodem575E0031141
-      CONFIG: ../configs/follower_startup.json
+      CONFIG: ../configs/follower.startup

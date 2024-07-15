@@ -17,29 +17,29 @@ import argparse
 import time
 import json
 
-import numpy as np
+import pyarrow as pa
 
 from common.dynamixel_bus import DynamixelBus, TorqueMode, OperatingMode
 from common.position_control.utils import physical_to_logical, logical_to_physical
 
-FULL_ARM = np.array([
+FULL_ARM = pa.array([
     "shoulder_pan",
     "shoulder_lift",
     "elbow_flex",
     "wrist_flex",
     "wrist_roll",
     "gripper"
-])
+], type=pa.string())
 
-ARM_WITHOUT_GRIPPER = np.array([
+ARM_WITHOUT_GRIPPER = pa.array([
     "shoulder_pan",
     "shoulder_lift",
     "elbow_flex",
     "wrist_flex",
     "wrist_roll"
-])
+], type=pa.string())
 
-GRIPPER = "gripper"
+GRIPPER = pa.array(["gripper"], type=pa.string())
 
 
 def pause():
@@ -54,21 +54,10 @@ def configure_servos(bus: DynamixelBus):
     Configure the servos for the LCR.
     :param bus: DynamixelBus
     """
-    bus.sync_write_torque_enable(TorqueMode.DISABLED, FULL_ARM)
+    bus.write_torque_enable(TorqueMode.DISABLED, FULL_ARM)
 
-    bus.sync_write_operating_mode(OperatingMode.EXTENDED_POSITION, ARM_WITHOUT_GRIPPER)
+    bus.write_operating_mode(OperatingMode.EXTENDED_POSITION, ARM_WITHOUT_GRIPPER)
     bus.write_operating_mode(OperatingMode.CURRENT_CONTROLLED_POSITION, GRIPPER)
-
-
-def rounded_values(values: np.array) -> np.array:
-    """
-    Calculate the nearest rounded values.
-    :param values: numpy array of values
-    :return: numpy array of nearest rounded positions
-    """
-
-    return np.array(
-        [round(values[i] / 1024) * 1024 if values[i] is not None else None for i in range(len(values))])
 
 
 def calculate_physical_to_logical_tables(physical_position_1, physical_position_2, wanted):
@@ -82,8 +71,10 @@ def calculate_physical_to_logical_tables(physical_position_1, physical_position_
     for i in range(len(physical_position_1)):
         table = {}
 
-        first, second = round((physical_position_1[i] % 4096) / 1024) * 1024 % 4096, round(
-            (physical_position_2[i] % 4096) / 1024) * 1024 % 4096
+        first, second = round((physical_position_1[i].as_py() % 4096) / 1024) * 1024 % 4096, round(
+            (physical_position_2[i].as_py() % 4096) / 1024) * 1024 % 4096
+
+        wanted_first, wanted_second = wanted[i][0].as_py(), wanted[i][1].as_py()
 
         if first == 3072 and second == 0:
             second = 4096
@@ -92,30 +83,52 @@ def calculate_physical_to_logical_tables(physical_position_1, physical_position_
 
         if first < second:
             index = first // 1024
-            table[str(index)] = (int(wanted[i][0]), int(wanted[i][1]))
+
+            table[str(index)] = [
+                wanted_first,
+                wanted_second,
+            ]
 
             for j in range(4):
                 if j != index:
-                    offset = (index - j) * (wanted[i][1] - wanted[i][0])
-                    table[str(j)] = (int(wanted[i][0] - offset), int(wanted[i][1] - offset))
+                    offset = (index - j) * (wanted_second - wanted_first)
+
+                    table[str(j)] = [
+                        wanted_first - offset,
+                        wanted_second - offset
+                    ]
 
                     if not -2048 <= table[str(j)][0] <= 2048 or not -2048 <= table[str(j)][1] <= 2048:
-                        table[str(j)] = (table[str(j)][0] % 4096, table[str(j)][1] % 4096)
+                        table[str(j)] = [
+                            (wanted_first - offset) % 4096,
+                            (wanted_second - offset) % 4096
+                        ]
         else:
             index = second // 1024
-            table[str(index)] = (int(wanted[i][1]), int(wanted[i][0]))
+
+            table[str(index)] = [
+                wanted_second,
+                wanted_first,
+            ]
 
             for j in range(4):
                 if j != index:
-                    offset = (index - j) * (wanted[i][0] - wanted[i][1])
-                    table[str(j)] = (int(wanted[i][1] - offset), int(wanted[i][0] - offset))
+                    offset = (index - j) * (wanted_first - wanted_second)
 
-                    if not -2048 <= table[str(j)][0] <= 2048 or not -2048 <= table[str(j)][1] <= 2048:
-                        table[str(j)] = (table[str(j)][0] % 4096, table[str(j)][1] % 4096)
+                    table[str(j)] = [
+                        wanted_second - offset,
+                        wanted_first - offset
+                    ]
+
+                    if not -2048 <= table[str(j)][1] <= 2048 or not -2048 <= table[str(j)][0] <= 2048:
+                        table[str(j)] = [
+                            (wanted_second - offset) % 4096,
+                            (wanted_first - offset) % 4096
+                        ]
 
         result.append(table)
 
-    return np.array(result)
+    return result
 
 
 def calculate_logical_to_physical_tables(physical_position_1, physical_position_2, wanted):
@@ -124,28 +137,40 @@ def calculate_logical_to_physical_tables(physical_position_1, physical_position_
     for i in range(len(physical_position_1)):
         table = {}
 
-        first, second = round(physical_position_1[i] / 1024) * 1024, round(physical_position_2[i] / 1024) * 1024
+        first, second = round(physical_position_1[i].as_py() / 1024) * 1024, round(
+            physical_position_2[i].as_py() / 1024) * 1024
 
-        if wanted[i][0] < wanted[i][1]:
-            index = int((wanted[i][0] + 2048) // 1024)
-            table[str(index)] = (first, second)
+        wanted_first, wanted_second = wanted[i][0].as_py(), wanted[i][1].as_py()
+
+        if wanted_first < wanted_second:
+            index = int((wanted_first + 2048) // 1024)
+            table[str(index)] = [first, second]
 
             for j in range(4):
                 if j != index:
                     offset = (index - j) * (second - first)
-                    table[str(j)] = (int(first - offset), int(second - offset))
+                    table[str(j)] = [
+                        first - offset,
+                        second - offset
+                    ]
         else:
-            index = int((wanted[i][1] + 2048) // 1024)
-            table[str(index)] = (int(second), int(first))
+            index = int((wanted_second + 2048) // 1024)
+            table[str(index)] = [
+                second,
+                first
+            ]
 
             for j in range(4):
                 if j != index:
                     offset = (index - j) * (first - second)
-                    table[str(j)] = (int(second - offset), int(first - offset))
+                    table[str(j)] = [
+                        second - offset,
+                        first - offset
+                    ]
 
         result.append(table)
 
-    return np.array(result)
+    return result
 
 
 def main():
@@ -157,10 +182,10 @@ def main():
 
     args = parser.parse_args()
 
-    wanted_position_1 = np.array([0, -1024, 1024, 0, -1024, 0]).astype(np.int32)
-    wanted_position_2 = np.array([1024, 0, 0, 1024, 0, -1024]).astype(np.int32)
+    wanted_position_1 = pa.array([0, -1024, 1024, 0, -1024, 0], type=pa.int32())
+    wanted_position_2 = pa.array([1024, 0, 0, 1024, 0, -1024], type=pa.int32())
 
-    wanted = np.array([
+    wanted = pa.array([
         (wanted_position_1[i], wanted_position_2[i])
 
         for i in range(len(wanted_position_1))
@@ -181,11 +206,11 @@ def main():
 
     print("Please move the LCR to the first position.")
     pause()
-    physical_position_1 = arm.sync_read_position(FULL_ARM)
+    physical_position_1 = arm.read_position(FULL_ARM)["positions"].values
 
     print("Please move the LCR to the second position.")
     pause()
-    physical_position_2 = arm.sync_read_position(FULL_ARM)
+    physical_position_2 = arm.read_position(FULL_ARM)["positions"].values
 
     physical_to_logical_tables = calculate_physical_to_logical_tables(physical_position_1, physical_position_2, wanted)
     logical_to_physical_tables = calculate_logical_to_physical_tables(physical_position_1, physical_position_2, wanted)
@@ -193,11 +218,11 @@ def main():
     print("Configuration completed.")
 
     path = input(
-        "Please enter the path of the configuration file (e.g. ./robots/alexk-lcr/configs/leader_control.json): ")
+        "Please enter the path of the configuration file (e.g. ./robots/alexk-lcr/configs/leader.left.control): ")
     json_config = {}
 
     for i in range(6):
-        json_config[FULL_ARM[i]] = {
+        json_config[FULL_ARM[i].as_py()] = {
             "physical_to_logical": physical_to_logical_tables[i],
             "logical_to_physical": logical_to_physical_tables[i],
             "initial_goal_position": None if i != 5 else -450,
@@ -207,18 +232,12 @@ def main():
         json.dump(json_config, file)
 
     while True:
-        try:
-            physical_position = arm.sync_read_position(FULL_ARM)
-            offset = physical_position - logical_to_physical(
-                physical_to_logical(physical_position, physical_to_logical_tables), logical_to_physical_tables)
+        physical_position = arm.read_position(FULL_ARM)
+        logical_position = physical_to_logical(physical_position, json_config)
 
-            logical_position = physical_to_logical(physical_position, physical_to_logical_tables) - offset
+        print(f"Logical position: {logical_position}")
 
-            print(f"Position: {logical_position}")
-        except Exception as e:
-            print(f"Error: {e}")
-
-        time.sleep(0.1)
+        time.sleep(0.5)
 
 
 if __name__ == "__main__":
