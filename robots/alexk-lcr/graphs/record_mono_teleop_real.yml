@@ -3,34 +3,76 @@ nodes:
     build: pip install ../../../node-hub/dynamixel-client
     path: dynamixel-client
     inputs:
-      pull_position: lerobot-dashboard/tick
+      pull_position:
+        source: lerobot-dashboard/tick
+        queue_size: 1
+
+      write_goal_position: lcr-to-lcr/leader_goal
+
+      end: lerobot-dashboard/end
     outputs:
       - position
     env:
       PORT: /dev/tty.usbmodem575E0030111
-      CONFIG: ../configs/leader.json
+      CONFIG: ../configs/leader.startup
 
   - id: lcr-to-lcr
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
-      leader_position: lcr-leader/position
-      follower_position: lcr-follower/position
+      leader_position:
+        source: lcr-leader/position
+        queue_size: 1
+
+      follower_position:
+        source: lcr-follower/position
+        queue_size: 1
+
     outputs:
-      - goal_position
+      - follower_goal
+      - leader_goal
+
+    env:
+      LEADER_CONTROL: ../configs/leader.left.control
+      FOLLOWER_CONTROL: ../configs/follower.left.control
+
+  - id: lcr-to-record
+    path: ../nodes/interpolate_lcr_to_record.py
+    inputs:
+      leader_position:
+        source: lcr-leader/position
+        queue_size: 1
+
+      follower_position:
+        source: lcr-follower/position
+        queue_size: 1
+
+    outputs:
+      - logical_goal
+      - logical_position
+
+    env:
+      LEADER_CONTROL: ../configs/leader.left.control
+      FOLLOWER_CONTROL: ../configs/follower.left.control
 
   - id: lcr-follower
     build: pip install ../../../node-hub/dynamixel-client
     path: dynamixel-client
     inputs:
-      pull_position: lerobot-dashboard/tick
-      write_goal_position: lcr-to-lcr/goal_position
+      pull_position:
+        source: lerobot-dashboard/tick
+        queue_size: 1
+
+      write_goal_position:
+        source: lcr-to-lcr/follower_goal
+        queue_size: 1
+
       end: lerobot-dashboard/end
 
     outputs:
       - position
     env:
       PORT: /dev/tty.usbmodem575E0031141
-      CONFIG: ../configs/follower.json
+      CONFIG: ../configs/follower.startup
 
   - id: opencv-camera
     build: pip install ../../../node-hub/opencv-camera
@@ -85,8 +127,8 @@ nodes:
     build: cargo install dora-record
     path: dora-record
     inputs:
-      action: lcr-to-lcr/goal_position
-      observation.state: lcr-follower/position
+      action: lcr-to-record/logical_goal
+      observation.state: lcr-to-record/logical_position
       episode_index: lerobot-dashboard/episode
       failed_episode_index: lerobot-dashboard/failed
       observation.images.cam_up: video-encoder/image
