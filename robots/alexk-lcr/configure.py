@@ -99,10 +99,16 @@ def calculate_physical_to_logical_tables(physical_position_1, physical_position_
                     ]
 
                     if not -2048 <= table[str(j)][0] <= 2048 or not -2048 <= table[str(j)][1] <= 2048:
-                        table[str(j)] = [
-                            (wanted_first - offset) % 4096,
-                            (wanted_second - offset) % 4096
-                        ]
+                        if table[str(j)][0] < 0 or table[str(j)][1] < 0:
+                            table[str(j)] = [
+                                (wanted_first - offset) % 4096,
+                                (wanted_second - offset) % 4096
+                            ]
+                        else:
+                            table[str(j)] = [
+                                (wanted_first - offset) % (-4096),
+                                (wanted_second - offset) % (-4096)
+                            ]
         else:
             index = second // 1024
 
@@ -121,10 +127,16 @@ def calculate_physical_to_logical_tables(physical_position_1, physical_position_
                     ]
 
                     if not -2048 <= table[str(j)][1] <= 2048 or not -2048 <= table[str(j)][0] <= 2048:
-                        table[str(j)] = [
-                            (wanted_second - offset) % 4096,
-                            (wanted_first - offset) % 4096
-                        ]
+                        if table[str(j)][1] < 0 or table[str(j)][0] < 0:
+                            table[str(j)] = [
+                                (wanted_second - offset) % 4096,
+                                (wanted_first - offset) % 4096
+                            ]
+                        else:
+                            table[str(j)] = [
+                                (wanted_second - offset) % (-4096),
+                                (wanted_first - offset) % (-4096)
+                            ]
 
         result.append(table)
 

@@ -17,29 +17,29 @@ import argparse
 import time
 import json
 
-import numpy as np
+import pyarrow as pa
 
 from common.feetech_bus import FeetechBus, TorqueMode, OperatingMode
-from common.position_control.utils import physical_to_logical, DriveMode
+from common.position_control.utils import physical_to_logical, logical_to_physical
 
-FULL_ARM = np.array([
+FULL_ARM = pa.array([
     "shoulder_pan",
     "shoulder_lift",
     "elbow_flex",
     "wrist_flex",
     "wrist_roll",
     "gripper"
-])
+], type=pa.string())
 
-ARM_WITHOUT_GRIPPER = np.array([
+ARM_WITHOUT_GRIPPER = pa.array([
     "shoulder_pan",
     "shoulder_lift",
     "elbow_flex",
     "wrist_flex",
     "wrist_roll"
-])
+], type=pa.string())
 
-GRIPPER = "gripper"
+GRIPPER = pa.array(["gripper"], type=pa.string())
 
 
 def pause():
@@ -54,88 +54,155 @@ def configure_servos(bus: FeetechBus):
     Configure the servos for the LCR.
     :param bus: FeetechBus
     """
-    bus.sync_write_torque_enable(TorqueMode.DISABLED, FULL_ARM)
 
-    bus.sync_write_operating_mode(OperatingMode.ONE_TURN, FULL_ARM)
-    bus.sync_write_min_angle_limit(np.uint32(0), FULL_ARM)
-    bus.sync_write_max_angle_limit(np.uint32(0), FULL_ARM)
+    bus.write_torque_enable(TorqueMode.DISABLED, FULL_ARM)
+    bus.write_operating_mode(OperatingMode.ONE_TURN, FULL_ARM)
+    bus.write_min_angle_limit(pa.scalar(0, pa.uint32()), FULL_ARM)
+    bus.write_max_angle_limit(pa.scalar(0, pa.uint32()), FULL_ARM)
 
 
-def rounded_values(values: np.array) -> np.array:
+def calculate_physical_to_logical_tables(physical_position_1, physical_position_2, wanted):
     """
-    Calculate the nearest rounded values.
-    :param values: numpy array of values
-    :return: numpy array of nearest rounded positions
+    This function compute, for each joint, a dictionary of 4 key-value pairs. The key is the index of the quadrant
+    (0, 1, 2, 3) = (0-1024, 1024-2048, 2048-3072, 3072-4096) and the value is a tuple of the logical position. It's the
+    value for the interpolation of the physical position to the logical position.
     """
+    result = []
 
-    return np.array(
-        [round(values[i] / 1024) * 1024 if values[i] is not None else None for i in range(len(values))])
+    for i in range(len(physical_position_1)):
+        table = {}
+
+        first, second = round((physical_position_1[i].as_py() % 4096) / 1024) * 1024 % 4096, round(
+            (physical_position_2[i].as_py() % 4096) / 1024) * 1024 % 4096
+
+        wanted_first, wanted_second = wanted[i][0].as_py(), wanted[i][1].as_py()
+
+        if first == 3072 and second == 0:
+            second = 4096
+        elif second == 3072 and first == 0:
+            first = 4096
+
+        if first < second:
+            index = first // 1024
+
+            table[str(index)] = [
+                wanted_first,
+                wanted_second,
+            ]
+
+            for j in range(4):
+                if j != index:
+                    offset = (index - j) * (wanted_second - wanted_first)
+
+                    table[str(j)] = [
+                        wanted_first - offset,
+                        wanted_second - offset
+                    ]
+
+                    if not -2048 <= table[str(j)][0] <= 2048 or not -2048 <= table[str(j)][1] <= 2048:
+                        if table[str(j)][0] < 0 or table[str(j)][1] < 0:
+                            table[str(j)] = [
+                                (wanted_first - offset) % 4096,
+                                (wanted_second - offset) % 4096
+                            ]
+                        else:
+                            table[str(j)] = [
+                                (wanted_first - offset) % (-4096),
+                                (wanted_second - offset) % (-4096)
+                            ]
+        else:
+            index = second // 1024
+
+            table[str(index)] = [
+                wanted_second,
+                wanted_first,
+            ]
+
+            for j in range(4):
+                if j != index:
+                    offset = (index - j) * (wanted_first - wanted_second)
+
+                    table[str(j)] = [
+                        wanted_second - offset,
+                        wanted_first - offset
+                    ]
+
+                    if not -2048 <= table[str(j)][1] <= 2048 or not -2048 <= table[str(j)][0] <= 2048:
+                        if table[str(j)][1] < 0 or table[str(j)][0] < 0:
+                            table[str(j)] = [
+                                (wanted_second - offset) % 4096,
+                                (wanted_first - offset) % 4096
+                            ]
+                        else:
+                            table[str(j)] = [
+                                (wanted_second - offset) % (-4096),
+                                (wanted_first - offset) % (-4096)
+                            ]
+
+        result.append(table)
+
+    return result
 
 
-def calculate_offsets(bus: FeetechBus, drive_modes: np.array, wanted: np.array) -> np.array:
-    """
-    Calculate the offset you need to apply to the positions in order to reach the wanted positions.
-    :param bus: FeetechBus
-    :param drive_modes: numpy array of DriveMode
-    :param wanted: numpy array of wanted positions
-    :return: numpy array of offsets
-    """
+def calculate_logical_to_physical_tables(physical_position_1, physical_position_2, wanted):
+    result = []
 
-    # Get the present rounded positions of the servos
-    present_positions = rounded_values(physical_to_logical(
-        bus.sync_read_position(FULL_ARM),
-        np.array([0, 0, 0, 0, 0, 0]),
-        drive_modes
-    ))
+    for i in range(len(physical_position_1)):
+        table = {}
 
-    offsets = np.array([None, None, None, None, None, None])
+        first, second = round(physical_position_1[i].as_py() / 1024) * 1024, round(
+            physical_position_2[i].as_py() / 1024) * 1024
 
-    for i in range(len(present_positions)):
-        if present_positions[i] is not None:
-            offsets[i] = wanted[i] - present_positions[i]
+        wanted_first, wanted_second = wanted[i][0].as_py(), wanted[i][1].as_py()
 
-    return offsets
+        if wanted_first < wanted_second:
+            index = int((wanted_first + 2048) // 1024)
+            table[str(index)] = [first, second]
 
+            for j in range(4):
+                if j != index:
+                    offset = (index - j) * (second - first)
+                    table[str(j)] = [
+                        first - offset,
+                        second - offset
+                    ]
+        else:
+            index = int((wanted_second + 2048) // 1024)
+            table[str(index)] = [
+                second,
+                first
+            ]
 
-def compute_drive_modes(bus: FeetechBus, offsets: np.array, wanted: np.array) -> np.array:
-    """
-    Compute the drive mode of the servos.
-    :param bus: FeetechBus
-    :param offsets: numpy array of offsets
-    :param wanted: numpy array of wanted positions
-    :return: list of booleans to determine the drive mode of the servos
-    """
+            for j in range(4):
+                if j != index:
+                    offset = (index - j) * (first - second)
+                    table[str(j)] = [
+                        second - offset,
+                        first - offset
+                    ]
 
-    # Get the present rounded positions of the servos
-    present_positions = rounded_values(physical_to_logical(
-        bus.sync_read_position(FULL_ARM),
-        offsets,
-        np.array([DriveMode.POSITIVE_CURRENT] * 6)
-    ))
+        result.append(table)
 
-    drive_modes = np.array([None, None, None, None, None, None])
-
-    for i in range(len(present_positions)):
-        if present_positions[i] is not None:
-            if present_positions[i] != wanted[i]:
-                drive_modes[i] = DriveMode.NEGATIVE_CURRENT
-            else:
-                drive_modes[i] = DriveMode.POSITIVE_CURRENT
-
-    return drive_modes
+    return result
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="LCR Auto Configure: This program is used to automatically configure the Low Cost Robot (LCR) for "
+        description="SO100 Auto Configure: This program is used to automatically configure the Low Cost Robot (LCR) for "
                     "the user.")
 
     parser.add_argument("--port", type=str, required=True, help="The port of the LCR.")
 
     args = parser.parse_args()
 
-    wanted_position_1 = np.array([0, -1024, 1024, 0, -1024, 0]).astype(np.int32)
-    wanted_position_2 = np.array([1024, 0, 0, 1024, 0, -1024]).astype(np.int32)
+    wanted_position_1 = pa.array([0, -1024, 1024, 0, -1024, 0], type=pa.int32())
+    wanted_position_2 = pa.array([1024, 0, 0, 1024, 0, -1024], type=pa.int32())
+
+    wanted = pa.array([
+        (wanted_position_1[i], wanted_position_2[i])
+
+        for i in range(len(wanted_position_1))
+    ])
 
     arm = FeetechBus(
         args.port, {
@@ -150,64 +217,40 @@ def main():
 
     configure_servos(arm)
 
-    # Ask the user to move the LCR to the position 1
-    print("Please move the LCR to the position 1")
+    print("Please move the SO100 to the first position.")
     pause()
+    physical_position_1 = arm.read_position(FULL_ARM)["positions"].values
 
-    offsets = calculate_offsets(
-        arm,
-        np.array([DriveMode.POSITIVE_CURRENT] * 6),
-        wanted_position_1
-    )
-
-    # Ask the user to move the LCR to the position 2
-    print("Please move the LCR to the position 2")
+    print("Please move the SO100 to the second position.")
     pause()
+    physical_position_2 = arm.read_position(FULL_ARM)["positions"].values
 
-    drive_modes = compute_drive_modes(
-        arm,
-        offsets,
-        wanted_position_2
-    )
+    physical_to_logical_tables = calculate_physical_to_logical_tables(physical_position_1, physical_position_2, wanted)
+    logical_to_physical_tables = calculate_logical_to_physical_tables(physical_position_1, physical_position_2, wanted)
 
-    offsets = calculate_offsets(
-        arm,
-        drive_modes,
-        wanted_position_2
-    )
+    print("Configuration completed.")
 
-    print("Configuration done!")
-
-    path = input("Please enter the path of the configuration file (e.g. ./robots/alexk-lcr/configs/leader.json): ")
-    json_config = {"config": []}
+    path = input(
+        "Please enter the path of the configuration file (e.g. ./robots/so100/configs/follower.left.control): ")
+    json_config = {}
 
     for i in range(6):
-        json_config["config"].append({
-            "id": i + 1,
-            "joint": FULL_ARM[i],
-            "model": "scs_series",
-            "torque": True,
-            "offset": int(offsets[i]),
-            "drive_mode": "POS" if drive_modes[i] == DriveMode.POSITIVE_CURRENT else "NEG",
-            "initial_goal_position": None,
-        })
+        json_config[FULL_ARM[i].as_py()] = {
+            "physical_to_logical": physical_to_logical_tables[i],
+            "logical_to_physical": logical_to_physical_tables[i],
+            "initial_goal_position": None if i != 5 else -450,
+        }
 
     with open(path, "w") as file:
         json.dump(json_config, file)
 
-    print("Make sure everything is working properly:")
-    pause()
-
     while True:
-        positions = physical_to_logical(
-            arm.sync_read_position(FULL_ARM),
-            offsets,
-            drive_modes
-        )
+        physical_position = arm.read_position(FULL_ARM)
+        logical_position = physical_to_logical(physical_position, json_config)
 
-        print("Positions: ", " ".join([str(i) for i in positions]))
+        print(f"Logical position: {logical_position}")
 
-        time.sleep(1.0)
+        time.sleep(0.5)
 
 
 if __name__ == "__main__":

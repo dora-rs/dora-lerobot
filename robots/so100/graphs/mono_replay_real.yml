@@ -7,28 +7,40 @@ nodes:
 
     outputs:
       - position
+      - end
 
     env:
-      PATH: ../../../datasets/test
+      PATH: ../../../datasets/enzo1
       EPISODE: 1
+
+  - id: replay-to-so100
+    path: ../nodes/interpolate_replay_to_so100.py
+    inputs:
+      leader_position:
+        source: replay-client/position
+        queue_size: 1
+
+      follower_position:
+        source: so100-follower/position
+        queue_size: 1
+
+    outputs:
+      - follower_goal
+
+    env:
+      FOLLOWER_CONTROL: ../configs/follower.left.control
 
   - id: so100-follower
     build: pip install ../../../node-hub/feetech-client
     path: feetech-client
     inputs:
-      write_goal_position: replay-client/position
+      pull_position: dora/timer/millis/33
+
+      write_goal_position: replay-to-so100/follower_goal
+
+      end: replay-client/end
     outputs:
       - position
     env:
-      PORT: /dev/tty.usbmodem575E0031141
-
-      IDS: 1 2 3 4 5 6
-      JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
-      MODELS: x_series x_series x_series x_series x_series x_series
-
-      TORQUE: True True True True True True
-
-      INITIAL_GOAL_POSITION: None None None None None None
-
-      OFFSETS: -2048 2048 2048 2048 1024 2048
-      DRIVE_MODES: POS NEG NEG NEG NEG NEG
+      PORT: /dev/tty.usbmodem585A0077581
+      CONFIG: ../configs/follower.startup

@@ -1,6 +1,7 @@
 import enum
 
 import numpy as np
+import pyarrow as pa
 
 from typing import Union
 
@@ -13,12 +14,12 @@ TIMEOUT_MS = 1000
 
 
 class TorqueMode(enum.Enum):
-    ENABLED = np.uint32(1)
-    DISABLED = np.uint32(0)
+    ENABLED = 1
+    DISABLED = 0
 
 
 class OperatingMode(enum.Enum):
-    ONE_TURN = np.uint32(0)
+    ONE_TURN = 0
 
 
 SCS_SERIES_CONTROL_TABLE = [
@@ -92,11 +93,11 @@ class FeetechBus:
             if motor_model not in MODEL_CONTROL_TABLE:
                 raise ValueError(f"Model {motor_model} is not supported.")
 
-            self.motor_ctrl[motor_name] = {}
+            self.motor_ctrl[pa.scalar(motor_name, pa.string())] = {}
 
-            self.motor_ctrl[motor_name]["id"] = motor_id
+            self.motor_ctrl[pa.scalar(motor_name, pa.string())]["id"] = motor_id
             for data_name, address, bytes_size in MODEL_CONTROL_TABLE[motor_model]:
-                self.motor_ctrl[motor_name][data_name] = {
+                self.motor_ctrl[pa.scalar(motor_name, pa.string())][data_name] = {
                     "addr": address,
                     "bytes_size": bytes_size
                 }
@@ -116,79 +117,21 @@ class FeetechBus:
     def close(self):
         self.port_handler.closePort()
 
-    def write(self, data_name: str, value: Union[np.uint32, np.int32, None], motor_name: str):
-        if value is None:
-            return
-
-        if value < 0:
-            value = np.uint32(32767 - value)
-
-        motor_id = self.motor_ctrl[motor_name]["id"]
-        packet_address = self.motor_ctrl[motor_name][data_name]["addr"]
-        packet_bytes_size = self.motor_ctrl[motor_name][data_name]["bytes_size"]
-
-        args = (self.port_handler, motor_id, packet_address, value)
-
-        if packet_bytes_size == 1:
-            comm, err = self.packet_handler.write1ByteTxRx(*args)
-        elif packet_bytes_size == 2:
-            comm, err = self.packet_handler.write2ByteTxRx(*args)
-        else:
-            raise NotImplementedError(
-                f"Value of the number of bytes to be sent is expected to be in [1, 2, 4], but {packet_bytes_size} "
-                f"is provided instead.")
-
-        if comm != COMM_SUCCESS:
-            raise ConnectionError(
-                f"Write failed due to communication error on port {self.port} for motor {motor_id}: "
-                f"{self.packet_handler.getTxRxResult(comm)}"
-            )
-        elif err != 0:
-            raise ConnectionError(
-                f"Write failed due to error {err} on port {self.port} for motor {motor_id}: "
-                f"{self.packet_handler.getTxRxResult(err)}"
-            )
-
-    def read(self, data_name: str, motor_name: str) -> np.int32:
-        motor_id = self.motor_ctrl[motor_name]["id"]
-        packet_address = self.motor_ctrl[motor_name][data_name]["addr"]
-        packet_bytes_size = self.motor_ctrl[motor_name][data_name]["bytes_size"]
-
-        args = (self.port_handler, motor_id, packet_address, packet_bytes_size)
-        if packet_bytes_size == 1:
-            value, comm, err = self.packet_handler.read1ByteTxRx(*args)
-        elif packet_bytes_size == 2:
-            value, comm, err = self.packet_handler.read2ByteTxRx(*args)
-        else:
-            raise NotImplementedError(
-                f"Value of the number of bytes to be sent is expected to be in [1, 2, 4], but "
-                f"{packet_bytes_size} is provided instead.")
-
-        if comm != COMM_SUCCESS:
-            raise ConnectionError(
-                f"Read failed due to communication error on port {self.port} for motor {motor_id}: "
-                f"{self.packet_handler.getTxRxResult(comm)}"
-            )
-        elif err != 0:
-            raise ConnectionError(
-                f"Read failed due to error {err} on port {self.port} for motor {motor_id}: "
-                f"{self.packet_handler.getTxRxResult(err)}"
-            )
-
-        return np.int32(value) if value < 32767 else np.int32(32767 - value)
-
-    def sync_write(self, data_name: str, values: Union[np.uint32, np.int32, np.array],
-                   motor_names: np.array):
+    def write(self, data_name: str, values: Union[pa.Scalar, pa.Array],
+              motor_names: pa.Array):
         motor_ids = [self.motor_ctrl[motor_name]["id"] for motor_name in
                      motor_names]
 
-        if isinstance(values, (np.uint32, np.int32)):
-            values = np.array([values] * len(motor_ids))
+        if isinstance(values, pa.Scalar):
+            values = pa.array([values] * len(motor_ids), type=values.type)
 
-        motor_ids, values = ([motor_ids[i] for i in range(len(motor_ids)) if values[i] is not None],
-                             np.array([value for value in values if value is not None]))
+        values = pa.array(
+            [pa.scalar(32767 - value.as_py(), pa.uint32()) if value.as_py() < 0 else pa.scalar(value.as_py(), pa.uint32())
+             for value in values],
+            type=pa.uint32())
 
-        values = [np.uint32(32767 - value) if value < 0 else np.uint32(value) for value in values]
+        motor_ids, values = ([motor_ids[i] for i in range(len(motor_ids)) if values[i].as_py() is not None],
+                             values.drop_null())
 
         group_key = f"{data_name}_" + "_".join([str(idx) for idx in motor_ids])
 
@@ -204,6 +147,8 @@ class FeetechBus:
                                                            packet_bytes_size)
 
         for idx, value in zip(motor_ids, values):
+            value = value.as_py()
+
             if packet_bytes_size == 1:
                 data = [
                     SCS_LOBYTE(SCS_LOWORD(value)),
@@ -237,7 +182,7 @@ class FeetechBus:
                 f"{self.packet_handler.getTxRxResult(comm)}"
             )
 
-    def sync_read(self, data_name: str, motor_names: np.array) -> np.array:
+    def read(self, data_name: str, motor_names: pa.Array) -> pa.Scalar:
         """
         You should use this method only if the motors you selected have the same address and bytes size for the data you want to read.
         """
@@ -270,63 +215,55 @@ class FeetechBus:
 
         values = []
         for idx in motor_ids:
-            value = np.uint32(self.group_readers[group_key].getData(idx, packet_address, packet_bytes_size))
+            value = pa.scalar(self.group_readers[group_key].getData(idx, packet_address, packet_bytes_size),
+                              type=pa.uint32())
             values.append(value)
 
-        return np.array([np.int32(value) if value < 32767 else np.int32(32767 - value) for value in values])
+        values = pa.array(values, type=pa.uint32())
+        values = values.from_buffers(
+            pa.int32(),
+            len(values),
+            values.buffers()
+        )
 
-    def write_torque_enable(self, torque_mode: TorqueMode, motor_name: str):
-        self.write("Torque_Enable", torque_mode.value, motor_name)
+        return pa.scalar({
+            "joints": motor_names,
+            "positions": values
+        }, type=pa.struct([
+            pa.field("joints", pa.list_(pa.string())),
+            pa.field("positions", pa.list_(pa.int32()))
+        ]))
 
-    def sync_write_torque_enable(self, torque_mode: Union[TorqueMode, list[TorqueMode]],
-                                 motor_names: np.array):
-        self.sync_write("Torque_Enable", torque_mode.value if isinstance(torque_mode, TorqueMode) else np.array(
-            [mode.value for mode in torque_mode]),
-                        motor_names)
+    def write_torque_enable(self, torque_mode: Union[TorqueMode, list[TorqueMode]],
+                            motor_names: pa.Array):
+        self.write("Torque_Enable",
+                   pa.scalar(torque_mode.value, pa.int32()) if isinstance(torque_mode, TorqueMode) else pa.array(
+                       [mode.value for mode in torque_mode], pa.int32()),
+                   motor_names)
 
-    def write_operating_mode(self, operating_mode: OperatingMode, motor_name: str):
-        self.write("Mode", operating_mode.value, motor_name)
+    def write_operating_mode(self, operating_mode: Union[OperatingMode, list[OperatingMode]],
+                             motor_names: pa.Array):
+        self.write("Mode",
+                   pa.scalar(operating_mode.value, pa.int32()) if isinstance(operating_mode,
+                                                                             OperatingMode) else pa.array(
+                       [mode.value for mode in operating_mode], pa.int32()),
+                   motor_names)
 
-    def sync_write_operating_mode(self, operating_mode: Union[OperatingMode, list[OperatingMode]],
-                                  motor_names: np.array):
-        self.sync_write("Mode",
-                        operating_mode.value if isinstance(operating_mode, OperatingMode) else np.array(
-                            [mode.value for mode in operating_mode]),
-                        motor_names)
+    def read_position(self, motor_names: pa.Array) -> pa.Scalar:
+        return self.read("Present_Position", motor_names)
 
-    def read_position(self, motor_name: str) -> np.int32:
-        return self.read("Present_Position", motor_name)
+    def read_velocity(self, motor_names: pa.Array) -> pa.Scalar:
+        return self.read("Present_Speed", motor_names)
 
-    def sync_read_position(self, motor_names: np.array) -> np.array:
-        return self.sync_read("Present_Position", motor_names)
+    def read_current(self, motor_names: pa.Array) -> pa.Scalar:
+        return self.read("Present_Current", motor_names)
 
-    def read_velocity(self, motor_name: str) -> np.int32:
-        return self.read("Present_Speed", motor_name)
+    def write_goal_position(self, goal_position: Union[pa.Scalar, pa.Scalar],
+                            motor_names: pa.Array):
+        self.write("Goal_Position", goal_position, motor_names)
 
-    def sync_read_velocity(self, motor_names: np.array) -> np.array:
-        return self.sync_read("Present_Speed", motor_names)
+    def write_max_angle_limit(self, max_angle_limit: Union[np.uint32, np.array], motor_names: np.array):
+        self.write("Max_Angle_Limit", max_angle_limit, motor_names)
 
-    def read_current(self, motor_name: str) -> np.int32:
-        return self.read("Present_Current", motor_name)
-
-    def sync_read_current(self, motor_names: np.array) -> np.array:
-        return self.sync_read("Present_Current", motor_names)
-
-    def write_goal_position(self, goal_position: Union[np.int32, np.uint32], motor_name: str):
-        self.write("Goal_Position", goal_position, motor_name)
-
-    def sync_write_goal_position(self, goal_position: Union[np.int32, np.uint32, np.array],
-                                 motor_names: np.array):
-        self.sync_write("Goal_Position", goal_position, motor_names)
-
-    def write_max_angle_limit(self, max_angle_limit: np.uint32, motor_name: str):
-        self.write("Max_Angle_Limit", max_angle_limit, motor_name)
-
-    def sync_write_max_angle_limit(self, max_angle_limit: Union[np.uint32, np.array], motor_names: np.array):
-        self.sync_write("Max_Angle_Limit", max_angle_limit, motor_names)
-
-    def write_min_angle_limit(self, min_angle_limit: np.uint32, motor_name: str):
-        self.write("Min_Angle_Limit", min_angle_limit, motor_name)
-
-    def sync_write_min_angle_limit(self, min_angle_limit: Union[np.uint32, np.array], motor_names: np.array):
-        self.sync_write("Min_Angle_Limit", min_angle_limit, motor_names)
+    def write_min_angle_limit(self, min_angle_limit: Union[np.uint32, np.array], motor_names: np.array):
+        self.write("Min_Angle_Limit", min_angle_limit, motor_names)

@@ -14,7 +14,6 @@ import pyarrow as pa
 from dora import Node
 
 from common.feetech_bus import FeetechBus, TorqueMode
-from common.position_control import DriveMode, logical_to_physical, physical_to_logical, adapt_range_goal
 
 
 class Client:
@@ -28,35 +27,12 @@ class Client:
 
         self.bus = FeetechBus(config["port"], description)
 
-        self.offsets = config["offsets"]
-        self.drive_modes = config["drive_modes"]
-
-        # Set initial values
+        # Set client configuration values
 
         try:
-            self.bus.sync_write_torque_enable(config["torque"], self.config["joints"])
+            self.bus.write_torque_enable(config["torque"], self.config["joints"])
         except Exception as e:
             print("Error writing torque status:", e)
-
-        try:
-            positions = logical_to_physical(
-                config["initial_goal_position"],
-                self.offsets,
-                self.drive_modes
-            )
-
-            current_position = physical_to_logical(
-                self.bus.sync_read_position(self.config["joints"]),
-                self.offsets,
-                self.drive_modes
-            )
-
-            self.bus.sync_write_goal_position(
-                adapt_range_goal(positions, current_position),
-                self.config["joints"]
-            )
-        except Exception as e:
-            print("Error writing goal position:", e)
 
         self.node = Node(config["name"])
 
@@ -84,23 +60,13 @@ class Client:
                 raise ValueError("An error occurred in the dataflow: " + event["error"])
 
     def close(self):
-        self.bus.sync_write_torque_enable(TorqueMode.DISABLED, self.config["joints"])
+        self.bus.write_torque_enable(TorqueMode.DISABLED, self.config["joints"])
 
     def pull_position(self, node, metadata):
         try:
-            position = physical_to_logical(
-                self.bus.sync_read_position(self.config["joints"]),
-                self.offsets,
-                self.drive_modes)
-
-            position_with_joints = {
-                "joints": self.config["joints"],
-                "positions": position
-            }
-
             node.send_output(
                 "position",
-                pa.array([position_with_joints]),
+                pa.array([self.bus.read_position(self.config["joints"])]),
                 metadata
             )
 
@@ -109,16 +75,9 @@ class Client:
 
     def pull_velocity(self, node, metadata):
         try:
-            velocity = self.bus.sync_read_velocity(self.config["joints"])
-
-            velocity_with_joints = {
-                "joints": self.config["joints"],
-                "velocities": velocity
-            }
-
             node.send_output(
                 "velocity",
-                pa.array([velocity_with_joints]),
+                pa.array([self.bus.read_velocity(self.config["joints"])]),
                 metadata
             )
         except ConnectionError as e:
@@ -126,28 +85,20 @@ class Client:
 
     def pull_current(self, node, metadata):
         try:
-            current = self.bus.sync_read_current(self.config["joints"])
-
-            current_with_joints = {
-                "joints": self.config["joints"],
-                "currents": current
-            }
-
             node.send_output(
                 "current",
-                pa.array([current_with_joints]),
+                pa.array([self.bus.read_current(self.config["joints"])]),
                 metadata
             )
         except ConnectionError as e:
             print("Error reading current:", e)
 
-    def write_goal_position(self, goal_position_with_joints: {}):
+    def write_goal_position(self, goal_position_with_joints: pa.Array):
         try:
-            joints = goal_position_with_joints[0]["joints"].values.to_numpy(zero_copy_only=False)
-            goal_position = goal_position_with_joints[0]["positions"].values.to_numpy()
+            joints = goal_position_with_joints[0]["joints"].values
+            goal_position = goal_position_with_joints[0]["positions"].values
 
-            self.bus.sync_write_goal_position(logical_to_physical(goal_position, self.offsets, self.drive_modes),
-                                              joints)
+            self.bus.write_goal_position(goal_position, joints)
         except ConnectionError as e:
             print("Error writing goal position:", e)
 
@@ -181,27 +132,18 @@ def main():
             "variables or as an argument.")
 
     with open(os.environ.get("CONFIG") if args.config is None else args.config) as file:
+        print (file)
         config = json.load(file)["config"]
 
     # Create configuration
     bus = {
         "name": args.name,
         "port": port,  # (e.g. "/dev/ttyUSB0", "COM3")
-        "ids": np.array([np.uint8(motor["id"]) for motor in config]),
-        "joints": np.array([motor["joint"] for motor in config]),
-        "models": np.array([motor["model"] for motor in config]),
+        "ids": [motor["id"] for motor in config],
+        "joints": pa.array([motor["joint"] for motor in config], pa.string()),
+        "models": [motor["model"] for motor in config],
 
-        "torque": np.array(
-            [TorqueMode.ENABLED if motor["torque"] else TorqueMode.DISABLED for motor in config]),
-
-        "offsets": np.array([motor["offset"] for motor in config]).astype(np.int32),
-        "drive_modes": np.array(
-            [DriveMode.POSITIVE_CURRENT if motor["drive_mode"] == "POS" else DriveMode.NEGATIVE_CURRENT for motor in
-             config]),
-
-        "initial_goal_position": np.array(
-            [np.int32(motor["initial_goal_position"]) if motor["initial_goal_position"] is not None else None for motor
-             in config]),
+        "torque": [TorqueMode.ENABLED if motor["torque"] else TorqueMode.DISABLED for motor in config],
     }
 
     print("Feetech Client Configuration: ", bus, flush=True)

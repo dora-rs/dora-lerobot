@@ -3,50 +3,51 @@ nodes:
     build: pip install ../../../node-hub/dynamixel-client
     path: dynamixel-client
     inputs:
-      pull_position: dora/timer/millis/10 # pull the position every 10ms
+      pull_position:
+        source: dora/timer/millis/10
+        queue_size: 1
+
+      write_goal_position: lcr-to-so100/leader_goal
+
     outputs:
       - position
     env:
       PORT: /dev/tty.usbmodem575E0030111
-
-      IDS: 1 2 3 4 5 6
-      JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
-      MODELS: x_series x_series x_series x_series x_series x_series
-
-      TORQUE: False False False False False True
-
-      INITIAL_GOAL_POSITION: None None None None None -450
-      INITIAL_GOAL_CURRENT: None None None None None 40
-
-      OFFSETS:  -2048 -3072 1024 2048 1024 2048
-      DRIVE_MODES:  POS POS NEG POS NEG NEG
+      CONFIG: ../../alexk-lcr/configs/leader.startup
 
   - id: lcr-to-so100
     path: ../nodes/interpolate_lcr_to_so100.py
     inputs:
-      leader_position: lcr-leader/position
-      follower_position: so100-follower/position
+      leader_position:
+        source: lcr-leader/position
+        queue_size: 1
+
+      follower_position:
+        source: so100-follower/position
+        queue_size: 1
+
     outputs:
-      - goal_position
+      - follower_goal
+      - leader_goal
+
+    env:
+      LEADER_CONTROL: ../../alexk-lcr/configs/leader.left.control
+      FOLLOWER_CONTROL: ../configs/follower.left.control
 
   - id: so100-follower
     build: pip install ../../../node-hub/feetech-client
     path: feetech-client
     inputs:
-      pull_position: dora/timer/millis/10
-      write_goal_position: lcr-to-so100/goal_position
+      pull_position:
+        source: dora/timer/millis/10
+        queue_size: 1
+
+      write_goal_position:
+        source: lcr-to-so100/follower_goal
+        queue_size: 1
+
     outputs:
       - position
     env:
-      PORT: /dev/tty.usbmodem575E0031141
-
-      IDS: 1 2 3 4 5 6
-      JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
-      MODELS: x_series x_series x_series x_series x_series x_series
-
-      TORQUE: True True True True True True
-
-      INITIAL_GOAL_POSITION: None None None None None None
-
-      OFFSETS:  -2048 2048 2048 2048 1024 2048
-      DRIVE_MODES:  POS NEG NEG NEG NEG NEG
+      PORT: /dev/tty.usbmodem585A0077581
+      CONFIG: ../configs/follower.startup

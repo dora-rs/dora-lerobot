@@ -1,0 +1,40 @@
+{
+  "config": [
+    {
+      "id": 1,
+      "joint": "shoulder_pan",
+      "model": "sts3215",
+      "torque": true
+    },
+    {
+      "id": 2,
+      "joint": "shoulder_lift",
+      "model": "sts3215",
+      "torque": true
+    },
+    {
+      "id": 3,
+      "joint": "elbow_flex",
+      "model": "sts3215",
+      "torque": true
+    },
+    {
+      "id": 4,
+      "joint": "wrist_flex",
+      "model": "sts3215",
+      "torque": true
+    },
+    {
+      "id": 5,
+      "joint": "wrist_roll",
+      "model": "sts3215",
+      "torque": true
+    },
+    {
+      "id": 6,
+      "joint": "gripper",
+      "model": "sts3215",
+      "torque": true
+    }
+  ]
+}
