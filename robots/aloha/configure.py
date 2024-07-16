@@ -1,15 +1,7 @@
 """
-LCR Auto Configure: This program is used to automatically configure the Low Cost Robot (LCR) for the user.
+Aloha Auto Configure: This program is used to automatically configure the Aloha for the user.
 
 The program will:
-1. Disable all torque motors of provided LCR.
-2. Ask the user to move the LCR to the position 1 (see CONFIGURING.md for more details).
-3. Record the position of the LCR.
-4. Ask the user to move the LCR to the position 2 (see CONFIGURING.md for more details).
-5. Record the position of the LCR.
-8. Calculate the offset and inverted mode of the LCR.
-9. Let the user verify in real time that the LCR is working properly.
-
 It will also enable all appropriate operating modes for the LCR.
 """
 
@@ -25,23 +17,16 @@ from common.position_control.configure import build_physical_to_logical_tables, 
     build_physical_to_logical, build_logical_to_physical
 
 FULL_ARM = pa.array([
-    "shoulder_pan",
-    "shoulder_lift",
-    "elbow_flex",
-    "wrist_flex",
-    "wrist_roll",
-    "gripper"
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
 ], type=pa.string())
-
-ARM_WITHOUT_GRIPPER = pa.array([
-    "shoulder_pan",
-    "shoulder_lift",
-    "elbow_flex",
-    "wrist_flex",
-    "wrist_roll"
-], type=pa.string())
-
-GRIPPER = pa.array(["gripper"], type=pa.string())
 
 
 def pause():
@@ -58,8 +43,7 @@ def configure_servos(bus: DynamixelBus):
     """
     bus.write_torque_enable(TorqueMode.DISABLED, FULL_ARM)
 
-    bus.write_operating_mode(OperatingMode.EXTENDED_POSITION, ARM_WITHOUT_GRIPPER)
-    bus.write_operating_mode(OperatingMode.CURRENT_CONTROLLED_POSITION, GRIPPER)
+    bus.write_operating_mode(OperatingMode.EXTENDED_POSITION, FULL_ARM)
 
 
 def main():
@@ -81,8 +65,8 @@ def main():
     if args.follower and args.leader:
         raise ValueError("You cannot specify both --follower and --leader.")
 
-    wanted_position_1 = pa.array([0, -1024, 1024, 0, -1024, 0], type=pa.int32())
-    wanted_position_2 = pa.array([1024, 0, 0, 1024, 0, -1024], type=pa.int32())
+    wanted_position_1 = pa.array([0, -1024, -1024, 1024, 1024, 0, 0, 0, 0], type=pa.int32())
+    wanted_position_2 = pa.array([1024, 0, 0, 0, 0, 1024, 1024, 1024, 1024], type=pa.int32())
 
     wanted = pa.array([
         (wanted_position_1[i], wanted_position_2[i])
@@ -92,12 +76,15 @@ def main():
 
     arm = DynamixelBus(
         args.port, {
-            "shoulder_pan": (1, "x_series"),
-            "shoulder_lift": (2, "x_series"),
-            "elbow_flex": (3, "x_series"),
-            "wrist_flex": (4, "x_series"),
-            "wrist_roll": (5, "x_series"),
-            "gripper": (6, "x_series")
+            "1": (1, "x_series"),
+            "2": (2, "x_series"),
+            "3": (3, "x_series"),
+            "4": (4, "x_series"),
+            "5": (5, "x_series"),
+            "6": (6, "x_series"),
+            "7": (7, "x_series"),
+            "8": (8, "x_series"),
+            "9": (9, "x_series"),
         }
     )
 
@@ -118,43 +105,30 @@ def main():
 
     control_table = {}
     control_table_json = {}
-    for i in range(len(FULL_ARM)):
-        model = "xl430-w250" if i <= 1 and args.follower else "xl330-m288" if args.follower else "xl330-m077"
 
+    for i in range(len(FULL_ARM)):
         control_table[FULL_ARM[i].as_py()] = {
             "id": i + 1,
-            "model": model,
-            "torque": True if args.follower else True if args.leader and i == 5 else False,
-            "goal_current": 500 if args.follower and i == 5 else 40 if args.leader and i == 5 else None,
-            "goal_position": -40 if args.leader and i == 5 else None,
+            "model": "x_series",
+            "torque": True if args.follower else False,
             "physical_to_logical": build_physical_to_logical(physical_to_logical_tables[i]),
             "logical_to_physical": build_logical_to_physical(logical_to_physical_tables[i]),
-
-            "P": 640 if model == "xl430-w250" else 1500 if model == "xl330-m288" and i != 5 else 250,
-            "I": 0,
-            "D": 3600 if model == "xl430-w250" else 600,
         }
 
         control_table_json[FULL_ARM[i].as_py()] = {
             "id": i + 1,
-            "model": model,
-            "torque": True if args.follower else True if args.leader and i == 5 else False,
-            "goal_current": 500 if args.follower and i == 5 else 40 if args.leader and i == 5 else None,
-            "goal_position": -40 if args.leader and i == 5 else None,
+            "model": "x_series",
+            "torque": True if args.follower else False,
             "physical_to_logical": physical_to_logical_tables[i],
             "logical_to_physical": logical_to_physical_tables[i],
-
-            "P": 640 if model == "xl430-w250" else 1500 if model == "xl330-m288" and i != 5 else 250,
-            "I": 0,
-            "D": 3600 if model == "xl430-w250" else 600,
         }
 
     left = "left" if args.left else "right"
     leader = "leader" if args.leader else "follower"
 
     path = (input(
-        f"Please enter the path of the configuration file (default is ./robots/alexk-lcr/configs/{leader}.{left}.json): ")
-            or f"./robots/alexk-lcr/configs/{leader}.{left}.json")
+        f"Please enter the path of the configuration file (default is ./robots/aloha/configs/{leader}.{left}.json): ")
+            or f"./robots/aloha/configs/{leader}.{left}.json")
 
     with open(path, "w") as file:
         json.dump(control_table_json, file)

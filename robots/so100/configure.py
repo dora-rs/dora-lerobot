@@ -21,6 +21,8 @@ import pyarrow as pa
 
 from common.feetech_bus import FeetechBus, TorqueMode, OperatingMode
 from common.position_control.utils import physical_to_logical, logical_to_physical
+from common.position_control.configure import build_physical_to_logical_tables, build_logical_to_physical_tables, \
+    build_physical_to_logical, build_logical_to_physical
 
 FULL_ARM = pa.array([
     "shoulder_pan",
@@ -61,137 +63,19 @@ def configure_servos(bus: FeetechBus):
     bus.write_max_angle_limit(pa.scalar(0, pa.uint32()), FULL_ARM)
 
 
-def calculate_physical_to_logical_tables(physical_position_1, physical_position_2, wanted):
-    """
-    This function compute, for each joint, a dictionary of 4 key-value pairs. The key is the index of the quadrant
-    (0, 1, 2, 3) = (0-1024, 1024-2048, 2048-3072, 3072-4096) and the value is a tuple of the logical position. It's the
-    value for the interpolation of the physical position to the logical position.
-    """
-    result = []
-
-    for i in range(len(physical_position_1)):
-        table = {}
-
-        first, second = round((physical_position_1[i].as_py() % 4096) / 1024) * 1024 % 4096, round(
-            (physical_position_2[i].as_py() % 4096) / 1024) * 1024 % 4096
-
-        wanted_first, wanted_second = wanted[i][0].as_py(), wanted[i][1].as_py()
-
-        if first == 3072 and second == 0:
-            second = 4096
-        elif second == 3072 and first == 0:
-            first = 4096
-
-        if first < second:
-            index = first // 1024
-
-            table[str(index)] = [
-                wanted_first,
-                wanted_second,
-            ]
-
-            for j in range(4):
-                if j != index:
-                    offset = (index - j) * (wanted_second - wanted_first)
-
-                    table[str(j)] = [
-                        wanted_first - offset,
-                        wanted_second - offset
-                    ]
-
-                    if not -2048 <= table[str(j)][0] <= 2048 or not -2048 <= table[str(j)][1] <= 2048:
-                        if table[str(j)][0] < 0 or table[str(j)][1] < 0:
-                            table[str(j)] = [
-                                (wanted_first - offset) % 4096,
-                                (wanted_second - offset) % 4096
-                            ]
-                        else:
-                            table[str(j)] = [
-                                (wanted_first - offset) % (-4096),
-                                (wanted_second - offset) % (-4096)
-                            ]
-        else:
-            index = second // 1024
-
-            table[str(index)] = [
-                wanted_second,
-                wanted_first,
-            ]
-
-            for j in range(4):
-                if j != index:
-                    offset = (index - j) * (wanted_first - wanted_second)
-
-                    table[str(j)] = [
-                        wanted_second - offset,
-                        wanted_first - offset
-                    ]
-
-                    if not -2048 <= table[str(j)][1] <= 2048 or not -2048 <= table[str(j)][0] <= 2048:
-                        if table[str(j)][1] < 0 or table[str(j)][0] < 0:
-                            table[str(j)] = [
-                                (wanted_second - offset) % 4096,
-                                (wanted_first - offset) % 4096
-                            ]
-                        else:
-                            table[str(j)] = [
-                                (wanted_second - offset) % (-4096),
-                                (wanted_first - offset) % (-4096)
-                            ]
-
-        result.append(table)
-
-    return result
-
-
-def calculate_logical_to_physical_tables(physical_position_1, physical_position_2, wanted):
-    result = []
-
-    for i in range(len(physical_position_1)):
-        table = {}
-
-        first, second = round(physical_position_1[i].as_py() / 1024) * 1024, round(
-            physical_position_2[i].as_py() / 1024) * 1024
-
-        wanted_first, wanted_second = wanted[i][0].as_py(), wanted[i][1].as_py()
-
-        if wanted_first < wanted_second:
-            index = int((wanted_first + 2048) // 1024)
-            table[str(index)] = [first, second]
-
-            for j in range(4):
-                if j != index:
-                    offset = (index - j) * (second - first)
-                    table[str(j)] = [
-                        first - offset,
-                        second - offset
-                    ]
-        else:
-            index = int((wanted_second + 2048) // 1024)
-            table[str(index)] = [
-                second,
-                first
-            ]
-
-            for j in range(4):
-                if j != index:
-                    offset = (index - j) * (first - second)
-                    table[str(j)] = [
-                        second - offset,
-                        first - offset
-                    ]
-
-        result.append(table)
-
-    return result
-
-
 def main():
     parser = argparse.ArgumentParser(
-        description="SO100 Auto Configure: This program is used to automatically configure the Low Cost Robot (LCR) for "
-                    "the user.")
+        description="SO100 Auto Configure: This program is used to automatically configure the Low Cost Robot (SO100) "
+                    "for the user.")
 
-    parser.add_argument("--port", type=str, required=True, help="The port of the LCR.")
+    parser.add_argument("--port", type=str, required=True, help="The port of the SO100.")
+    parser.add_argument("--right", action="store_true", help="If the SO100 is on the right side of the user.")
+    parser.add_argument("--left", action="store_true", help="If the SO100 is on the left side of the user.")
+
+    args = parser.parse_args()
+
+    if args.right and args.left:
+        raise ValueError("You cannot specify both --right and --left.")
 
     args = parser.parse_args()
 
@@ -225,30 +109,44 @@ def main():
     pause()
     physical_position_2 = arm.read_position(FULL_ARM)["positions"].values
 
-    physical_to_logical_tables = calculate_physical_to_logical_tables(physical_position_1, physical_position_2, wanted)
-    logical_to_physical_tables = calculate_logical_to_physical_tables(physical_position_1, physical_position_2, wanted)
-
     print("Configuration completed.")
 
-    path = input(
-        "Please enter the path of the configuration file (e.g. ./robots/so100/configs/follower.left.control): ")
-    json_config = {}
+    physical_to_logical_tables = build_physical_to_logical_tables(physical_position_1, physical_position_2, wanted)
+    logical_to_physical_tables = build_logical_to_physical_tables(physical_position_1, physical_position_2, wanted)
 
-    for i in range(6):
-        json_config[FULL_ARM[i].as_py()] = {
-            "physical_to_logical": physical_to_logical_tables[i],
-            "logical_to_physical": logical_to_physical_tables[i],
-            "initial_goal_position": None if i != 5 else -450,
+    control_table = {}
+    control_table_json = {}
+    for i in range(len(FULL_ARM)):
+        control_table[FULL_ARM[i].as_py()] = {
+            "id": i + 1,
+            "model": "st3215",
+            "torque": True,
+            "physical_to_logical": build_physical_to_logical(physical_to_logical_tables[i]),
+            "logical_to_physical": build_logical_to_physical(logical_to_physical_tables[i])
         }
 
+        control_table_json[FULL_ARM[i].as_py()] = {
+            "id": i + 1,
+            "model": "st3215",
+            "torque": True,
+            "physical_to_logical": physical_to_logical_tables[i],
+            "logical_to_physical": logical_to_physical_tables[i]
+        }
+
+    left = "left" if args.left else "right"
+    path = (input(
+        f"Please enter the path of the configuration file (default is ./robots/so100/configs/follower.{left}.json): ")
+            or f"./robots/so100/configs/follower.{left}.json")
+
     with open(path, "w") as file:
-        json.dump(json_config, file)
+        json.dump(control_table_json, file)
 
     while True:
-        physical_position = arm.read_position(FULL_ARM)
-        logical_position = physical_to_logical(physical_position, json_config)
+        base_physical_position = arm.read_position(FULL_ARM)
+        logical_position = physical_to_logical(base_physical_position, control_table)
 
-        print(f"Logical position: {logical_position}")
+        print(
+            f"Logical Position: {logical_position["positions"]}")
 
         time.sleep(0.5)
 
