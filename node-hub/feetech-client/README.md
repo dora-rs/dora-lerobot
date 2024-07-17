@@ -15,7 +15,7 @@ nodes:
       pull_current: dora/timer/millis/10 # pull the present current every 10ms
 
       # write_goal_position: some goal position from other node
-      
+
       # end: some end signal from other node
     outputs:
       - position # regarding 'pull_position' input, it will output the position every 10ms
@@ -24,17 +24,7 @@ nodes:
 
     env:
       PORT: COM9 # e.g. /dev/ttyUSB0 or COM9
-      
-      IDS: 1 2 3 4 5 6
-      JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
-      MODELS: scs_series scs_series scs_series scs_series scs_series scs_series
-
-      TORQUE: True True True True True True
-
-      INITIAL_GOAL_POSITION: None None None None None None
-
-      OFFSETS:  -2048 2048 2048 2048 1024 2048
-      DRIVE_MODES:  POS NEG NEG NEG NEG NEG
+      CONFIG: config.json # the configuration file for the motors
 ````
 ## License
 

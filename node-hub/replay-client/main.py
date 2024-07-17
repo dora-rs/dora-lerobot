@@ -1,13 +1,11 @@
 """
-Dynamixel Client: This node is used to represent a chain of dynamixel motors. It can be used to read positions,
-velocities, currents, and set goal positions and currents.
+Replay Client: This node is used to represent a leader robot and send a sequence of goals to the dataflow,
+reading a dataset of actions and joints from a specific episode.
 """
 
 import os
-import time
 import argparse
 
-import numpy as np
 import pyarrow as pa
 import pandas as pd
 
@@ -59,10 +57,10 @@ class Client:
 
         position_with_joints = pa.scalar({
             "joints": joints,
-            "positions": pa.array(action, type=pa.int32()),
+            "positions": pa.array(action, type=pa.float32()),
         }, type=pa.struct({
             "joints": pa.list_(pa.string()),
-            "positions": pa.list_(pa.int32()),
+            "positions": pa.list_(pa.float32()),
         }))
 
         self.frame += 1

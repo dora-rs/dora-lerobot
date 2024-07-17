@@ -1,6 +1,6 @@
 """
-Dynamixel Client: This node is used to represent a chain of dynamixel motors. It can be used to read positions,
-velocities, currents, and set goal positions and currents.
+Mujoco Client: This node is used to represent simulated robot, it can be used to read virtual positions,
+or can be controlled
 """
 
 import os
@@ -8,7 +8,6 @@ import argparse
 import time
 import json
 
-import numpy as np
 import pyarrow as pa
 
 from dora import Node
@@ -117,18 +116,20 @@ def main():
     # Check if config is set
     if not os.environ.get("CONFIG") and args.config is None:
         raise ValueError(
-            "The configuration is not set. Please set the configuration of the dynamixel motors in the environment "
+            "The configuration is not set. Please set the configuration of the simulated motors in the environment "
             "variables or as an argument.")
 
     with open(os.environ.get("CONFIG") if args.config is None else args.config) as file:
-        config = json.load(file)["config"]
+        config = json.load(file)
+
+    joints = config.keys()
 
     # Create configuration
     bus = {
         "name": args.name,
         "scene": scene,
 
-        "joints": pa.array([motor["joint"] for motor in config], type=pa.string()),
+        "joints": pa.array(joints, pa.string()),
     }
 
     print("Mujoco Client Configuration: ", bus, flush=True)

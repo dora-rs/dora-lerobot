@@ -1,15 +1,4 @@
-"""
-LCR webcam: this Dora node reads the webcam feed of CAMERA_ID and propagates in the dataflow.
-
-1. It reads the webcam feed of CAMERA_ID.
-2. It sends the webcam feed to the dataflow.
-3. If no camera is found at CAMERA_ID, it sends a black image to the dataflow.
-
-This node also shows the webcam feed in a window.
-"""
 import os
-import subprocess
-import time
 from pathlib import Path
 
 import cv2

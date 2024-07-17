@@ -10,11 +10,10 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-numpy = "2.0.0"
-pyarrow = "16.1.0"
+numpy = "< 2.0.0"
 dynamixel-sdk = "3.7.31"
 feetech-servo-sdk = "1.0.0"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.8.0"]
 build-backend = "poetry.core.masonry.api"

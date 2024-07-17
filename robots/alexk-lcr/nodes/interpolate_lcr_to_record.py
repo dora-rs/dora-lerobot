@@ -12,7 +12,8 @@ import pyarrow.compute as pc
 
 from dora import Node
 
-from common.position_control import logical_to_physical, physical_to_logical, calculate_offset
+from common.position_control.utils import logical_to_physical, physical_to_logical
+from common.position_control.configure import build_logical_to_physical, build_physical_to_logical
 
 
 def main():
@@ -47,6 +48,17 @@ def main():
     with open(os.environ.get("FOLLOWER_CONTROL") if args.follower_control is None else args.follower_control) as file:
         follower_control = json.load(file)
 
+    for joint in leader_control.keys():
+        leader_control[joint]["physical_to_logical"] = build_physical_to_logical(
+            leader_control[joint]["physical_to_logical"])
+        leader_control[joint]["logical_to_physical"] = build_logical_to_physical(
+            leader_control[joint]["logical_to_physical"])
+
+        follower_control[joint]["physical_to_logical"] = build_physical_to_logical(
+            follower_control[joint]["physical_to_logical"])
+        follower_control[joint]["logical_to_physical"] = build_logical_to_physical(
+            follower_control[joint]["logical_to_physical"])
+
     node = Node("lcr-to-lcr")
 
     follower_position = pa.scalar({}, type=pa.struct({
@@ -72,13 +84,13 @@ def main():
 
                 leader_position = pa.scalar({
                     "joints": leader_position["joints"].values,
-                    "positions": pa.array(pc.floor(pc.multiply(leader_position["positions"].values,
+                    "positions": pa.array(pc.multiply(leader_position["positions"].values,
                                                                pa.array([1, 1, 1, 1, 1, 700 / 450],
-                                                                        type=pa.float32()))),
-                                          type=pa.int32())
+                                                                        type=pa.float32())),
+                                          type=pa.float32())
                 }, type=pa.struct({
                     "joints": pa.list_(pa.string()),
-                    "positions": pa.list_(pa.int32())
+                    "positions": pa.list_(pa.float32())
                 }))
 
                 node.send_output(

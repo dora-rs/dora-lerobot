@@ -8,7 +8,6 @@ import time
 import argparse
 import json
 
-import numpy as np
 import pyarrow as pa
 
 from dora import Node
@@ -166,25 +165,28 @@ def main():
             "variables or as an argument.")
 
     with open(os.environ.get("CONFIG") if args.config is None else args.config) as file:
-        config = json.load(file)["config"]
+        config = json.load(file)
+
+    joints = config.keys()
 
     # Create configuration
     bus = {
         "name": args.name,
         "port": port,  # (e.g. "/dev/ttyUSB0", "COM3")
-        "ids": [motor["id"] for motor in config],
-        "joints": pa.array([motor["joint"] for motor in config], pa.string()),
-        "models": [motor["model"] for motor in config],
+        "ids": [config[joint]["id"] for joint in joints],
+        "joints": pa.array(joints, pa.string()),
+        "models": [config[joint]["model"] for joint in joints],
 
-        "torque": [TorqueMode.ENABLED if motor["torque"] else TorqueMode.DISABLED for motor in config],
+        "torque": [TorqueMode.ENABLED if config[joint]["torque"] else TorqueMode.DISABLED for joint in joints],
 
         "goal_current": pa.array(
-            [pa.scalar(motor["goal_current"], pa.uint32()) if motor["goal_current"] is not None else None for motor
-             in config]),
+            [pa.scalar(config[joint]["goal_current"], pa.uint32()) if config[joint][
+                                                                          "goal_current"] is not None else None for
+             joint in joints]),
 
-        "P": pa.array([motor["P"] for motor in config], type=pa.int32()),
-        "I": pa.array([motor["I"] for motor in config], type=pa.int32()),
-        "D": pa.array([motor["D"] for motor in config], type=pa.int32())
+        "P": pa.array([config[joint]["P"] for joint in joints], type=pa.int32()),
+        "I": pa.array([config[joint]["I"] for joint in joints], type=pa.int32()),
+        "D": pa.array([config[joint]["D"] for joint in joints], type=pa.int32())
     }
 
     print("Dynamixel Client Configuration: ", bus, flush=True)

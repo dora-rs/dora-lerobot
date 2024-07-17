@@ -19,10 +19,11 @@ nodes:
       - text
       - episode
       - failed
+      - end # end signal that can be sent to other nodes (sent when the window is closed)
 
     env:
-      CAMERA_WIDTH: 640 # camera width
-      CAMERA_HEIGHT: 480 # camera height
+      WINDOW_WIDTH: 1280 # window width (default is 640) 
+      WINDOW_HEIGHT: 1080 # window height (default is 480)
 ````
 
 ## License

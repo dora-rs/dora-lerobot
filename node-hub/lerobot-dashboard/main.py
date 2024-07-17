@@ -20,17 +20,16 @@ def main():
 
     parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
                         default="lerobot_record")
+    parser.add_argument("--window-width", type=int, required=False, help="The width of the window.", default=640)
+    parser.add_argument("--window-height", type=int, required=False, help="The height of the window.", default=480)
 
     args = parser.parse_args()
 
-    if not os.getenv("CAMERA_WIDTH") or not os.getenv("CAMERA_HEIGHT"):
-        raise ValueError("Please set the CAMERA_ID, CAMERA_WIDTH, and CAMERA_HEIGHT environment variables")
+    window_width = int(os.getenv("WINDOW_WIDTH", args.window_width))
+    window_height = int(os.getenv("WINDOW_HEIGHT", args.window_height))
 
-    camera_width = os.getenv("CAMERA_WIDTH")
-    camera_height = os.getenv("CAMERA_HEIGHT")
-
-    image_left = pygame.Surface((int(camera_width), int(camera_height)))
-    image_right = pygame.Surface((int(camera_width), int(camera_height)))
+    image_left = pygame.Surface((int(window_width // 2), window_height // 2))
+    image_right = pygame.Surface((int(window_width // 2), window_height // 2))
 
     pygame.font.init()
     font = pygame.font.SysFont("Comic Sans MS", 30)
@@ -38,7 +37,7 @@ def main():
 
     pygame.init()
 
-    screen = pygame.display.set_mode((int(camera_width) * 2, int(camera_height) + text.get_height()))
+    screen = pygame.display.set_mode((window_width, window_height + text.get_height()))
 
     pygame.display.set_caption("Pygame minimalistic interface")
 
@@ -151,11 +150,11 @@ def main():
                 screen.blit(image_left, (0, 0))
 
                 # Draw the right image
-                screen.blit(image_right, (int(camera_width), 0))
+                screen.blit(image_right, (window_width // 2, 0))
 
                 # Draw the text bottom center
                 screen.blit(text,
-                            (int(camera_width) - text.get_width() // 2, int(camera_height)))
+                            (window_width // 2 - text.get_width() // 2, int(window_height)))
 
                 pygame.display.flip()
 

@@ -17,6 +17,7 @@ import argparse
 import time
 import json
 
+import numpy as np
 import pyarrow as pa
 
 from common.dynamixel_bus import DynamixelBus, TorqueMode, OperatingMode
@@ -81,8 +82,8 @@ def main():
     if args.follower and args.leader:
         raise ValueError("You cannot specify both --follower and --leader.")
 
-    wanted_position_1 = pa.array([0, -1024, 1024, 0, -1024, 0], type=pa.int32())
-    wanted_position_2 = pa.array([1024, 0, 0, 1024, 0, -1024], type=pa.int32())
+    wanted_position_1 = pa.array([0, -90, 90, 0, -90, 0], type=pa.int32())
+    wanted_position_2 = pa.array([90, 0, 0, 90, 0, -90], type=pa.int32())
 
     wanted = pa.array([
         (wanted_position_1[i], wanted_position_2[i])

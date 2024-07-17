@@ -15,14 +15,11 @@ nodes:
       # end: some end signal from other node
     outputs:
       - position # regarding 'pull_position' input, it will output the position every 10ms
+      - end # end signal that can be sent to other nodes (sent when the simulation ends)
 
     env:
       SCENE: scene.xml # the scene file to be used in the simulation modify this to the relative path from the graph file to the scene file
-
-      JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
-
-      INITIAL_GOAL_POSITION: None None None None None None
-
+      CONFIG: config.json # the configuration file for the simulated arm (only retrieve joints names)
 ````
 ## License
 

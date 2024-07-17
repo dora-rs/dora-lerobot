@@ -13,23 +13,8 @@ import pyarrow.compute as pc
 
 from dora import Node
 
-from common.position_control import logical_to_physical, physical_to_logical, calculate_offset
-
-
-def calculate_goal_position(physical_position: pa.Scalar, logical_goal: pa.Scalar,
-                            table: {str: {str: pa.Array}}) -> pa.Scalar:
-    offset = calculate_offset(physical_position, table)
-    physical_goal = logical_to_physical(logical_goal, table)
-
-    return pa.scalar({
-        str: pa.Array,
-
-        "joints": physical_goal["joints"].values,
-        "positions": pc.add(physical_goal["positions"].values, offset["positions"].values)
-    }, type=pa.struct({
-        "joints": pa.list_(pa.string()),
-        "positions": pa.list_(pa.int32())
-    }))
+from common.position_control.utils import logical_to_physical, physical_to_logical
+from common.position_control.configure import build_logical_to_physical, build_physical_to_logical
 
 
 def main():
@@ -54,13 +39,19 @@ def main():
     with open(os.environ.get("LEADER_CONTROL") if args.leader_control is None else args.leader_control) as file:
         leader_control = json.load(file)
 
+    for joint in leader_control.keys():
+        leader_control[joint]["physical_to_logical"] = build_physical_to_logical(
+            leader_control[joint]["physical_to_logical"])
+        leader_control[joint]["logical_to_physical"] = build_logical_to_physical(
+            leader_control[joint]["logical_to_physical"])
+
     logical_leader_goal = pa.scalar({
         "joints": pa.array(leader_control.keys(), type=pa.string()),
-        "positions": pa.array([leader_control[joint]["initial_goal_position"] for joint in leader_control.keys()],
-                              type=pa.int32())
+        "positions": pa.array([leader_control[joint]["goal_position"] for joint in leader_control.keys()],
+                              type=pa.float32())
     }, type=pa.struct({
         "joints": pa.list_(pa.string()),
-        "positions": pa.list_(pa.int32())
+        "positions": pa.list_(pa.float32())
     }))
 
     node = Node(args.name)
@@ -79,10 +70,10 @@ def main():
                     "joints": [joint.as_py() + "_joint"
                                for joint in leader_position["joints"].values],
                     "positions": pc.multiply(
-                        pc.add(leader_position["positions"].values, pa.array([0, 0, 0, 0, 1024, 0], type=pa.int32())),
+                        pc.add(leader_position["positions"].values, pa.array([0, 0, 0, 0, 90, 0], type=pa.float32())),
                         pa.array(
-                            [np.pi / 2048, np.pi / 2048, np.pi / 2048, np.pi / 2048, np.pi / 2048,
-                             np.pi / 2048 * 700 / 450],
+                            [np.pi / 180, np.pi / 180, np.pi / 180, np.pi / 180, np.pi / 180,
+                             np.pi / 180 * 700 / 450],
                             type=pa.float32()))
                 }, type=pa.struct({
                     "joints": pa.list_(pa.string()),

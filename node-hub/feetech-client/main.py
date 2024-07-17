@@ -4,11 +4,9 @@ velocities, currents, and set goal positions and currents.
 """
 
 import os
-import time
 import argparse
 import json
 
-import numpy as np
 import pyarrow as pa
 
 from dora import Node
@@ -120,7 +118,7 @@ def main():
     # Check if port is set
     if not os.environ.get("PORT") and args.port is None:
         raise ValueError(
-            "The port is not set. Please set the port of the dynamixel motors in the environment variables or as an "
+            "The port is not set. Please set the port of the feetech motors in the environment variables or as an "
             "argument.")
 
     port = os.environ.get("PORT") if args.port is None else args.port
@@ -128,22 +126,23 @@ def main():
     # Check if config is set
     if not os.environ.get("CONFIG") and args.config is None:
         raise ValueError(
-            "The configuration is not set. Please set the configuration of the dynamixel motors in the environment "
+            "The configuration is not set. Please set the configuration of the feetech motors in the environment "
             "variables or as an argument.")
 
     with open(os.environ.get("CONFIG") if args.config is None else args.config) as file:
-        print (file)
-        config = json.load(file)["config"]
+        config = json.load(file)
+
+    joints = config.keys()
 
     # Create configuration
     bus = {
         "name": args.name,
         "port": port,  # (e.g. "/dev/ttyUSB0", "COM3")
-        "ids": [motor["id"] for motor in config],
-        "joints": pa.array([motor["joint"] for motor in config], pa.string()),
-        "models": [motor["model"] for motor in config],
+        "ids": [config[joint]["id"] for joint in joints],
+        "joints": pa.array(joints, pa.string()),
+        "models": [config[joint]["model"] for joint in joints],
 
-        "torque": [TorqueMode.ENABLED if motor["torque"] else TorqueMode.DISABLED for motor in config],
+        "torque": [TorqueMode.ENABLED if config[joint]["torque"] else TorqueMode.DISABLED for joint in joints],
     }
 
     print("Feetech Client Configuration: ", bus, flush=True)

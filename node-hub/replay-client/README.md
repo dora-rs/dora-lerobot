@@ -13,6 +13,7 @@ nodes:
 
     outputs:
       - position
+      - end # end signal that can be sent to other nodes (sent when the replay ends)
 
     env:
       PATH: /path/to/record

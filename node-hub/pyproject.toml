@@ -15,9 +15,9 @@ feetech-client = { path = "feetech-client" }
 mujoco-client = { path = "mujoco-client" }
 replay-client = { path = "replay-client" }
 lerobot-dashboard = { path = "lerobot-dashboard" }
-opencv-camera = { path = "opencv-camera" }
+opencv-video-capture = { path = "opencv-video-capture" }
 video-encoder = { path = "video-encoder" }
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.8.0"]
 build-backend = "poetry.core.masonry.api"
