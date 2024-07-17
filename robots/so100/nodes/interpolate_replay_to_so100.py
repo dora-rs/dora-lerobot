@@ -12,23 +12,8 @@ import pyarrow.compute as pc
 
 from dora import Node
 
-from common.position_control import logical_to_physical, physical_to_logical, calculate_offset
-
-
-def calculate_goal_position(physical_position: pa.Scalar, logical_goal: pa.Scalar,
-                            table: {str: {str: pa.Array}}) -> pa.Scalar:
-    offset = calculate_offset(physical_position, table)
-    physical_goal = logical_to_physical(logical_goal, table)
-
-    return pa.scalar({
-        str: pa.Array,
-
-        "joints": physical_goal["joints"].values,
-        "positions": pc.add(physical_goal["positions"].values, offset["positions"].values)
-    }, type=pa.struct({
-        "joints": pa.list_(pa.string()),
-        "positions": pa.list_(pa.int32())
-    }))
+from common.position_control.utils import logical_to_physical, physical_to_logical, compute_goal_with_offset
+from common.position_control.configure import build_logical_to_physical, build_physical_to_logical
 
 
 def main():
@@ -38,7 +23,7 @@ def main():
                     "LCR followers knowing a Leader position and Follower position.")
 
     parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="lcr-to-lcr")
+                        default="replay-to-so100")
     parser.add_argument("--follower-control", type=str, help="The configuration file for controlling the follower.",
                         default=None)
 
@@ -52,16 +37,17 @@ def main():
     with open(os.environ.get("FOLLOWER_CONTROL") if args.follower_control is None else args.follower_control) as file:
         follower_control = json.load(file)
 
-    node = Node("replay-to-lcr")
+    for joint in follower_control.keys():
+        follower_control[joint]["physical_to_logical"] = build_physical_to_logical(
+            follower_control[joint]["physical_to_logical"])
+        follower_control[joint]["logical_to_physical"] = build_logical_to_physical(
+            follower_control[joint]["logical_to_physical"])
+
+    node = Node(args.name)
 
     follower_initialized = False
 
     follower_position = pa.scalar({}, type=pa.struct({
-        "joints": pa.list_(pa.string()),
-        "positions": pa.list_(pa.int32())
-    }))
-
-    leader_position = pa.scalar({}, type=pa.struct({
         "joints": pa.list_(pa.string()),
         "positions": pa.list_(pa.int32())
     }))
@@ -78,15 +64,7 @@ def main():
                 if not follower_initialized:
                     continue
 
-                leader_position = pa.scalar({
-                    "joints": leader_position["joints"].values,
-                    "positions": leader_position["positions"].values
-                }, type=pa.struct({
-                    "joints": pa.list_(pa.string()),
-                    "positions": pa.list_(pa.int32())
-                }))
-
-                physical_goal = calculate_goal_position(follower_position, leader_position, follower_control)
+                physical_goal = compute_goal_with_offset(follower_position, leader_position, follower_control)
 
                 node.send_output(
                     "follower_goal",
@@ -98,8 +76,6 @@ def main():
                 follower_position = event["value"][0]
                 follower_initialized = True
 
-        elif event_type == "STOP":
-            break
         elif event_type == "ERROR":
             print("[lcr-to-lcr] error: ", event["error"])
             break

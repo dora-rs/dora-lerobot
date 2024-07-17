@@ -44,7 +44,7 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
-python configure.py --port /dev/ttyUSB0 --type follower
+python configure.py --port /dev/ttyUSB0 --follower --left # (or right)
 ```
 
 **Note:** change `/dev/ttyUSB0` to the device port you retrieved from the official wizard (like `COM3` on Windows).
@@ -53,26 +53,24 @@ python configure.py --port /dev/ttyUSB0 --type follower
 
 ![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_positions.png)
 
-**Node:** You will be asked the path of the configuration file, please consider
-using `./robots/alexk-lcr/configs/follower.json`.
+**Node:** You will be asked the path of the configuration file, you can press enter to use the default one.
 
 - Repeat the same steps for the Leader arm:
 
 ```bash
-python configure.py --port /dev/ttyUSB1 --type leader
+python configure.py --port /dev/ttyUSB1 --leader --left # (or right)
 ```
 
 **Note:** change `/dev/ttyUSB1` to the device port you retrieved from the official wizard (like `COM4` on Windows).
 **Note:** The wizard will disable all torque so you can move the arm freely to the Position 1.
-**Node:** You will be asked the path of the configuration file, please consider
-using `./robots/alexk-lcr/configs/leader.json`.
+**Node:** You will be asked the path of the configuration file, you can press enter to use the default one.
 
 After following the guide, you should have the following configuration:
 
 ![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_wanted_configuration.png)
 
 This configuration file has to be imported inside the ENV variable of the nodes in the graph file. By default it searches
-for `./robots/alexk-lcr/configs/leader.json` and `./robots/alexk-lcr/configs/follower.json`. If you want to change the
+for `./robots/alexk-lcr/configs/leader.left.json` and `./robots/alexk-lcr/configs/follower.left.json`. If you want to change the
 path, you can do it by adding the `CONFIG` variable in the ENV of the nodes in the graph file.
 
 ```YAML
@@ -80,7 +78,12 @@ nodes:
   - id: lcr-follower
     env:
       PORT: /dev/ttyUSB0
-      CONFIG: ../configs/follower.json # relative path to `./robots/alexk-lcr/configs/follower.json`
+      CONFIG: ../configs/follower.left.json # relative path to `./robots/alexk-lcr/configs/follower.json`
+
+  - id: lcr-to-lcr
+    env:
+      LEADER_CONTROL: ../configs/leader.left.json
+      FOLLOWER_CONTROL: ../configs/follower.left.json
 ```
 
 ## License

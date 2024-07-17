@@ -23,7 +23,7 @@ def main():
                     "LCR followers knowing a Leader position and Follower position.")
 
     parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="lcr-to-lcr")
+                        default="replay-to-lcr")
     parser.add_argument("--follower-control", type=str, help="The configuration file for controlling the follower.",
                         default=None)
 
@@ -43,16 +43,11 @@ def main():
         follower_control[joint]["logical_to_physical"] = build_logical_to_physical(
             follower_control[joint]["logical_to_physical"])
 
-    node = Node("replay-to-lcr")
+    node = Node(args.name)
 
     follower_initialized = False
 
     follower_position = pa.scalar({}, type=pa.struct({
-        "joints": pa.list_(pa.string()),
-        "positions": pa.list_(pa.int32())
-    }))
-
-    leader_position = pa.scalar({}, type=pa.struct({
         "joints": pa.list_(pa.string()),
         "positions": pa.list_(pa.int32())
     }))
@@ -81,8 +76,6 @@ def main():
                 follower_position = event["value"][0]
                 follower_initialized = True
 
-        elif event_type == "STOP":
-            break
         elif event_type == "ERROR":
             print("[lcr-to-lcr] error: ", event["error"])
             break

@@ -110,8 +110,6 @@ def main():
 
                     frame_count = 0
 
-        elif event_type == "STOP":
-            break
         elif event_type == "ERROR":
             raise ValueError("An error occurred in the dataflow: " + event["error"])
 

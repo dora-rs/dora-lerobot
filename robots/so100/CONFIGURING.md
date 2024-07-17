@@ -44,7 +44,7 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
-python ./robots/so100/configure.py --port /dev/ttyUSB0
+python ./robots/so100/configure.py --port /dev/ttyUSB0 --follower --left
 ```
 
 **Note:** change `/dev/ttyUSB0` to the device port you retrieved from the official wizard (like `COM3` on Windows).
@@ -58,10 +58,14 @@ configuration:
 
 ```YAML
 nodes:
-  - id: so100_follower
+  - id: so100-follower
     env:
-      HOMING_OFFSET: -2048 2048 2048 -2048 5120 2048
-      INVERTED: False True True False True True
+      PORT: /dev/ttyUSB0
+      CONFIG: ../configs/follower.left.json
+      
+  - id: lcr-to-so100
+    env:
+      FOLLOWER_CONTROL: ../configs/follower.left.json
 ```
 
 ## License

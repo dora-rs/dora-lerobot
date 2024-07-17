@@ -15,7 +15,7 @@ dynamixel-client = { path = "../../node_hub/dynamixel-client" }
 mujoco-client = { path = "../../node_hub/mujoco-client" }
 replay-client = { path = "../../node_hub/replay-client" }
 lerobot-dashboard = { path = "../../node_hub/lerobot-dashboard" }
-opencv-camera = { path = "../../node_hub/opencv-camera" }
+opencv-video-capture = { path = "../../node_hub/opencv-video-capture" }
 video-encoder = { path = "../../node_hub/video-encoder" }
 
 [build-system]

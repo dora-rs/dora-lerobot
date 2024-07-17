@@ -61,16 +61,6 @@ pip install robots/alexk-lcr
 have to activate
 your custom python environment before running `dora up && dora start [graph].yml`.
 
-You may need to install our dora tool for precisely recording data with timestamps:
-
-```bash
-cargo install --git https://github.com/dora-rs/dora dora-record
-```
-
-**Note**: If you want to install only the packages for 1 dora application (e.g. `record_mono_teleop_real.yml`), you can
-skip the two last steps and install the required packages by running the `dora build` command for the desired
-application. (see **Examples**)
-
 In order to record episodes, you need ffmpeg installed on your system. You can download it from
 the [official website](https://ffmpeg.org/download.html). If you're on Windows, you can download the latest build
 from [here](https://www.gyan.dev/ffmpeg/builds/). You can

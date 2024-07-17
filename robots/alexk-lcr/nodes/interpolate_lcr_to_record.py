@@ -23,7 +23,7 @@ def main():
                     "LCR followers knowing a Leader position and Follower position.")
 
     parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="lcr-to-lcr")
+                        default="lcr-to-record")
     parser.add_argument("--leader-control", type=str, help="The configuration file for controlling the leader.",
                         default=None)
     parser.add_argument("--follower-control", type=str, help="The configuration file for controlling the follower.",
@@ -59,7 +59,7 @@ def main():
         follower_control[joint]["logical_to_physical"] = build_logical_to_physical(
             follower_control[joint]["logical_to_physical"])
 
-    node = Node("lcr-to-lcr")
+    node = Node(args.name)
 
     follower_position = pa.scalar({}, type=pa.struct({
         "joints": pa.list_(pa.string()),
@@ -110,8 +110,6 @@ def main():
                     event["metadata"]
                 )
 
-        elif event_type == "STOP":
-            break
         elif event_type == "ERROR":
             print("[lcr-to-lcr] error: ", event["error"])
             break

@@ -15,11 +15,13 @@ arms and the camera. The graph file is located in the `graphs` folder.
 
 Make sure to:
 
-- Adjust the serial ports of `lcr_leader` and `lcr_follower` in the `record_mono_teleop_real.yml` file.
-- Adjust the camera ID in the `record_mono_teleop_real.yml` file.
-- Adjust camera and video WIDTH and HEIGHT in the `record_mono_teleop_real.yml` file, if needed.
+- Adjust the serial ports of `lcr-leader` and `lcr-follower` in the `record_mono_teleop_real.yml` file.
+- Adjust the camera PATH in the `record_mono_teleop_real.yml` file.
+- Adjust image and video WIDTH and HEIGHT in the `record_mono_teleop_real.yml` file, if needed.
 - Adjust recording framerate with your camera framerate in the `record_mono_teleop_real.yml` file.
 - Adjust CONFIG path environment variables in the `record_mono_teleop_real.yml` file for both arms if needed.
+- Adjust `LEADER_CONTROL` and `FOLLOWER_CONTROL` environment variables in the `record_mono_teleop_real.yml` file if
+  needed.
 
 You can now start the Dora pipeline to record episodes for LeRobot:
 

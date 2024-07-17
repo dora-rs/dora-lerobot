@@ -158,6 +158,9 @@ def main():
 
                 pygame.display.flip()
 
+        elif event_type == "ERROR":
+            raise ValueError("An error occurred in the dataflow: " + event["error"])
+
     node.send_output(
         "end",
         pa.array([])

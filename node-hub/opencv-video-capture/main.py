@@ -86,8 +86,6 @@ def main():
                     event["metadata"]
                 )
 
-        elif event_type == "STOP":
-            break
         elif event_type == "ERROR":
             raise Exception(event["error"])
 

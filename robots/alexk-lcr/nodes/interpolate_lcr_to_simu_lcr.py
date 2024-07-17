@@ -13,7 +13,7 @@ import pyarrow.compute as pc
 
 from dora import Node
 
-from common.position_control.utils import logical_to_physical, physical_to_logical
+from common.position_control.utils import logical_to_physical, physical_to_logical, compute_goal_with_offset
 from common.position_control.configure import build_logical_to_physical, build_physical_to_logical
 
 
@@ -56,6 +56,8 @@ def main():
 
     node = Node(args.name)
 
+    leader_initialized = False
+
     for event in node:
         event_type = event["type"]
 
@@ -64,6 +66,18 @@ def main():
 
             if event_id == "leader_position":
                 leader_position = event["value"][0]
+
+                if not leader_initialized:
+                    leader_initialized = True
+
+                    physical_goal = compute_goal_with_offset(leader_position, logical_leader_goal, leader_control)
+
+                    node.send_output(
+                        "leader_goal",
+                        pa.array([physical_goal]),
+                        event["metadata"]
+                    )
+
                 leader_position = physical_to_logical(leader_position, leader_control)
 
                 follower_goal = pa.scalar({
@@ -86,8 +100,6 @@ def main():
                     event["metadata"]
                 )
 
-        elif event_type == "STOP":
-            break
         elif event_type == "ERROR":
             print("[lcr_interpolate] error: ", event["error"])
             break

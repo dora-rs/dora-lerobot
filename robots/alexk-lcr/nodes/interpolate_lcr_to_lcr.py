@@ -68,7 +68,7 @@ def main():
         "positions": pa.list_(pa.float32())
     }))
 
-    node = Node("lcr-to-lcr")
+    node = Node(args.name)
 
     leader_initialized = False
     follower_initialized = False
@@ -110,9 +110,9 @@ def main():
 
                 leader_position = pa.scalar({
                     "joints": leader_position["joints"].values,
-                    "positions": pa.array(pc.floor(pc.multiply(leader_position["positions"].values,
+                    "positions": pa.array(pc.multiply(leader_position["positions"].values,
                                                                pa.array([1, 1, 1, 1, 1, 700 / 450],
-                                                                        type=pa.float32()))),
+                                                                        type=pa.float32())),
                                           type=pa.float32())
                 }, type=pa.struct({
                     "joints": pa.list_(pa.string()),
@@ -131,8 +131,6 @@ def main():
                 follower_position = event["value"][0]
                 follower_initialized = True
 
-        elif event_type == "STOP":
-            break
         elif event_type == "ERROR":
             print("[lcr-to-lcr] error: ", event["error"])
             break
