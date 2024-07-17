@@ -4,6 +4,7 @@ velocities, currents, and set goal positions and currents.
 """
 
 import os
+import time
 import argparse
 
 import numpy as np
@@ -11,131 +12,67 @@ import pyarrow as pa
 
 from dora import Node
 
-from dynamixel import DynamixelXLBus, TorqueMode, retrieve_ids_and_command, u32_to_i32, i32_to_u32
-
-
-def apply_homing_offset(values: np.array, homing_offset: np.array) -> np.array:
-    """
-    Apply the homing offset to the values.
-    values: np.array of i32
-    """
-
-    for i in range(len(values)):
-        if values[i] is not None:
-            values[i] += homing_offset[i]
-
-    return values
-
-
-def apply_inverted(values: np.array, inverted: np.array) -> np.array:
-    """
-    Apply the inverted values.
-    values: np.array of i32
-    """
-
-    for i in range(len(values)):
-        if values[i] is not None and inverted[i]:
-            values[i] = -values[i]
-
-    return values
-
-
-def apply_configuration(values: np.array, homing_offset: np.array, inverted: np.array) -> np.array:
-    """
-    Get the working position of the robot
-    Args:
-        values: 
-        homing_offset: 
-        inverted: 
-
-    Returns:
-
-    """
-
-    return apply_homing_offset(apply_inverted(values, inverted), homing_offset)
-
-
-def invert_configuration(values: np.array, homing_offset: np.array, inverted: np.array) -> np.array:
-    """
-    Transform working position into real position for the robot.
-    Args:
-        values: 
-        homing_offset: 
-        inverted: 
-
-    Returns:
-
-    """
-
-    return apply_inverted(apply_homing_offset(values, np.array([
-        -offset if offset is not None else None for offset in homing_offset
-    ])), inverted)
+from dora_lerobot.dynamixel_bus import DynamixelBus, TorqueMode
+from dora_lerobot.position_control import DriveMode, logical_to_physical, physical_to_logical
 
 
 class Client:
 
-    def __init__(self, config):
+    def __init__(self, config: dict[str, any]):
         self.config = config
-        self.chain = DynamixelXLBus(config["port"], config["ids"])
 
-        self.homing_offset = config["homing_offset"]
-        self.inverted = config["inverted"]
+        description = {}
+        for i in range(len(config["ids"])):
+            description[config["joints"][i]] = (config["ids"][i], config["models"][i])
+
+        self.bus = DynamixelBus(config["port"], description)
+
+        self.offsets = config["offsets"]
+        self.drive_modes = config["drive_modes"]
 
         # Set initial values
 
         try:
-            self.chain.sync_write_torque_enable(config["torque"])
+            self.bus.sync_write_torque_enable(config["torque"], self.config["joints"])
         except Exception as e:
             print("Error writing torque status:", e)
 
         try:
-            positions = invert_configuration(
+            positions = logical_to_physical(
                 config["initial_goal_position"],
-                self.homing_offset,
-                self.inverted)
+                self.offsets,
+                self.drive_modes)
 
-            ids, positions = retrieve_ids_and_command(positions, self.chain.motor_ids)
-
-            self.chain.sync_write_goal_position_i32(positions, ids)
+            self.bus.sync_write_goal_position(positions, self.config["joints"])
         except Exception as e:
             print("Error writing goal position:", e)
 
         try:
-            ids, currents = retrieve_ids_and_command(
-                config["initial_goal_current"],
-                self.chain.motor_ids)
-
-            self.chain.sync_write_goal_current(currents, ids)
+            self.bus.sync_write_goal_current(config["initial_goal_current"], self.config["joints"])
         except Exception as e:
             print("Error writing goal current:", e)
 
-        # Create node and connect it to dataflow (if dynamic)
-
         self.node = Node(config["name"])
 
-        self.pull_present_position(self.node, None)
-
     def run(self):
-        # Run the event loop of Dora and call appropriate functions
-
         for event in self.node:
             event_type = event["type"]
 
             if event_type == "INPUT":
                 event_id = event["id"]
 
-                if event_id == "pull_present_position":
-                    self.pull_present_position(self.node, event["metadata"])
-                elif event_id == "pull_goal_position":
-                    self.pull_goal_position(self.node, event["metadata"])
-                elif event_id == "pull_present_velocity":
-                    self.pull_present_velocity(self.node, event["metadata"])
+                if event_id == "pull_position":
+                    self.pull_position(self.node, event["metadata"])
+                elif event_id == "pull_velocity":
+                    self.pull_velocity(self.node, event["metadata"])
+                elif event_id == "pull_current":
+                    self.pull_current(self.node, event["metadata"])
                 elif event_id == "write_goal_position":
                     self.write_goal_position(event["value"])
                 elif event_id == "write_goal_current":
                     self.write_goal_current(event["value"])
-                elif event_id == "write_goal_velocity":
-                    self.write_goal_velocity(event["value"])
+                elif event_id == "end":
+                    break
 
             elif event_type == "STOP":
                 break
@@ -143,83 +80,81 @@ class Client:
                 raise ValueError("An error occurred in the dataflow: " + event["error"])
 
     def close(self):
-        self.chain.sync_write_torque_enable(TorqueMode.DISABLED.value)
-        self.chain.close()
+        self.bus.sync_write_torque_enable(TorqueMode.DISABLED, self.config["joints"])
 
-    def pull_present_position(self, node, metadata):
+    def pull_position(self, node, metadata):
         try:
-            position = i32_to_u32(apply_configuration(
-                self.chain.sync_read_present_position_i32(),
-                self.homing_offset,
-                self.inverted))
+            position = physical_to_logical(
+                self.bus.sync_read_position(self.config["joints"]),
+                self.offsets,
+                self.drive_modes)
+
+            position_with_joints = {
+                "joints": self.config["joints"],
+                "positions": position
+            }
 
             node.send_output(
-                "present_position",
-                pa.array(position.ravel()),
+                "position",
+                pa.array([position_with_joints]),
                 metadata
             )
 
         except ConnectionError as e:
             print("Error reading position:", e)
 
-    def pull_goal_position(self, node, metadata):
+    def pull_velocity(self, node, metadata):
         try:
-            goal_position = i32_to_u32(apply_configuration(
-                self.chain.sync_read_goal_position_i32(),
-                self.homing_offset,
-                self.inverted))
+            velocity = self.bus.sync_read_velocity(self.config["joints"])
+
+            velocity_with_joints = {
+                "joints": self.config["joints"],
+                "velocities": velocity
+            }
 
             node.send_output(
-                "goal_position",
-                pa.array(goal_position.ravel()),
-                metadata
-            )
-        except ConnectionError as e:
-            print("Error reading goal position:", e)
-
-    def pull_present_velocity(self, node, metadata):
-        try:
-            velocity = self.chain.sync_read_present_velocity()
-
-            node.send_output(
-                "present_velocity",
-                pa.array(velocity.ravel()),
+                "velocity",
+                pa.array([velocity_with_joints]),
                 metadata
             )
         except ConnectionError as e:
             print("Error reading velocity:", e)
 
-    def write_goal_position(self, goal_position):
+    def pull_current(self, node, metadata):
         try:
-            positions = invert_configuration(u32_to_i32(goal_position).to_numpy().copy(),
-                                             self.homing_offset,
-                                             self.inverted)
+            current = self.bus.sync_read_current(self.config["joints"])
 
-            ids, positions = retrieve_ids_and_command(positions, self.chain.motor_ids)
+            current_with_joints = {
+                "joints": self.config["joints"],
+                "currents": current
+            }
 
-            self.chain.sync_write_goal_position_i32(positions, ids)
+            node.send_output(
+                "current",
+                pa.array([current_with_joints]),
+                metadata
+            )
+        except ConnectionError as e:
+            print("Error reading current:", e)
+
+    def write_goal_position(self, goal_position_with_joints: {}):
+        try:
+            joints = goal_position_with_joints[0]["joints"].values.to_numpy(zero_copy_only=False)
+            goal_position = goal_position_with_joints[0]["positions"].values.to_numpy()
+
+            self.bus.sync_write_goal_position(logical_to_physical(goal_position, self.offsets, self.drive_modes),
+                                              joints)
         except ConnectionError as e:
             print("Error writing goal position:", e)
 
-    def write_goal_current(self, goal_current):
+    def write_goal_current(self, goal_current_with_joints: np.array):
         try:
-            ids, currents = retrieve_ids_and_command(
-                goal_current,
-                self.chain.motor_ids)
+            joints = goal_current_with_joints[0]["joints"].values.to_numpy(zero_copy_only=False)
+            goal_current = goal_current_with_joints[0]["currents"].values.to_numpy()
 
-            self.chain.sync_write_goal_current(currents, ids)
+            self.bus.sync_write_goal_current(goal_current, joints)
         except ConnectionError as e:
             print("Error writing goal current:", e)
-
-    def write_goal_velocity(self, goal_velocity):
-        try:
-            ids, velocities = retrieve_ids_and_command(
-                goal_velocity,
-                self.chain.motor_ids)
-
-            self.chain.sync_write_goal_velocity(velocities, ids)
-        except ConnectionError as e:
-            print("Error writing goal velocity:", e)
 
 
 def main():
@@ -242,18 +177,29 @@ def main():
     config = {
         "name": args.name,
         "port": os.environ.get("PORT"),  # (e.g. "/dev/ttyUSB0", "COM3")
-        "ids": list(map(int, os.environ.get("IDS", "1 2 3 4 5 6").split())),
-        "torque": [1 if value == "True" else 0 for value in
-                   list(os.getenv("TORQUE", "True True True True True True").split())],
 
-        "initial_goal_position": [int(value) if 'None' not in value else None for value in
-                                  list(os.getenv("INITIAL_GOAL_POSITION", "None None None None None None").split())],
-        "initial_goal_current": [int(value) if 'None' not in value else None for value in
-                                 list(os.getenv("INITIAL_GOAL_CURRENT", "None None None None None None").split())],
+        "ids": list(map(np.uint8, os.environ.get("IDS", "1 2 3 4 5 6").split())),
+        "joints": np.array(
+            list(map(str, os.environ.get("JOINTS", "shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll "
+                                                   "gripper").split()))),
+        "models": list(
+            map(str, os.environ.get("MODELS", "x_series x_series x_series x_series x_series x_series").split())),
 
-        "homing_offset": list(map(int, os.environ.get("HOMING_OFFSET", "0, 0, 0, 0, 0, 0").split())),
-        "inverted": [True if value == "True" else False for value in
-                     list(os.getenv("INVERTED", "False False False False False False").split())]
+        "torque": np.array([TorqueMode.ENABLED if value == "True" else TorqueMode.DISABLED for value in
+                            list(os.getenv("TORQUE", "True True True True True True").split())]),
+
+        "initial_goal_position": np.array([np.int32(value) if 'None' not in value else None for value in
+                                           list(os.getenv("INITIAL_GOAL_POSITION",
+                                                          "None None None None None None").split())]),
+        "initial_goal_current": np.array([np.int32(value) if 'None' not in value else None for value in
+                                          list(os.getenv("INITIAL_GOAL_CURRENT",
+                                                         "None None None None None None").split())]),
+
+        "offsets": np.array(list(map(np.int32, os.environ.get("OFFSETS", "0, 0, 0, 0, 0, 0").split()))).astype(
+            np.int32),
+        "drive_modes": np.array(
+            [DriveMode.POSITIVE_CURRENT if value == "POS" else DriveMode.NEGATIVE_CURRENT for value in
+             list(os.getenv("DRIVE_MODES", "False False False False False False").split())])
     }
 
     print("Dynamixel Client Configuration: ", config, flush=True)

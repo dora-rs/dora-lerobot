@@ -1,0 +1,132 @@
+nodes:
+  - id: lcr_leader
+    path: ../../../node_hub/dynamixel_client/client.py
+    inputs:
+      pull_position:
+        source: lerobot_record/tick
+        queue_size: 1
+    outputs:
+      - position
+    env:
+      PORT: /dev/tty.usbmodem575E0030111
+
+      IDS: 1 2 3 4 5 6
+      JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
+      MODELS: x_series x_series x_series x_series x_series x_series
+
+      TORQUE: False False False False False True
+
+      INITIAL_GOAL_POSITION: None None None None None -450
+      INITIAL_GOAL_CURRENT: None None None None None 40
+
+      OFFSETS: -2048 -3072 1024 -2048 1024 2048
+      DRIVE_MODES: POS POS NEG POS NEG NEG
+
+  - id: lcr_interpolate
+    path: ../nodes/interpolate_lcr_to_lcr.py
+    inputs:
+      leader_position:
+        source: lcr_leader/position
+        queue_size: 1
+      follower_position:
+        source: lcr_follower/position
+        queue_size: 1
+    outputs:
+      - goal_position
+
+  - id: lcr_follower
+    path: ../../../node_hub/dynamixel_client/client.py
+    inputs:
+      pull_position:
+        source: lerobot_record/tick
+        queue_size: 1
+      write_goal_position:
+        source: lcr_interpolate/goal_position
+        queue_size: 1
+      end: lerobot_record/end
+
+    outputs:
+      - position
+    env:
+      PORT: /dev/tty.usbmodem575E0031141
+
+      IDS: 1 2 3 4 5 6
+      JOINTS: shoulder_pan shoulder_lift elbow_flex wrist_flex wrist_roll gripper
+      MODELS: x_series x_series x_series x_series x_series x_series
+
+      TORQUE: True True True True True True
+
+      INITIAL_GOAL_POSITION: None None None None None None
+      INITIAL_GOAL_CURRENT: None None None None None 500
+
+      OFFSETS: -2048 2048 2048 2048 1024 2048
+      DRIVE_MODES: POS NEG NEG NEG NEG NEG
+
+  - id: opencv_camera
+    path: ../../../node_hub/opencv_camera/camera.py
+    inputs:
+      pull_image:
+        source: lerobot_record/tick
+        queue_size: 1
+    outputs:
+      - image
+
+    env:
+      CAMERA_ID: 0
+      CAMERA_WIDTH: 860
+      CAMERA_HEIGHT: 540
+
+  - id: video_encoder
+    path: ../../../node_hub/video_encoder/encoder.py
+    inputs:
+      image:
+        source: opencv_camera/image
+        queue_size: 1
+      episode_index: lerobot_record/episode
+    outputs:
+      - image
+
+    env:
+      VIDEO_NAME: cam_up
+      VIDEO_WIDTH: 860
+      VIDEO_HEIGHT: 540
+      FPS: 30
+
+  - id: lerobot_record
+    path: ../../../node_hub/lerobot_record/record.py
+    inputs:
+      tick:
+        source: dora/timer/millis/16
+        queue_size: 1
+
+      image_left:
+        source: opencv_camera/image
+        queue_size: 1
+    outputs:
+      - tick
+      - episode
+      - failed
+      - end
+
+    env:
+      CAMERA_WIDTH: 860
+      CAMERA_HEIGHT: 540
+
+  - id: dora_record
+    path: dora-record
+    inputs:
+      action:
+        source: lcr_interpolate/goal_position
+        queue_size: 1
+      observation.state:
+        source: lcr_follower/position
+        queue_size: 1
+      episode_index:
+        source: lerobot_record/episode
+        queue_size: 1
+      failed_episode_index:
+        source: lerobot_record/failed
+        queue_size: 1
+      observation.images.cam_up:
+        source: video_encoder/image
+        queue_size: 1
