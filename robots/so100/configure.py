@@ -79,8 +79,8 @@ def main():
 
     args = parser.parse_args()
 
-    wanted_position_1 = pa.array([0, -1024, 1024, 0, -1024, 0], type=pa.int32())
-    wanted_position_2 = pa.array([1024, 0, 0, 1024, 0, -1024], type=pa.int32())
+    wanted_position_1 = pa.array([0, -90, 90, 0, -90, 0], type=pa.int32())
+    wanted_position_2 = pa.array([90, 0, 0, 90, 0, -90], type=pa.int32())
 
     wanted = pa.array([
         (wanted_position_1[i], wanted_position_2[i])

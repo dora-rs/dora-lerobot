@@ -26,35 +26,18 @@ class Client:
 
         self.bus = DynamixelBus(config["port"], description)
 
-        # Set client configuration values
+        # Set client configuration values, raise errors if the values are not set to indicate that the motors are not
+        # configured correctly
 
-        try:
-            self.bus.write_torque_enable(config["torque"], self.config["joints"])
-        except Exception as e:
-            print("Error writing torque status:", e)
+        self.bus.write_torque_enable(config["torque"], self.config["joints"])
+        self.bus.write_goal_current(config["goal_current"], self.config["joints"])
 
-        try:
-            self.bus.write_goal_current(config["goal_current"], self.config["joints"])
-        except Exception as e:
-            print("Error writing goal current:", e)
         time.sleep(0.1)
-
-        try:
-            self.bus.write_position_d_gain(config["D"], self.config["joints"])
-        except Exception as e:
-            print("Error writing gains:", e)
+        self.bus.write_position_d_gain(config["D"], self.config["joints"])
         time.sleep(0.1)
-
-        try:
-            self.bus.write_position_i_gain(config["I"], self.config["joints"])
-        except Exception as e:
-            print("Error writing gains:", e)
+        self.bus.write_position_i_gain(config["I"], self.config["joints"])
         time.sleep(0.1)
-
-        try:
-            self.bus.write_position_p_gain(config["P"], self.config["joints"])
-        except Exception as e:
-            print("Error writing gains:", e)
+        self.bus.write_position_p_gain(config["P"], self.config["joints"])
 
         self.node = Node(config["name"])
 
