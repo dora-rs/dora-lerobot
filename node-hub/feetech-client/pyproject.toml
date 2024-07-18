@@ -6,13 +6,13 @@ description = "Dora Node client for feetech motors."
 readme = "README.md"
 
 packages = [
-    { include = "main.py", to = "feetech_client" }
+    { include = "main.py", to = "feetech_client" },
+    { include = "bus.py", to = "feetech_client" },
 ]
 
 [tool.poetry.dependencies]
 dora-rs = "0.3.5"
-
-common = { path = "../../common" }
+feetech-servo-sdk = "1.0.0"
 
 [tool.poetry.scripts]
 feetech-client = "feetech_client.main:main"

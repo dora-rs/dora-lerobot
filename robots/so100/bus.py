@@ -12,6 +12,11 @@ PROTOCOL_VERSION = 0
 BAUD_RATE = 1_000_000
 TIMEOUT_MS = 1000
 
+ARROW_PWM_VALUES = pa.struct({
+    pa.field("joints", pa.list_(pa.string())),
+    pa.field("values", pa.list_(pa.int32()))
+})
+
 
 class TorqueMode(enum.Enum):
     ENABLED = 1
@@ -126,7 +131,8 @@ class FeetechBus:
             values = pa.array([values] * len(motor_ids), type=values.type)
 
         values = pa.array(
-            [pa.scalar(32767 - value.as_py(), pa.uint32()) if value.as_py() < 0 else pa.scalar(value.as_py(), pa.uint32())
+            [pa.scalar(32767 - value.as_py(), pa.uint32()) if value.as_py() < 0 else pa.scalar(value.as_py(),
+                                                                                               pa.uint32())
              for value in values],
             type=pa.uint32())
 
@@ -228,11 +234,8 @@ class FeetechBus:
 
         return pa.scalar({
             "joints": motor_names,
-            "positions": values
-        }, type=pa.struct([
-            pa.field("joints", pa.list_(pa.string())),
-            pa.field("positions", pa.list_(pa.int32()))
-        ]))
+            "values": values
+        }, type=ARROW_PWM_VALUES)
 
     def write_torque_enable(self, torque_mode: Union[TorqueMode, list[TorqueMode]],
                             motor_names: pa.Array):

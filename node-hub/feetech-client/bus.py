@@ -1,16 +1,21 @@
 import enum
 
-import pyarrow as pa
 import numpy as np
+import pyarrow as pa
 
 from typing import Union
 
-from dynamixel_sdk import PacketHandler, PortHandler, COMM_SUCCESS, GroupSyncRead, GroupSyncWrite
-from dynamixel_sdk import DXL_HIBYTE, DXL_HIWORD, DXL_LOBYTE, DXL_LOWORD
+from scservo_sdk import PacketHandler, PortHandler, COMM_SUCCESS, GroupSyncRead, GroupSyncWrite
+from scservo_sdk import SCS_HIBYTE, SCS_HIWORD, SCS_LOBYTE, SCS_LOWORD
 
-PROTOCOL_VERSION = 2.0
+PROTOCOL_VERSION = 0
 BAUD_RATE = 1_000_000
 TIMEOUT_MS = 1000
+
+ARROW_PWM_VALUES = pa.struct({
+    pa.field("joints", pa.list_(pa.string())),
+    pa.field("values", pa.list_(pa.int32()))
+})
 
 
 class TorqueMode(enum.Enum):
@@ -19,85 +24,68 @@ class TorqueMode(enum.Enum):
 
 
 class OperatingMode(enum.Enum):
-    VELOCITY = 1
-    POSITION = 3
-    EXTENDED_POSITION = 4
-    CURRENT_CONTROLLED_POSITION = 5
-    PWM = 16
+    ONE_TURN = 0
 
 
-X_SERIES_CONTROL_TABLE = [
-    ("Model_Number", 0, 2),
-    ("Model_Information", 2, 4),
-    ("Firmware_Version", 6, 1),
-    ("ID", 7, 1),
-    ("Baud_Rate", 8, 1),
-    ("Return_Delay_Time", 9, 1),
-    ("Drive_Mode", 10, 1),
-    ("Operating_Mode", 11, 1),
-    ("Secondary_ID", 12, 1),
-    ("Protocol_Type", 13, 1),
-    ("Homing_Offset", 20, 4),
-    ("Moving_Threshold", 24, 4),
-    ("Temperature_Limit", 31, 1),
-    ("Max_Voltage_Limit", 32, 2),
-    ("Min_Voltage_Limit", 34, 2),
-    ("PWM_Limit", 36, 2),
-    ("Current_Limit", 38, 2),
-    ("Acceleration_Limit", 40, 4),
-    ("Velocity_Limit", 44, 4),
-    ("Max_Position_Limit", 48, 4),
-    ("Min_Position_Limit", 52, 4),
-    ("Shutdown", 63, 1),
-    ("Torque_Enable", 64, 1),
-    ("LED", 65, 1),
-    ("Status_Return_Level", 68, 1),
-    ("Registered_Instruction", 69, 1),
-    ("Hardware_Error_Status", 70, 1),
-    ("Velocity_I_Gain", 76, 2),
-    ("Velocity_P_Gain", 78, 2),
-    ("Position_D_Gain", 80, 2),
-    ("Position_I_Gain", 82, 2),
-    ("Position_P_Gain", 84, 2),
-    ("Feedforward_2nd_Gain", 88, 2),
-    ("Feedforward_1st_Gain", 90, 2),
-    ("Bus_Watchdog", 98, 1),
-    ("Goal_PWM", 100, 2),
-    ("Goal_Current", 102, 2),
-    ("Goal_Velocity", 104, 4),
-    ("Profile_Acceleration", 108, 4),
-    ("Profile_Velocity", 112, 4),
-    ("Goal_Position", 116, 4),
-    ("Realtime_Tick", 120, 2),
-    ("Moving", 122, 1),
-    ("Moving_Status", 123, 1),
-    ("Present_PWM", 124, 2),
-    ("Present_Current", 126, 2),
-    ("Present_Velocity", 128, 4),
-    ("Present_Position", 132, 4),
-    ("Velocity_Trajectory", 136, 4),
-    ("Position_Trajectory", 140, 4),
-    ("Present_Input_Voltage", 144, 2),
-    ("Present_Temperature", 146, 1)
+SCS_SERIES_CONTROL_TABLE = [
+    ("Model", 3, 2),
+    ("ID", 5, 1),
+    ("Baud_Rate", 6, 1),
+    ("Return_Delay", 7, 1),
+    ("Response_Status_Level", 8, 1),
+    ("Min_Angle_Limit", 9, 2),
+    ("Max_Angle_Limit", 11, 2),
+    ("Max_Temperature_Limit", 13, 1),
+    ("Max_Voltage_Limit", 14, 1),
+    ("Min_Voltage_Limit", 15, 1),
+    ("Max_Torque_Limit", 16, 2),
+    ("Phase", 18, 1),
+    ("Unloading_Condition", 19, 1),
+    ("LED_Alarm_Condition", 20, 1),
+    ("P_Coefficient", 21, 1),
+    ("D_Coefficient", 22, 1),
+    ("I_Coefficient", 23, 1),
+    ("Minimum_Startup_Force", 24, 2),
+    ("CW_Dead_Zone", 26, 1),
+    ("CCW_Dead_Zone", 27, 1),
+    ("Protection_Current", 28, 2),
+    ("Angular_Resolution", 30, 1),
+    ("Offset", 31, 2),
+    ("Mode", 33, 1),
+    ("Protective_Torque", 34, 1),
+    ("Protection_Time", 35, 1),
+    ("Overload_Torque", 36, 1),
+    ("Speed_closed_loop_P_proportional_coefficient", 37, 1),
+    ("Over_Current_Protection_Time", 38, 1),
+    ("Velocity_closed_loop_I_integral_coefficient", 39, 1),
+    ("Torque_Enable", 40, 1),
+    ("Acceleration", 41, 1),
+    ("Goal_Position", 42, 2),
+    ("Goal_Time", 44, 2),
+    ("Goal_Speed", 46, 2),
+    ("Lock", 55, 1),
+    ("Present_Position", 56, 2),
+    ("Present_Speed", 58, 2),
+    ("Present_Load", 60, 2),
+    ("Present_Voltage", 62, 1),
+    ("Present_Temperature", 63, 1),
+    ("Status", 65, 1),
+    ("Moving", 66, 1),
+    ("Present_Current", 69, 2)
 ]
 
 MODEL_CONTROL_TABLE = {
-    "x_series": X_SERIES_CONTROL_TABLE,
-
-    "xl330-m077": X_SERIES_CONTROL_TABLE,
-    "xl330-m288": X_SERIES_CONTROL_TABLE,
-    "xl430-w250": X_SERIES_CONTROL_TABLE,
-    "xm430-w350": X_SERIES_CONTROL_TABLE,
-    "xm540-w270": X_SERIES_CONTROL_TABLE,
+    "scs_series": SCS_SERIES_CONTROL_TABLE,
+    "sts3215": SCS_SERIES_CONTROL_TABLE,
 }
 
 
-class DynamixelBus:
+class FeetechBus:
 
-    def __init__(self, port: str, description: dict[str, (int, str)]):
+    def __init__(self, port: str, description: dict[str, (np.uint8, str)]):
         """
         Args:
-            port: the serial port to connect to the Dynamixel bus
+            port: the serial port to connect to the Feetech bus
             description: a dictionary containing the description of the motors connected to the bus. The keys are the
             motor names and the values are tuples containing the motor id and the motor model.
         """
@@ -142,11 +130,11 @@ class DynamixelBus:
         if isinstance(values, pa.Scalar):
             values = pa.array([values] * len(motor_ids), type=values.type)
 
-        values = values.from_buffers(
-            pa.uint32(),
-            len(values),
-            values.buffers()
-        )
+        values = pa.array(
+            [pa.scalar(32767 - value.as_py(), pa.uint32()) if value.as_py() < 0 else pa.scalar(value.as_py(),
+                                                                                               pa.uint32())
+             for value in values],
+            type=pa.uint32())
 
         motor_ids, values = ([motor_ids[i] for i in range(len(motor_ids)) if values[i].as_py() is not None],
                              values.drop_null())
@@ -169,19 +157,19 @@ class DynamixelBus:
 
             if packet_bytes_size == 1:
                 data = [
-                    DXL_LOBYTE(DXL_LOWORD(value)),
+                    SCS_LOBYTE(SCS_LOWORD(value)),
                 ]
             elif packet_bytes_size == 2:
                 data = [
-                    DXL_LOBYTE(DXL_LOWORD(value)),
-                    DXL_HIBYTE(DXL_LOWORD(value)),
+                    SCS_LOBYTE(SCS_LOWORD(value)),
+                    SCS_HIBYTE(SCS_LOWORD(value)),
                 ]
             elif packet_bytes_size == 4:
                 data = [
-                    DXL_LOBYTE(DXL_LOWORD(value)),
-                    DXL_HIBYTE(DXL_LOWORD(value)),
-                    DXL_LOBYTE(DXL_HIWORD(value)),
-                    DXL_HIBYTE(DXL_HIWORD(value)),
+                    SCS_LOBYTE(SCS_LOWORD(value)),
+                    SCS_HIBYTE(SCS_LOWORD(value)),
+                    SCS_LOBYTE(SCS_HIWORD(value)),
+                    SCS_HIBYTE(SCS_HIWORD(value)),
                 ]
             else:
                 raise NotImplementedError(
@@ -246,11 +234,8 @@ class DynamixelBus:
 
         return pa.scalar({
             "joints": motor_names,
-            "positions": values
-        }, type=pa.struct([
-            pa.field("joints", pa.list_(pa.string())),
-            pa.field("positions", pa.list_(pa.int32()))
-        ]))
+            "values": values
+        }, ARROW_PWM_VALUES)
 
     def write_torque_enable(self, torque_mode: Union[TorqueMode, list[TorqueMode]],
                             motor_names: pa.Array):
@@ -261,7 +246,7 @@ class DynamixelBus:
 
     def write_operating_mode(self, operating_mode: Union[OperatingMode, list[OperatingMode]],
                              motor_names: pa.Array):
-        self.write("Operating_Mode",
+        self.write("Mode",
                    pa.scalar(operating_mode.value, pa.int32()) if isinstance(operating_mode,
                                                                              OperatingMode) else pa.array(
                        [mode.value for mode in operating_mode], pa.int32()),
@@ -271,7 +256,7 @@ class DynamixelBus:
         return self.read("Present_Position", motor_names)
 
     def read_velocity(self, motor_names: pa.Array) -> pa.Scalar:
-        return self.read("Present_Velocity", motor_names)
+        return self.read("Present_Speed", motor_names)
 
     def read_current(self, motor_names: pa.Array) -> pa.Scalar:
         return self.read("Present_Current", motor_names)
@@ -280,18 +265,8 @@ class DynamixelBus:
                             motor_names: pa.Array):
         self.write("Goal_Position", goal_position, motor_names)
 
-    def write_goal_current(self, goal_current: Union[pa.Scalar, pa.Scalar],
-                           motor_names: pa.Array):
-        self.write("Goal_Current", goal_current, motor_names)
+    def write_max_angle_limit(self, max_angle_limit: Union[np.uint32, np.array], motor_names: np.array):
+        self.write("Max_Angle_Limit", max_angle_limit, motor_names)
 
-    def write_position_p_gain(self, position_p_gain: Union[pa.Scalar, pa.Scalar],
-                              motor_names: pa.Array):
-        self.write("Position_P_Gain", position_p_gain, motor_names)
-
-    def write_position_i_gain(self, position_i_gain: Union[pa.Scalar, pa.Scalar],
-                              motor_names: pa.Array):
-        self.write("Position_I_Gain", position_i_gain, motor_names)
-
-    def write_position_d_gain(self, position_d_gain: Union[pa.Scalar, pa.Scalar],
-                              motor_names: pa.Array):
-        self.write("Position_D_Gain", position_d_gain, motor_names)
+    def write_min_angle_limit(self, min_angle_limit: Union[np.uint32, np.array], motor_names: np.array):
+        self.write("Min_Angle_Limit", min_angle_limit, motor_names)

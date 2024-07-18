@@ -7,7 +7,7 @@ The program will:
 3. Record the position of the LCR.
 4. Ask the user to move the LCR to the position 2 (see CONFIGURING.md for more details).
 5. Record the position of the LCR.
-8. Calculate the offset and inverted mode of the LCR.
+8. Calculate interpolation functions.
 9. Let the user verify in real time that the LCR is working properly.
 
 It will also enable all appropriate operating modes for the LCR.
@@ -17,12 +17,11 @@ import argparse
 import time
 import json
 
-import numpy as np
 import pyarrow as pa
 
-from common.dynamixel_bus import DynamixelBus, TorqueMode, OperatingMode
-from common.position_control.utils import physical_to_logical, logical_to_physical
-from common.position_control.configure import build_physical_to_logical_tables, build_logical_to_physical_tables, \
+from bus import DynamixelBus, TorqueMode, OperatingMode
+from nodes.position_control.utils import physical_to_logical, logical_to_physical
+from nodes.position_control.configure import build_physical_to_logical_tables, build_logical_to_physical_tables, \
     build_physical_to_logical, build_logical_to_physical
 
 FULL_ARM = pa.array([
@@ -106,11 +105,11 @@ def main():
 
     print("Please move the LCR to the first position.")
     pause()
-    physical_position_1 = arm.read_position(FULL_ARM)["positions"].values
+    physical_position_1 = arm.read_position(FULL_ARM)["values"].values
 
     print("Please move the LCR to the second position.")
     pause()
-    physical_position_2 = arm.read_position(FULL_ARM)["positions"].values
+    physical_position_2 = arm.read_position(FULL_ARM)["values"].values
 
     print("Configuration completed.")
 
@@ -123,17 +122,8 @@ def main():
         model = "xl430-w250" if i <= 1 and args.follower else "xl330-m288" if args.follower else "xl330-m077"
 
         control_table[FULL_ARM[i].as_py()] = {
-            "id": i + 1,
-            "model": model,
-            "torque": True if args.follower else True if args.leader and i == 5 else False,
-            "goal_current": 500 if args.follower and i == 5 else 40 if args.leader and i == 5 else None,
-            "goal_position": -40 if args.leader and i == 5 else None,
             "physical_to_logical": build_physical_to_logical(physical_to_logical_tables[i]),
             "logical_to_physical": build_logical_to_physical(logical_to_physical_tables[i]),
-
-            "P": 640 if model == "xl430-w250" else 1500 if model == "xl330-m288" and i != 5 else 250,
-            "I": 0,
-            "D": 3600 if model == "xl430-w250" else 600,
         }
 
         control_table_json[FULL_ARM[i].as_py()] = {
@@ -165,7 +155,7 @@ def main():
         logical_position = physical_to_logical(base_physical_position, control_table)
 
         print(
-            f"Logical Position: {logical_position["positions"]}")
+            f"Logical Position: {logical_position["values"]}")
 
         time.sleep(0.5)
 

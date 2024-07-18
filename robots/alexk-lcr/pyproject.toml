@@ -7,7 +7,6 @@ readme = "README.md"
 
 packages = [
     { include = "interpolate_lcr_to_lcr.py", from = "nodes", to = "alexk_lcr" },
-    { include = "interpolate_lcr_to_simu_lcr.py", from = "nodes", to = "alexk_lcr" }
 ]
 
 [tool.poetry.dependencies]
@@ -19,5 +18,5 @@ opencv-video-capture = { path = "../../node_hub/opencv-video-capture" }
 video-encoder = { path = "../../node_hub/video-encoder" }
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.8.0"]
 build-backend = "poetry.core.masonry.api"

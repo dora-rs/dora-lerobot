@@ -35,16 +35,12 @@ authors = ["[Pseudo/Name] <[email]>"]
 description = "Dora Node for []"
 readme = "README.md"
 
-packages = [# With poetry you're obliged to add at least one file...
+packages = [
     { include = "main.py", to = "[name of the node]" }
 ]
 
 [tool.poetry.dependencies]
-python = "^3.11"
 dora-rs = "0.3.5"
-numpy = "2.0.0"
-pyarrow = "16.1.0"
-...
 
 [tool.poetry.scripts]
 [name of the node] = "[name of the node].main:main"

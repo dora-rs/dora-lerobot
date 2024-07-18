@@ -160,8 +160,8 @@ def main():
 
     # only keep the array of positions for each action abd state
     joints = dataset["action"][0][0]["joints"]
-    dataset["action"] = dataset["action"].apply(lambda x: x[0]["positions"])
-    dataset["observation.state"] = dataset["observation.state"].apply(lambda x: x[0]["positions"])
+    dataset["action"] = dataset["action"].apply(lambda x: x[0]["values"])
+    dataset["observation.state"] = dataset["observation.state"].apply(lambda x: x[0]["values"])
 
     # Add a new column "joints" that is the array of joints with enough rows to match the number of rows in the dataset
     dataset["joints"] = pd.Series([joints for _ in range(len(dataset))])

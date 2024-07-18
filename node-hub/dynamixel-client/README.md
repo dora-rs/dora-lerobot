@@ -28,6 +28,56 @@ nodes:
       CONFIG: config.json # the configuration file for the motors
 ````
 
+## Arrow format
+
+### Outputs
+
+Arrow **Struct** of type:
+
+```Python
+pa.struct([
+    pa.field("joints", pa.list_(pa.string())),
+    pa.field("values", pa.list_(pa.int32()))
+])
+```
+
+### Inputs
+
+Arrow **Array** of type:
+
+```Python
+pa.struct([
+    pa.field("joints", pa.list_(pa.string())),
+    pa.field("values", pa.list_(pa.int32()))
+])
+```
+
+**Note**: only the first element of the array is used, the rest are ignored.
+
+## Configuration
+
+The configuration file that should be passed to the node is a JSON file that contains the configuration for the motors:
+
+```JSON
+{
+  "shoulder_pan": {
+    "id": 1,
+    "model": "x_series",
+    "torque": true,
+    "P": 800,
+    "I": 0,
+    "D": 0,
+    "goal_current": null
+  }
+}
+```
+
+The configuration file starts by the **joint** name of the servo. **id**: the id of the motor in the bus, **model**: the
+model of the motor, **torque**: whether the motor should be
+in torque mode or not (at the beginning), **P**: the proportional gain for position control mode, **I**: the integral
+gain for position control mode, **D**: the derivative gain for position control mode, **goal_current**: the goal current
+for the motor at the beginning, null if you don't want to set it.
+
 ## License
 
 This library is licensed under the [Apache License 2.0](../../LICENSE).

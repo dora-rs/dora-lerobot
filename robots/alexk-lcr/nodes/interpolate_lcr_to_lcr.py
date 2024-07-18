@@ -12,8 +12,9 @@ import pyarrow.compute as pc
 
 from dora import Node
 
-from common.position_control.utils import logical_to_physical, physical_to_logical, compute_goal_with_offset
-from common.position_control.configure import build_logical_to_physical, build_physical_to_logical
+from .position_control.utils import logical_to_physical, physical_to_logical, compute_goal_with_offset, \
+    ARROW_LOGICAL_VALUES, ARROW_PWM_VALUES
+from .position_control.configure import build_logical_to_physical, build_physical_to_logical
 
 
 def main():
@@ -61,27 +62,16 @@ def main():
 
     logical_leader_goal = pa.scalar({
         "joints": pa.array(leader_control.keys(), type=pa.string()),
-        "positions": pa.array([leader_control[joint]["goal_position"] for joint in leader_control.keys()],
-                              type=pa.float32())
-    }, type=pa.struct({
-        "joints": pa.list_(pa.string()),
-        "positions": pa.list_(pa.float32())
-    }))
+        "values": pa.array([leader_control[joint]["goal_position"] for joint in leader_control.keys()],
+                           type=pa.float32())
+    }, type=ARROW_LOGICAL_VALUES)
 
     node = Node(args.name)
 
     leader_initialized = False
     follower_initialized = False
 
-    follower_position = pa.scalar({}, type=pa.struct({
-        "joints": pa.list_(pa.string()),
-        "positions": pa.list_(pa.int32())
-    }))
-
-    leader_position = pa.scalar({}, type=pa.struct({
-        "joints": pa.list_(pa.string()),
-        "positions": pa.list_(pa.int32())
-    }))
+    follower_position = pa.scalar({}, type=ARROW_PWM_VALUES)
 
     for event in node:
         event_type = event["type"]
@@ -108,16 +98,12 @@ def main():
 
                 leader_position = physical_to_logical(leader_position, leader_control)
 
+                interpolation = pa.array([1, 1, 1, 1, 1, 700 / 450], type=pa.float32())
+
                 leader_position = pa.scalar({
                     "joints": leader_position["joints"].values,
-                    "positions": pa.array(pc.multiply(leader_position["positions"].values,
-                                                               pa.array([1, 1, 1, 1, 1, 700 / 450],
-                                                                        type=pa.float32())),
-                                          type=pa.float32())
-                }, type=pa.struct({
-                    "joints": pa.list_(pa.string()),
-                    "positions": pa.list_(pa.float32())
-                }))
+                    "values": pa.array(pc.multiply(leader_position["values"].values, interpolation)),
+                }, type=ARROW_LOGICAL_VALUES)
 
                 physical_goal = compute_goal_with_offset(follower_position, leader_position, follower_control)
 

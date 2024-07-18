@@ -6,13 +6,13 @@ description = "Dora Node client for dynamixel motors."
 readme = "README.md"
 
 packages = [
-    { include = "main.py", to = "dynamixel_client" }
+    { include = "main.py", to = "dynamixel_client" },
+    { include = "bus.py", to = "dynamixel_client" },
 ]
 
 [tool.poetry.dependencies]
 dora-rs = "0.3.5"
-
-common = { path = "../../common" }
+dynamixel-sdk = "3.7.31"
 
 [tool.poetry.scripts]
 dynamixel-client = "dynamixel_client.main:main"

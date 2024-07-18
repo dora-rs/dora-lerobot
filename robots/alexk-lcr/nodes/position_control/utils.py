@@ -1,10 +1,20 @@
 import pyarrow as pa
 import pyarrow.compute as pc
 
+ARROW_LOGICAL_VALUES = pa.struct({
+    "joints": pa.list_(pa.string()),
+    "values": pa.list_(pa.float32())
+})
+
+ARROW_PWM_VALUES = pa.struct({
+    "joints": pa.list_(pa.string()),
+    "values": pa.list_(pa.int32())
+})
+
 
 def physical_to_logical(physical_position: pa.Scalar, table: {}):
     joints = physical_position["joints"].values
-    positions = physical_position["positions"].values
+    positions = physical_position["values"].values
 
     result = []
 
@@ -16,16 +26,13 @@ def physical_to_logical(physical_position: pa.Scalar, table: {}):
 
     return pa.scalar({
         "joints": joints,
-        "positions": pa.array(result, type=pa.float32()),
-    }, type=pa.struct({
-        "joints": pa.list_(pa.string()),
-        "positions": pa.list_(pa.float32()),
-    }))
+        "values": pa.array(result, type=pa.float32()),
+    }, type=ARROW_LOGICAL_VALUES)
 
 
 def logical_to_physical(logical_position: pa.Scalar, table: {}):
     joints = logical_position["joints"].values
-    positions = logical_position["positions"].values
+    positions = logical_position["values"].values
 
     result = []
 
@@ -37,11 +44,8 @@ def logical_to_physical(logical_position: pa.Scalar, table: {}):
 
     return pa.scalar({
         "joints": joints,
-        "positions": pa.array(result, type=pa.int32()),
-    }, type=pa.struct({
-        "joints": pa.list_(pa.string()),
-        "positions": pa.list_(pa.int32()),
-    }))
+        "values": pa.array(result, type=pa.int32()),
+    }, type=ARROW_PWM_VALUES)
 
 
 def compute_goal_with_offset(physical_position: pa.Scalar, logical_goal: pa.Scalar, table: {}):
@@ -51,9 +55,6 @@ def compute_goal_with_offset(physical_position: pa.Scalar, logical_goal: pa.Scal
 
     return pa.scalar({
         "joints": base["joints"].values,
-        "positions": pc.add(pc.subtract(physical_position["positions"].values, base["positions"].values),
-                            goal["positions"].values)
-    }, type=pa.struct({
-        "joints": pa.list_(pa.string()),
-        "positions": pa.list_(pa.int32())
-    }))
+        "values": pc.add(pc.subtract(physical_position["values"].values, base["values"].values),
+                         goal["values"].values)
+    }, type=ARROW_PWM_VALUES)

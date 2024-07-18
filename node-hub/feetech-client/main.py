@@ -11,7 +11,7 @@ import pyarrow as pa
 
 from dora import Node
 
-from common.feetech_bus import FeetechBus, TorqueMode
+from .bus import FeetechBus, TorqueMode
 
 
 class Client:
@@ -89,10 +89,10 @@ class Client:
         except ConnectionError as e:
             print("Error reading current:", e)
 
-    def write_goal_position(self, goal_position_with_joints: pa.Array):
+    def write_goal_position(self, goal_position: pa.Array):
         try:
-            joints = goal_position_with_joints[0]["joints"].values
-            goal_position = goal_position_with_joints[0]["positions"].values
+            joints = goal_position[0]["joints"].values
+            goal_position = goal_position[0]["values"].values
 
             self.bus.write_goal_position(goal_position, joints)
         except ConnectionError as e:

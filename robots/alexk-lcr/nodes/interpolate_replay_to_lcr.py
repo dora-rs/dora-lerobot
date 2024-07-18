@@ -12,8 +12,9 @@ import pyarrow.compute as pc
 
 from dora import Node
 
-from common.position_control.utils import logical_to_physical, physical_to_logical, compute_goal_with_offset
-from common.position_control.configure import build_logical_to_physical, build_physical_to_logical
+from .position_control.utils import logical_to_physical, physical_to_logical, compute_goal_with_offset, \
+    ARROW_PWM_VALUES
+from .position_control.configure import build_logical_to_physical, build_physical_to_logical
 
 
 def main():
@@ -47,10 +48,7 @@ def main():
 
     follower_initialized = False
 
-    follower_position = pa.scalar({}, type=pa.struct({
-        "joints": pa.list_(pa.string()),
-        "positions": pa.list_(pa.int32())
-    }))
+    follower_position = pa.scalar({}, type=ARROW_PWM_VALUES)
 
     for event in node:
         event_type = event["type"]

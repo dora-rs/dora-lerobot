@@ -85,7 +85,7 @@ class Client:
 
     def write_goal_position(self, goal_position_with_joints):
         joints = goal_position_with_joints[0]["joints"].values
-        goal_position = goal_position_with_joints[0]["positions"].values
+        goal_position = goal_position_with_joints[0]["values"].values
 
         for i, joint in enumerate(joints):
             self.data.joint(joint.as_py()).qpos[0] = goal_position[i].as_py()

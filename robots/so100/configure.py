@@ -19,9 +19,9 @@ import json
 
 import pyarrow as pa
 
-from common.feetech_bus import FeetechBus, TorqueMode, OperatingMode
-from common.position_control.utils import physical_to_logical, logical_to_physical
-from common.position_control.configure import build_physical_to_logical_tables, build_logical_to_physical_tables, \
+from bus import FeetechBus, TorqueMode, OperatingMode
+from nodes.position_control.utils import physical_to_logical, logical_to_physical
+from nodes.position_control.configure import build_physical_to_logical_tables, build_logical_to_physical_tables, \
     build_physical_to_logical, build_logical_to_physical
 
 FULL_ARM = pa.array([
@@ -103,11 +103,11 @@ def main():
 
     print("Please move the SO100 to the first position.")
     pause()
-    physical_position_1 = arm.read_position(FULL_ARM)["positions"].values
+    physical_position_1 = arm.read_position(FULL_ARM)["values"].values
 
     print("Please move the SO100 to the second position.")
     pause()
-    physical_position_2 = arm.read_position(FULL_ARM)["positions"].values
+    physical_position_2 = arm.read_position(FULL_ARM)["values"].values
 
     print("Configuration completed.")
 
@@ -118,9 +118,6 @@ def main():
     control_table_json = {}
     for i in range(len(FULL_ARM)):
         control_table[FULL_ARM[i].as_py()] = {
-            "id": i + 1,
-            "model": "st3215",
-            "torque": True,
             "physical_to_logical": build_physical_to_logical(physical_to_logical_tables[i]),
             "logical_to_physical": build_logical_to_physical(logical_to_physical_tables[i])
         }
@@ -146,7 +143,7 @@ def main():
         logical_position = physical_to_logical(base_physical_position, control_table)
 
         print(
-            f"Logical Position: {logical_position["positions"]}")
+            f"Logical Position: {logical_position["values"]}")
 
         time.sleep(0.5)
 
