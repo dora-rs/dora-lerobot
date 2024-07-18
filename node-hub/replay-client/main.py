@@ -55,10 +55,10 @@ class Client:
 
         position_with_joints = pa.scalar({
             "joints": joints,
-            "positions": pa.array(action, type=pa.float32()),
+            "values": pa.array(action, type=pa.float32()),
         }, type=pa.struct({
             "joints": pa.list_(pa.string()),
-            "positions": pa.list_(pa.float32()),
+            "values": pa.list_(pa.float32()),
         }))
 
         self.frame += 1
