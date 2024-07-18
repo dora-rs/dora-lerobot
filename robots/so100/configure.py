@@ -124,7 +124,7 @@ def main():
 
         control_table_json[FULL_ARM[i].as_py()] = {
             "id": i + 1,
-            "model": "st3215",
+            "model": "sts3215",
             "torque": True,
             "physical_to_logical": physical_to_logical_tables[i],
             "logical_to_physical": logical_to_physical_tables[i]

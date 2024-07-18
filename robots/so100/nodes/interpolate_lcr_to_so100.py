@@ -12,9 +12,9 @@ import pyarrow.compute as pc
 
 from dora import Node
 
-from .position_control.utils import logical_to_physical, physical_to_logical, compute_goal_with_offset, \
+from position_control.utils import logical_to_physical, physical_to_logical, compute_goal_with_offset, \
     ARROW_LOGICAL_VALUES, ARROW_PWM_VALUES
-from .position_control.configure import build_logical_to_physical, build_physical_to_logical
+from position_control.configure import build_logical_to_physical, build_physical_to_logical
 
 
 def main():
@@ -63,7 +63,7 @@ def main():
     logical_leader_goal = pa.scalar({
         "joints": pa.array(leader_control.keys(), type=pa.string()),
         "values": pa.array([leader_control[joint]["goal_position"] for joint in leader_control.keys()],
-                           type=pa.int32())
+                           type=pa.float32())
     }, type=ARROW_LOGICAL_VALUES)
 
     node = Node(args.name)

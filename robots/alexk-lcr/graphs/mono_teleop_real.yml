@@ -8,7 +8,7 @@ nodes:
     outputs:
       - position
     env:
-      PORT: /dev/tty.usbmodem575E0030111
+      PORT: COM6
       CONFIG: ../configs/leader.left.json
 
   - id: lcr-to-lcr
@@ -32,5 +32,5 @@ nodes:
     outputs:
       - position
     env:
-      PORT: /dev/tty.usbmodem575E0031141
+      PORT: COM5
       CONFIG: ../configs/follower.left.json
