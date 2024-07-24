@@ -126,6 +126,10 @@ def main():
         # remove the rows for which episode_index is in failed_episode_index
         dataset = dataset[~dataset["episode_index"].isin(failed_episode_index)]
 
+    # sort the dataset by episode_index and timestamp_utc
+
+    dataset.sort_values(by=["episode_index", "timestamp_utc"], inplace=True)
+
     # create a raw.parquet file with the dataset
     if not os.path.exists("datasets/" + args.dataset_name):
         os.makedirs("datasets/" + args.dataset_name)
@@ -138,9 +142,6 @@ def main():
     dataset = dataset.ffill().bfill()
 
     dataset.reset_index(inplace=True)
-
-    # save the dataset to a parquet file
-    dataset.to_parquet("datasets/" + args.dataset_name + "/filled.parquet", index=False)
 
     # add a new column "frame" to the dataset that is the result of timestamp_utc // framerate
     dataset["frame"] = dataset["timestamp_utc"] // int(1000 / framerate)
@@ -159,11 +160,13 @@ def main():
 
     # only keep the array of positions for each action abd state
     joints = dataset["action"][0][0]["joints"]
-    dataset["action"] = dataset["action"].apply(lambda x: x[0]["positions"])
-    dataset["observation.state"] = dataset["observation.state"].apply(lambda x: x[0]["positions"])
+    dataset["action"] = dataset["action"].apply(lambda x: x[0]["values"])
+    dataset["observation.state"] = dataset["observation.state"].apply(lambda x: x[0]["values"])
 
     # Add a new column "joints" that is the array of joints with enough rows to match the number of rows in the dataset
     dataset["joints"] = pd.Series([joints for _ in range(len(dataset))])
+
+    dataset.sort_values(by=["episode_index", "timestamp"], inplace=True)
 
     # save the dataset to a parquet file
     dataset.to_parquet("datasets/" + args.dataset_name + "/dataset.parquet", index=False)

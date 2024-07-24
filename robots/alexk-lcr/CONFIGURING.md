@@ -1,6 +1,6 @@
-# Dora pipeline for teleoperated low-cost arm and episode recording for LeRobot
+# Dora pipeline Robots
 
-SO-ARM100 is a low-cost robotic arm that can be teleoperated using a similar arm. This repository contains
+AlexK Low Cost Robot is a low-cost robotic arm that can be teleoperated using a similar arm. This repository contains
 the Dora pipeline to manipulate the arms, the camera, and record/replay episodes with LeRobot.
 
 ## Configuring
@@ -23,7 +23,7 @@ The first thing to do is to configure the Servo BUS:
 - Setting the ID of the servos from the base (1) to the gripper (6) for the Follower and Leader arms.
 
 Those steps can be done using the official wizard provided by the
-manufacturer [Feetech](https://gitee.com/ftservo/fddebug/blob/master/FD1.9.6(200107)-EN-U.7z).
+manufacturer [ROBOTIS](https://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_wizard2/).
 
 After that, you need to configure the homing offsets and drive mode to have the same behavior for every user. We
 recommend using our on-board tool to set all of that automatically:
@@ -33,7 +33,7 @@ recommend using our on-board tool to set all of that automatically:
 - Run the wizard with the following command and follow the instructions:
 
 ```bash
-cd dora-lerobot/
+cd dora-lerobot/robots/alexk-lcr
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
@@ -44,7 +44,7 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
-python ./robots/so100/configure.py --port /dev/ttyUSB0 --follower --left
+python configure.py --port /dev/ttyUSB0 --follower --left # (or right)
 ```
 
 **Note:** change `/dev/ttyUSB0` to the device port you retrieved from the official wizard (like `COM3` on Windows).
@@ -53,18 +53,36 @@ python ./robots/so100/configure.py --port /dev/ttyUSB0 --follower --left
 
 ![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_positions.png)
 
-This configuration has to be exported into environment variables inside the graph file. Here is an example of the
-configuration:
+**Node:** You will be asked the path of the configuration file, you can press enter to use the default one.
+
+- Repeat the same steps for the Leader arm:
+
+```bash
+python configure.py --port /dev/ttyUSB1 --leader --left # (or right)
+```
+
+**Note:** change `/dev/ttyUSB1` to the device port you retrieved from the official wizard (like `COM4` on Windows).
+**Note:** The wizard will disable all torque so you can move the arm freely to the Position 1.
+**Node:** You will be asked the path of the configuration file, you can press enter to use the default one.
+
+After following the guide, you should have the following configuration:
+
+![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_wanted_configuration.png)
+
+This configuration file has to be imported inside the ENV variable of the nodes in the graph file. By default it searches
+for `./robots/alexk-lcr/configs/leader.left.json` and `./robots/alexk-lcr/configs/follower.left.json`. If you want to change the
+path, you can do it by adding the `CONFIG` variable in the ENV of the nodes in the graph file.
 
 ```YAML
 nodes:
-  - id: so100-follower
+  - id: lcr-follower
     env:
       PORT: /dev/ttyUSB0
-      CONFIG: ../configs/follower.left.json
-      
-  - id: lcr-to-so100
+      CONFIG: ../configs/follower.left.json # relative path to `./robots/alexk-lcr/configs/follower.json`
+
+  - id: lcr-to-lcr
     env:
+      LEADER_CONTROL: ../configs/leader.left.json
       FOLLOWER_CONTROL: ../configs/follower.left.json
 ```
 

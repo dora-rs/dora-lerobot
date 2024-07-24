@@ -5,9 +5,7 @@ the Dora pipeline to manipulate the arms, the camera, and record/replay episodes
 
 ## Assembling
 
-**Please read the instructions carefully before buying or printing the parts.**
-
-This section is under construction.
+Follow the instructions in the [SO-ARM100 repository](https://github.com/TheRobotStudio/SO-ARM100)
 
 ## License
 

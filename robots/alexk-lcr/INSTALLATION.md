@@ -1,6 +1,6 @@
-# Dora pipeline for teleoperated low-cost arm and episode recording for LeRobot
+# Dora pipeline Robots
 
-SO-ARM100 is a low-cost robotic arm that can be teleoperated using a similar arm. This repository contains
+AlexK Low Cost Robot is a low-cost robotic arm that can be teleoperated using a similar arm. This repository contains
 the Dora pipeline to manipulate the arms, the camera, and record/replay episodes with LeRobot.
 
 ## Installation
@@ -10,7 +10,7 @@ See [Dora repository](https://github.com/dora-rs/dora).
 
 **Please read the instructions carefully before installing the required software and environment to run the robot.**
 
-You must install Dora before attempting to run the SO-ARM100 pipeline. Here are the steps to install Dora:
+You must install Dora before attempting to run the AlexK Low Cost Robot pipeline. Here are the steps to install Dora:
 
 - Install Rust by following the instructions at [Rustup](https://rustup.rs/). (You may need to install Visual Studio C++
   build tools on Windows.)
@@ -20,10 +20,10 @@ You must install Dora before attempting to run the SO-ARM100 pipeline. Here are 
 cargo install dora-cli
 ```
 
-Now you're ready to run Rust dataflow applications! We decided to only make Python dataflow for SO-ARM100, so
+Now you're ready to run Rust dataflow applications! We decided to only make Python dataflow for AlexK Low Cost Robot, so
 you may need to setup your Python environment:
 
-- Install Python 3.10 or later by following the instructions at [Python](https://www.python.org/downloads/).
+- Install Python 3.12 or later by following the instructions at [Python](https://www.python.org/downloads/).
 - Clone this repository by running the following command:
 
 ```bash
@@ -54,16 +54,12 @@ venv\Scripts\activate.ps1 # On Windows PowerShell
 Finally, install the required Python packages by running the following command:
 
 ```bash
-pip install -r robots/so100
+pip install robots/alexk-lcr
 ```
 
 **Note**: You're totally free to use your own Python environment, a Conda environment, or whatever you prefer, you will
 have to activate
 your custom python environment before running `dora up && dora start [graph].yml`.
-
-**Note**: If you want to install only the packages for 1 dora application (e.g. `record_mono_teleop_real.yml`), you can
-skip the two last steps and install the required packages by running the `dora build` command for the desired
-application. (see **Examples**)
 
 In order to record episodes, you need ffmpeg installed on your system. You can download it from
 the [official website](https://ffmpeg.org/download.html). If you're on Windows, you can download the latest build

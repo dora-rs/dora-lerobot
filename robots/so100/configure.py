@@ -15,30 +15,33 @@ It will also enable all appropriate operating modes for the SO100.
 
 import argparse
 import time
+import json
 
-import numpy as np
+import pyarrow as pa
 
-from dora_lerobot.feetech_bus import FeetechBus, TorqueMode, OperatingMode
-from dora_lerobot.position_control.utils import physical_to_logical, DriveMode
+from bus import FeetechBus, TorqueMode, OperatingMode
+from nodes.position_control.utils import physical_to_logical, logical_to_physical
+from nodes.position_control.configure import build_physical_to_logical_tables, build_logical_to_physical_tables, \
+    build_physical_to_logical, build_logical_to_physical
 
-FULL_ARM = np.array([
+FULL_ARM = pa.array([
     "shoulder_pan",
     "shoulder_lift",
     "elbow_flex",
     "wrist_flex",
     "wrist_roll",
     "gripper"
-])
+], type=pa.string())
 
-ARM_WITHOUT_GRIPPER = np.array([
+ARM_WITHOUT_GRIPPER = pa.array([
     "shoulder_pan",
     "shoulder_lift",
     "elbow_flex",
     "wrist_flex",
     "wrist_roll"
-])
+], type=pa.string())
 
-GRIPPER = "gripper"
+GRIPPER = pa.array(["gripper"], type=pa.string())
 
 
 def pause():
@@ -53,86 +56,37 @@ def configure_servos(bus: FeetechBus):
     Configure the servos for the LCR.
     :param bus: FeetechBus
     """
-    bus.sync_write_torque_enable(TorqueMode.DISABLED, FULL_ARM)
 
-    bus.sync_write_operating_mode(OperatingMode.MULTI_TURN, ARM_WITHOUT_GRIPPER)
-
-
-def rounded_values(values: np.array) -> np.array:
-    """
-    Calculate the nearest rounded values.
-    :param values: numpy array of values
-    :return: numpy array of nearest rounded positions
-    """
-
-    return np.array(
-        [round(values[i] / 1024) * 1024 if values[i] is not None else None for i in range(len(values))])
-
-
-def calculate_offsets(bus: FeetechBus, drive_modes: np.array, wanted: np.array) -> np.array:
-    """
-    Calculate the offset you need to apply to the positions in order to reach the wanted positions.
-    :param bus: FeetechBus
-    :param drive_modes: numpy array of DriveMode
-    :param wanted: numpy array of wanted positions
-    :return: numpy array of offsets
-    """
-
-    # Get the present rounded positions of the servos
-    present_positions = rounded_values(physical_to_logical(
-        bus.sync_read_position(FULL_ARM),
-        np.array([0, 0, 0, 0, 0, 0]),
-        drive_modes
-    ))
-
-    offsets = np.array([None, None, None, None, None, None])
-
-    for i in range(len(present_positions)):
-        if present_positions[i] is not None:
-            offsets[i] = wanted[i] - present_positions[i]
-
-    return offsets
-
-
-def compute_drive_modes(bus: FeetechBus, offsets: np.array, wanted: np.array) -> np.array:
-    """
-    Compute the drive mode of the servos.
-    :param bus: FeetechBus
-    :param offsets: numpy array of offsets
-    :param wanted: numpy array of wanted positions
-    :return: list of booleans to determine the drive mode of the servos
-    """
-
-    # Get the present rounded positions of the servos
-    present_positions = rounded_values(physical_to_logical(
-        bus.sync_read_position(FULL_ARM),
-        offsets,
-        np.array([DriveMode.POSITIVE_CURRENT] * 6)
-    ))
-
-    drive_modes = np.array([None, None, None, None, None, None])
-
-    for i in range(len(present_positions)):
-        if present_positions[i] is not None:
-            if present_positions[i] != wanted[i]:
-                drive_modes[i] = DriveMode.NEGATIVE_CURRENT
-            else:
-                drive_modes[i] = DriveMode.POSITIVE_CURRENT
-
-    return drive_modes
+    bus.write_torque_enable(TorqueMode.DISABLED, FULL_ARM)
+    bus.write_operating_mode(OperatingMode.ONE_TURN, FULL_ARM)
+    bus.write_min_angle_limit(pa.scalar(0, pa.uint32()), FULL_ARM)
+    bus.write_max_angle_limit(pa.scalar(0, pa.uint32()), FULL_ARM)
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="LCR Auto Configure: This program is used to automatically configure the Low Cost Robot (LCR) for "
-                    "the user.")
+        description="SO100 Auto Configure: This program is used to automatically configure the Low Cost Robot (SO100) "
+                    "for the user.")
 
-    parser.add_argument("--port", type=str, required=True, help="The port of the LCR.")
+    parser.add_argument("--port", type=str, required=True, help="The port of the SO100.")
+    parser.add_argument("--right", action="store_true", help="If the SO100 is on the right side of the user.")
+    parser.add_argument("--left", action="store_true", help="If the SO100 is on the left side of the user.")
 
     args = parser.parse_args()
 
-    wanted_position_1 = np.array([0, -1024, 1024, 0, -1024, 0]).astype(np.int32)
-    wanted_position_2 = np.array([1024, 0, 0, 1024, 0, -1024]).astype(np.int32)
+    if args.right and args.left:
+        raise ValueError("You cannot specify both --right and --left.")
+
+    args = parser.parse_args()
+
+    wanted_position_1 = pa.array([0, -90, 90, 0, -90, 0], type=pa.int32())
+    wanted_position_2 = pa.array([90, 0, 0, 90, 0, -90], type=pa.int32())
+
+    wanted = pa.array([
+        (wanted_position_1[i], wanted_position_2[i])
+
+        for i in range(len(wanted_position_1))
+    ])
 
     arm = FeetechBus(
         args.port, {
@@ -147,55 +101,51 @@ def main():
 
     configure_servos(arm)
 
-    # Ask the user to move the LCR to the position 1
-    print("Please move the LCR to the position 1")
+    print("Please move the SO100 to the first position.")
     pause()
+    physical_position_1 = arm.read_position(FULL_ARM)["values"].values
 
-    offsets = calculate_offsets(
-        arm,
-        np.array([DriveMode.POSITIVE_CURRENT] * 6),
-        wanted_position_1
-    )
-
-    # Ask the user to move the LCR to the position 2
-    print("Please move the LCR to the position 2")
+    print("Please move the SO100 to the second position.")
     pause()
+    physical_position_2 = arm.read_position(FULL_ARM)["values"].values
 
-    drive_modes = compute_drive_modes(
-        arm,
-        offsets,
-        wanted_position_2
-    )
+    print("Configuration completed.")
 
-    offsets = calculate_offsets(
-        arm,
-        drive_modes,
-        wanted_position_2
-    )
+    physical_to_logical_tables = build_physical_to_logical_tables(physical_position_1, physical_position_2, wanted)
+    logical_to_physical_tables = build_logical_to_physical_tables(physical_position_1, physical_position_2, wanted)
 
-    print("Configuration done!")
+    control_table = {}
+    control_table_json = {}
+    for i in range(len(FULL_ARM)):
+        control_table[FULL_ARM[i].as_py()] = {
+            "physical_to_logical": build_physical_to_logical(physical_to_logical_tables[i]),
+            "logical_to_physical": build_logical_to_physical(logical_to_physical_tables[i])
+        }
 
-    print("Here is the configuration, you can copy this in your environment variables for client graph:")
+        control_table_json[FULL_ARM[i].as_py()] = {
+            "id": i + 1,
+            "model": "sts3215",
+            "torque": True,
+            "physical_to_logical": physical_to_logical_tables[i],
+            "logical_to_physical": logical_to_physical_tables[i]
+        }
 
-    print("=====================================")
-    print("      OFFSETS: ", " ".join([str(i) for i in offsets]))
-    print("      DRIVE_MODES: ", " ".join(
-        ["NEG" if drive_mode == DriveMode.NEGATIVE_CURRENT else "POS" for drive_mode in drive_modes]))
-    print("=====================================")
+    left = "left" if args.left else "right"
+    path = (input(
+        f"Please enter the path of the configuration file (default is ./robots/so100/configs/follower.{left}.json): ")
+            or f"./robots/so100/configs/follower.{left}.json")
 
-    print("Make sure everything is working properly:")
-    pause()
+    with open(path, "w") as file:
+        json.dump(control_table_json, file)
 
     while True:
-        positions = physical_to_logical(
-            arm.sync_read_position(FULL_ARM),
-            offsets,
-            drive_modes
-        )
+        base_physical_position = arm.read_position(FULL_ARM)
+        logical_position = physical_to_logical(base_physical_position, control_table)
 
-        print("Positions: ", " ".join([str(i) for i in positions]))
+        print(
+            f"Logical Position: {logical_position["values"]}")
 
-        time.sleep(1.0)
+        time.sleep(0.5)
 
 
 if __name__ == "__main__":

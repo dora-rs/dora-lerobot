@@ -4,7 +4,7 @@ This repo will contain all application related to dora-rs powered robots.
 
 ## [Trossen Robotics - Aloha v2](aloha/README.md)
 
-## [Tau Robotics - Low Cost Robot](alexk_lcr/README.md)
+## [Tau Robotics - Low Cost Robot](alexk-lcr/README.md)
 
 ## [TheRobotStudio - SO-ARM100](so100/README.md)
 

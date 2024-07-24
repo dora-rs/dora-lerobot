@@ -24,7 +24,7 @@ def main():
                     "LCR followers knowing a Leader position and Follower position.")
 
     parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="lcr-to-so100")
+                        default="lcr-to-lcr")
     parser.add_argument("--leader-control", type=str, help="The configuration file for controlling the leader.",
                         default=None)
     parser.add_argument("--follower-control", type=str, help="The configuration file for controlling the follower.",
@@ -99,6 +99,7 @@ def main():
                 leader_position = physical_to_logical(leader_position, leader_control)
 
                 interpolation = pa.array([1, 1, 1, 1, 1, 700 / 450], type=pa.float32())
+
                 leader_position = pa.scalar({
                     "joints": leader_position["joints"].values,
                     "values": pa.array(pc.multiply(leader_position["values"].values, interpolation)),
