@@ -1,7 +1,7 @@
 # Dora pipeline Robots
 
-AlexK Low Cost Robot is a low-cost robotic arm that can be teleoperated using a similar arm. This repository contains
-the Dora pipeline to manipulate the arms, the camera, and record/replay episodes with LeRobot.
+Aloha is a bi manual robot that can be teleoperated using a similar arm. This repository contains
+the Dora pipeline to manipulate arms, cameras, and record/replay episodes with LeRobot.
 
 ## Configuring
 
@@ -20,7 +20,7 @@ correctly for the robot to work as expected. Here are the reasons why you need t
 The first thing to do is to configure the Servo BUS:
 
 - Setting all the servos to the same baud rate (1M).
-- Setting the ID of the servos from the base (1) to the gripper (6) for the Follower and Leader arms.
+- Setting the ID of the servos from the base (1) to the gripper (9) for the Follower and Leader arms.
 
 Those steps can be done using the official wizard provided by the
 manufacturer [ROBOTIS](https://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_wizard2/).
@@ -44,21 +44,21 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
-python ./robots/alexk-lcr/configure.py --port /dev/ttyUSB0 --follower --left # (or right)
+python ./robots/aloha/configure.py --port /dev/ttyUSB0 --follower --left # (or right)
 ```
 
 **Note:** change `/dev/ttyUSB0` to the device port you retrieved from the official wizard (like `COM3` on Windows).
 **Note:** The wizard will disable all torque so you can move the arm freely to the Position 1.
 **Note:** You will be asked to set the arm in two different positions. The two positions are:
 
-![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_positions.png)
+TODO: image for aloha
 
 **Node:** You will be asked the path of the configuration file, you can press enter to use the default one.
 
 - Repeat the same steps for the Leader arm:
 
 ```bash
-python ./robots/alexk-lcr/configure.py --port /dev/ttyUSB1 --leader --left # (or right)
+python ./robots/aloha/configure.py --port /dev/ttyUSB1 --leader --left # (or right)
 ```
 
 **Note:** change `/dev/ttyUSB1` to the device port you retrieved from the official wizard (like `COM4` on Windows).
@@ -67,23 +67,28 @@ python ./robots/alexk-lcr/configure.py --port /dev/ttyUSB1 --leader --left # (or
 
 After following the guide, you should have the following configuration:
 
-![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_wanted_configuration.png)
+TODO: image for aloha
 
 This configuration has to be exported into environment variables inside the graph file. Here is an example of the
 configuration:
 
 ```YAML
 nodes:
-  - id: lcr-follower
+  - id: aloha-follower
     env:
       PORT: /dev/ttyUSB0
-      CONFIG: ../configs/follower.left.json # relative path to `./robots/alexk-lcr/configs/follower.json`
+      CONFIG: ../configs/follower.left.json # relative path to `./robots/aloha/configs/follower.json`
 
-  - id: lcr-to-lcr
+  - id: aloha-to-aloha
     env:
       LEADER_CONTROL: ../configs/leader.left.json
       FOLLOWER_CONTROL: ../configs/follower.left.json
 ```
+
+## Acknowledgement
+
+This work is inspired from [tonyzhaozh/aloha](https://github.com/tonyzhaozh/aloha) and we're trying to bring perfornance
+improvement.
 
 ## License
 

@@ -2,13 +2,15 @@
 
 This repo will contain all application related to dora-rs powered robots.
 
-## [Trossen Robotics - Aloha v2](aloha/README.md)
-
 ## [Tau Robotics - Low Cost Robot](alexk-lcr/README.md)
 
-## [TheRobotStudio - SO-ARM100](so100/README.md)
+## [Trossen Robotics - Aloha v2](aloha/README.md)
 
-## [Pollen Robotics - Reachy2](reachy/README.md)
+## [Pollen Robotics - Reachy1](reachy1/README.md)
+
+## [Pollen Robotics - Reachy2](reachy2/README.md)
+
+## [TheRobotStudio - SO-ARM100](so100/README.md)
 
 ## Add your own robot!
 
@@ -48,11 +50,11 @@ Your robot examples here.
 3. Create a `ASSEMBLING.md`, `INSTALLATION.md`, `CONFIGURING.md`, `RECORDING.md`, and `EXAMPLES.md` files with the
    instructions for assembling, installing, configuring, recording, and examples for your robot.
 4. Add a `graphs` folder with the graph files for your robot.
-5. Add a `requirements.txt` file with the required Python packages for your robot (link requirements of all nodes that you use from node_hub).
+5. Add a `requirements.txt` file with the required Python packages for your robot (link requirements of all nodes that you use from node-hub).
 6. Add a `nodes` folder with the specific nodes for your robot.
 7. Add a `configure.py` file to configure your robot.
 
-**Note:** You can use the `alexk_lcr` robot as a reference.
+**Note:** You can use the `alexk-lcr` robot as a reference.
 
 ## License
 

@@ -36,10 +36,12 @@ git clone https://github.com/dora-rs/dora-lerobot
 cd dora-lerobot
 ```
 
-- Create a virtual environment by running the following command:
+- Create a virtual environment by running the following command (you can find where is all your pythons executable with
+  the command `whereis python3` on Linux, on default for Windows it's located
+  in `C:\Users\<User>\AppData\Local\Programs\Python\Python3.12\python.exe)`):
 
 ```bash
-python -m venv venv
+path_to_your_python3_executable -m venv venv
 ```
 
 - Activate the virtual environment by running the following command:
@@ -54,7 +56,14 @@ venv\Scripts\activate.ps1 # On Windows PowerShell
 Finally, install the required Python packages by running the following command:
 
 ```bash
-pip install robots/alexk-lcr
+pip install -r robots/alexk-lcr/requirements.txt # You **MUST** be inside dora-lerobot to run this command, not robots/alexk-lcr
+```
+
+If you want to install the required Python packages in development mode, you can run the following command, but you will
+have to avoid using `dora build` during execution procedure:
+
+```bash
+pip install -r robots/alexk-lcr/development.txt # You **MUST** be inside dora-lerobot to run this command, not robots/alexk-lcr
 ```
 
 **Note**: You're totally free to use your own Python environment, a Conda environment, or whatever you prefer, you will

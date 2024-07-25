@@ -53,6 +53,8 @@ python ./robots/so100/configure.py --port /dev/ttyUSB0 --follower --left
 
 ![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_positions.png)
 
+**Node:** You will be asked the path of the configuration file, you can press enter to use the default one.
+
 This configuration has to be exported into environment variables inside the graph file. Here is an example of the
 configuration:
 
