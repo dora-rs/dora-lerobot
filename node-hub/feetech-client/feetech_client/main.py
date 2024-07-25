@@ -11,7 +11,7 @@ import pyarrow as pa
 
 from dora import Node
 
-from .bus import FeetechBus, TorqueMode
+from .bus import FeetechBus, TorqueMode, wrap_joints_and_values
 
 
 class Client:
@@ -23,12 +23,13 @@ class Client:
         for i in range(len(config["ids"])):
             description[config["joints"][i]] = (config["ids"][i], config["models"][i])
 
+        self.config["joints"] = pa.array(config["joints"], pa.string())
         self.bus = FeetechBus(config["port"], description)
 
         # Set client configuration values and raise errors if the values are not set to indicate that the motors are not
         # configured correctly
 
-        self.bus.write_torque_enable(config["torque"], self.config["joints"])
+        self.bus.write_torque_enable(self.config["torque"])
 
         self.node = Node(config["name"])
 
@@ -54,14 +55,19 @@ class Client:
                 raise ValueError("An error occurred in the dataflow: " + event["error"])
 
     def close(self):
-        self.bus.write_torque_enable(TorqueMode.DISABLED, self.config["joints"])
+        self.bus.write_torque_enable(
+            wrap_joints_and_values(
+                self.config["joints"],
+                [TorqueMode.DISABLED.value] * len(self.config["joints"]),
+            )
+        )
 
     def pull_position(self, node, metadata):
         try:
             node.send_output(
                 "position",
-                pa.array([self.bus.read_position(self.config["joints"])]),
-                metadata
+                self.bus.read_position(self.config["joints"]),
+                metadata,
             )
 
         except ConnectionError as e:
@@ -71,8 +77,8 @@ class Client:
         try:
             node.send_output(
                 "velocity",
-                pa.array([self.bus.read_velocity(self.config["joints"])]),
-                metadata
+                self.bus.read_velocity(self.config["joints"]),
+                metadata,
             )
         except ConnectionError as e:
             print("Error reading velocity:", e)
@@ -81,18 +87,15 @@ class Client:
         try:
             node.send_output(
                 "current",
-                pa.array([self.bus.read_current(self.config["joints"])]),
-                metadata
+                self.bus.read_current(self.config["joints"]),
+                metadata,
             )
         except ConnectionError as e:
             print("Error reading current:", e)
 
-    def write_goal_position(self, goal_position: pa.Array):
+    def write_goal_position(self, goal_position: pa.StructArray):
         try:
-            joints = goal_position[0]["joints"].values
-            goal_position = goal_position[0]["values"].values
-
-            self.bus.write_goal_position(goal_position, joints)
+            self.bus.write_goal_position(goal_position)
         except ConnectionError as e:
             print("Error writing goal position:", e)
 
@@ -101,13 +104,30 @@ def main():
     # Handle dynamic nodes, ask for the name of the node in the dataflow
     parser = argparse.ArgumentParser(
         description="Feetech Client: This node is used to represent a chain of feetech motors. "
-                    "It can be used to read "
-                    "positions, velocities, currents, and set goal positions and currents.")
+        "It can be used to read "
+        "positions, velocities, currents, and set goal positions and currents."
+    )
 
-    parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="feetech_client")
-    parser.add_argument("--port", type=str, required=False, help="The port of the feetech motors.", default=None)
-    parser.add_argument("--config", type=str, help="The configuration of the feetech motors.", default=None)
+    parser.add_argument(
+        "--name",
+        type=str,
+        required=False,
+        help="The name of the node in the dataflow.",
+        default="feetech_client",
+    )
+    parser.add_argument(
+        "--port",
+        type=str,
+        required=False,
+        help="The port of the feetech motors.",
+        default=None,
+    )
+    parser.add_argument(
+        "--config",
+        type=str,
+        help="The configuration of the feetech motors.",
+        default=None,
+    )
 
     args = parser.parse_args()
 
@@ -115,7 +135,8 @@ def main():
     if not os.environ.get("PORT") and args.port is None:
         raise ValueError(
             "The port is not set. Please set the port of the feetech motors in the environment variables or as an "
-            "argument.")
+            "argument."
+        )
 
     port = os.environ.get("PORT") if args.port is None else args.port
 
@@ -123,7 +144,8 @@ def main():
     if not os.environ.get("CONFIG") and args.config is None:
         raise ValueError(
             "The configuration is not set. Please set the configuration of the feetech motors in the environment "
-            "variables or as an argument.")
+            "variables or as an argument."
+        )
 
     with open(os.environ.get("CONFIG") if args.config is None else args.config) as file:
         config = json.load(file)
@@ -135,10 +157,22 @@ def main():
         "name": args.name,
         "port": port,  # (e.g. "/dev/ttyUSB0", "COM3")
         "ids": [config[joint]["id"] for joint in joints],
-        "joints": pa.array(joints, pa.string()),
+        "joints": list(config.keys()),
         "models": [config[joint]["model"] for joint in joints],
-
-        "torque": [TorqueMode.ENABLED if config[joint]["torque"] else TorqueMode.DISABLED for joint in joints],
+        "torque": wrap_joints_and_values(
+            pa.array(config.keys(), pa.string()),
+            pa.array(
+                [
+                    (
+                        TorqueMode.ENABLED.value
+                        if config[joint]["torque"]
+                        else TorqueMode.DISABLED.value
+                    )
+                    for joint in joints
+                ],
+                type=pa.uint32(),
+            ),
+        ),
     }
 
     print("Feetech Client Configuration: ", bus, flush=True)
@@ -148,5 +182,5 @@ def main():
     client.close()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

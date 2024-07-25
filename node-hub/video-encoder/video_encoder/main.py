@@ -17,8 +17,13 @@ def main():
         description="Video Encoder: This node is used to record episodes of a robot interacting with the environment."
     )
 
-    parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="video_encoder")
+    parser.add_argument(
+        "--name",
+        type=str,
+        required=False,
+        help="The name of the node in the dataflow.",
+        default="video_encoder",
+    )
 
     if not os.getenv("VIDEO_NAME") or not os.getenv("FPS"):
         raise ValueError("Please set the VIDEO_NAME and FPS environment variables.")
@@ -66,7 +71,14 @@ def main():
 
                     node.send_output(
                         "image",
-                        pa.array([{"path": f"videos/{name}", "timestamp": float(frame_count) / fps}]),
+                        pa.array(
+                            [
+                                {
+                                    "path": f"videos/{name}",
+                                    "timestamp": float(frame_count) / fps,
+                                }
+                            ]
+                        ),
                         event["metadata"],
                     )
 
@@ -75,11 +87,12 @@ def main():
                         "width": arrow_image["width"].as_py(),
                         "height": arrow_image["height"].as_py(),
                         "channels": arrow_image["channels"].as_py(),
-                        "data": arrow_image["data"].values.to_numpy().astype(np.uint8)
+                        "data": arrow_image["data"].values.to_numpy().astype(np.uint8),
                     }
 
                     data = image["data"].reshape(
-                        (image["height"], image["width"], image["channels"]))
+                        (image["height"], image["width"], image["channels"])
+                    )
 
                     path = str(out_dir / f"frame_{frame_count:06d}.png")
                     cv2.imwrite(path, data)
@@ -102,8 +115,10 @@ def main():
                     ffmpeg = (
                         FFmpeg()
                         .option("y")
-                        .input(str(out_dir / "frame_%06d.png"), f='image2', r=fps)
-                        .output(str(video_path), vcodec='libx264', g=2, pix_fmt='yuv444p')
+                        .input(str(out_dir / "frame_%06d.png"), f="image2", r=fps)
+                        .output(
+                            str(video_path), vcodec="libx264", g=2, pix_fmt="yuv444p"
+                        )
                     )
 
                     ffmpeg.execute()

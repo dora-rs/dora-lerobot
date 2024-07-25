@@ -12,6 +12,7 @@ nodes:
       CONFIG: ../configs/leader.left.json
 
   - id: lcr-to-lcr-left
+    build: pip install git+https://github.com/Hennzau/pwm-position-control
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
       leader_position: lcr-left-leader/position
@@ -48,6 +49,7 @@ nodes:
       CONFIG: ../configs/leader.right.json
 
   - id: lcr-to-lcr-right
+    build: pip install git+https://github.com/Hennzau/pwm-position-control
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
       leader_position: lcr-right-leader/position

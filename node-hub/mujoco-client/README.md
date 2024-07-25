@@ -21,6 +21,11 @@ nodes:
       SCENE: scene.xml # the scene file to be used in the simulation modify this to the relative path from the graph file to the scene file
       CONFIG: config.json # the configuration file for the simulated arm (only retrieve joints names)
 ````
+
+## Inputs
+
+## Outputs
+
 ## License
 
 This library is licensed under the [Apache License 2.0](../../LICENSE).

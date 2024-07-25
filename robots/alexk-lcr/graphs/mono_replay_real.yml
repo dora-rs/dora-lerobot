@@ -12,6 +12,7 @@ nodes:
       EPISODE: 1
 
   - id: replay-to-lcr
+    build: pip install git+https://github.com/Hennzau/pwm-position-control
     path: ../nodes/interpolate_replay_to_lcr.py
     inputs:
       leader_position:

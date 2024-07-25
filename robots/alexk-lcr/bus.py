@@ -4,30 +4,86 @@ import pyarrow as pa
 
 from typing import Union
 
-from dynamixel_sdk import PacketHandler, PortHandler, COMM_SUCCESS, GroupSyncRead, GroupSyncWrite
+from dynamixel_sdk import (
+    PacketHandler,
+    PortHandler,
+    COMM_SUCCESS,
+    GroupSyncRead,
+    GroupSyncWrite,
+)
 from dynamixel_sdk import DXL_HIBYTE, DXL_HIWORD, DXL_LOBYTE, DXL_LOWORD
 
 PROTOCOL_VERSION = 2.0
 BAUD_RATE = 1_000_000
 TIMEOUT_MS = 1000
 
-ARROW_PWM_VALUES = pa.struct({
-    pa.field("joints", pa.list_(pa.string())),
-    pa.field("values", pa.list_(pa.int32()))
-})
+
+def wrap_joints_and_values(
+    joints: Union[list[str], pa.Array],
+    values: Union[int, list[int], pa.Array],
+) -> pa.StructArray:
+    """
+    Wraps joints and their corresponding values into a structured array.
+
+    :param joints: A list, numpy array, or pyarrow array of joint names.
+    :type joints: Union[list[str], np.array, pa.Array]
+    :param values: A single integer value, or a list, numpy array, or pyarrow array of integer values.
+                   If a single integer is provided, it will be broadcasted to all joints.
+    :type values: Union[int, list[int], np.array, pa.Array]
+
+    :return: A structured array with two fields:
+             - "joints": A string field containing the names of the joints.
+             - "values": An Int32Array containing the values corresponding to the joints.
+    :rtype: pa.StructArray
+
+    :raises ValueError: If lengths of joints and values do not match.
+
+    Example:
+    --------
+    joints = ["shoulder_pan", "shoulder_lift", "elbow_flex"]
+    values = [100, 200, 300]
+    struct_array = wrap_joints_and_values(joints, values)
+
+    This example wraps the given joints and their corresponding values into a structured array.
+
+    Another example with a single integer value:
+    joints = ["shoulder_pan", "shoulder_lift", "elbow_flex"]
+    value = 150
+    struct_array = wrap_joints_and_values(joints, value)
+
+    This example broadcasts the single integer value to all joints and wraps them into a structured array.
+    """
+
+    if isinstance(values, int):
+        values = [values] * len(joints)
+
+    if len(joints) != len(values):
+        raise ValueError("joints and values must have the same length")
+
+    mask = pa.array([False] * len(values), type=pa.bool_())
+
+    if isinstance(values, list):
+        mask = pa.array([value is None for value in values])
+
+    if isinstance(values, pa.Array):
+        mask = values.is_null()
+
+    return pa.StructArray.from_arrays(
+        arrays=[joints, values], names=["joints", "values"], mask=mask
+    ).drop_null()
 
 
 class TorqueMode(enum.Enum):
-    ENABLED = 1
-    DISABLED = 0
+    ENABLED = pa.scalar(1, pa.uint32())
+    DISABLED = pa.scalar(0, pa.uint32())
 
 
 class OperatingMode(enum.Enum):
-    VELOCITY = 1
-    POSITION = 3
-    EXTENDED_POSITION = 4
-    CURRENT_CONTROLLED_POSITION = 5
-    PWM = 16
+    VELOCITY = pa.scalar(1, pa.uint32())
+    POSITION = pa.scalar(3, pa.uint32())
+    EXTENDED_POSITION = pa.scalar(4, pa.uint32())
+    CURRENT_CONTROLLED_POSITION = pa.scalar(5, pa.uint32())
+    PWM = pa.scalar(16, pa.uint32())
 
 
 X_SERIES_CONTROL_TABLE = [
@@ -82,12 +138,11 @@ X_SERIES_CONTROL_TABLE = [
     ("Velocity_Trajectory", 136, 4),
     ("Position_Trajectory", 140, 4),
     ("Present_Input_Voltage", 144, 2),
-    ("Present_Temperature", 146, 1)
+    ("Present_Temperature", 146, 1),
 ]
 
 MODEL_CONTROL_TABLE = {
     "x_series": X_SERIES_CONTROL_TABLE,
-
     "xl330-m077": X_SERIES_CONTROL_TABLE,
     "xl330-m288": X_SERIES_CONTROL_TABLE,
     "xl430-w250": X_SERIES_CONTROL_TABLE,
@@ -107,13 +162,13 @@ class DynamixelBus:
             if motor_model not in MODEL_CONTROL_TABLE:
                 raise ValueError(f"Model {motor_model} is not supported.")
 
-            self.motor_ctrl[pa.scalar(motor_name, pa.string())] = {}
+            self.motor_ctrl[motor_name] = {}
 
-            self.motor_ctrl[pa.scalar(motor_name, pa.string())]["id"] = motor_id
+            self.motor_ctrl[motor_name]["id"] = motor_id
             for data_name, address, bytes_size in MODEL_CONTROL_TABLE[motor_model]:
-                self.motor_ctrl[pa.scalar(motor_name, pa.string())][data_name] = {
+                self.motor_ctrl[motor_name][data_name] = {
                     "addr": address,
-                    "bytes_size": bytes_size
+                    "bytes_size": bytes_size,
                 }
 
         self.port_handler = PortHandler(self.port)
@@ -131,22 +186,17 @@ class DynamixelBus:
     def close(self):
         self.port_handler.closePort()
 
-    def write(self, data_name: str, values: Union[pa.Scalar, pa.Array],
-              motor_names: pa.Array):
-        motor_ids = [self.motor_ctrl[motor_name]["id"] for motor_name in
-                     motor_names]
+    def write(self, data_name: str, data: pa.StructArray):
+        motor_ids = [
+            self.motor_ctrl[motor_name.as_py()]["id"]
+            for motor_name in data.field("joints")
+        ]
 
-        if isinstance(values, pa.Scalar):
-            values = pa.array([values] * len(motor_ids), type=values.type)
-
-        values = values.from_buffers(
+        values = pa.Array.from_buffers(
             pa.uint32(),
-            len(values),
-            values.buffers()
+            length=len(data.field("values")),
+            buffers=data.field("values").buffers(),
         )
-
-        motor_ids, values = ([motor_ids[i] for i in range(len(motor_ids)) if values[i].as_py() is not None],
-                             values.drop_null())
 
         group_key = f"{data_name}_" + "_".join([str(idx) for idx in motor_ids])
 
@@ -158,11 +208,17 @@ class DynamixelBus:
         init_group = data_name not in self.group_readers
 
         if init_group:
-            self.group_writers[group_key] = GroupSyncWrite(self.port_handler, self.packet_handler, packet_address,
-                                                           packet_bytes_size)
+            self.group_writers[group_key] = GroupSyncWrite(
+                self.port_handler,
+                self.packet_handler,
+                packet_address,
+                packet_bytes_size,
+            )
 
         for idx, value in zip(motor_ids, values):
             value = value.as_py()
+            if value is None:
+                continue
 
             if packet_bytes_size == 1:
                 data = [
@@ -183,7 +239,8 @@ class DynamixelBus:
             else:
                 raise NotImplementedError(
                     f"Value of the number of bytes to be sent is expected to be in [1, 2, 4], but {packet_bytes_size} "
-                    f"is provided instead.")
+                    f"is provided instead."
+                )
 
             if init_group:
                 self.group_writers[group_key].addParam(idx, data)
@@ -197,9 +254,10 @@ class DynamixelBus:
                 f"{self.packet_handler.getTxRxResult(comm)}"
             )
 
-    def read(self, data_name: str, motor_names: pa.Array) -> pa.Scalar:
-        motor_ids = [self.motor_ctrl[motor_name]["id"] for motor_name in
-                     motor_names]
+    def read(self, data_name: str, motor_names: pa.Array) -> pa.StructArray:
+        motor_ids = [
+            self.motor_ctrl[motor_name.as_py()]["id"] for motor_name in motor_names
+        ]
 
         group_key = f"{data_name}_" + "_".join([str(idx) for idx in motor_ids])
 
@@ -209,10 +267,12 @@ class DynamixelBus:
         packet_bytes_size = self.motor_ctrl[first_motor_name][data_name]["bytes_size"]
 
         if data_name not in self.group_readers:
-            self.group_readers[group_key] = GroupSyncRead(self.port_handler,
-                                                          self.packet_handler,
-                                                          packet_address,
-                                                          packet_bytes_size)
+            self.group_readers[group_key] = GroupSyncRead(
+                self.port_handler,
+                self.packet_handler,
+                packet_address,
+                packet_bytes_size,
+            )
 
             for idx in motor_ids:
                 self.group_readers[group_key].addParam(idx)
@@ -224,64 +284,45 @@ class DynamixelBus:
                 f"{self.packet_handler.getTxRxResult(comm)}"
             )
 
-        values = []
-        for idx in motor_ids:
-            value = pa.scalar(self.group_readers[group_key].getData(idx, packet_address, packet_bytes_size),
-                              type=pa.uint32())
-            values.append(value)
-
-        values = pa.array(values, type=pa.uint32())
-        values = values.from_buffers(
-            pa.int32(),
-            len(values),
-            values.buffers()
+        values = pa.array(
+            [
+                self.group_readers[group_key].getData(
+                    idx, packet_address, packet_bytes_size
+                )
+                for idx in motor_ids
+            ],
+            type=pa.uint32(),
         )
+        values = values.from_buffers(pa.int32(), len(values), values.buffers())
 
-        return pa.scalar({
-            "joints": motor_names,
-            "values": values
-        }, type=ARROW_PWM_VALUES)
+        return wrap_joints_and_values(motor_names, values)
 
-    def write_torque_enable(self, torque_mode: Union[TorqueMode, list[TorqueMode]],
-                            motor_names: pa.Array):
-        self.write("Torque_Enable",
-                   pa.scalar(torque_mode.value, pa.int32()) if isinstance(torque_mode, TorqueMode) else pa.array(
-                       [mode.value for mode in torque_mode], pa.int32()),
-                   motor_names)
+    def write_torque_enable(self, torque_mode: pa.StructArray):
+        self.write("Torque_Enable", torque_mode)
 
-    def write_operating_mode(self, operating_mode: Union[OperatingMode, list[OperatingMode]],
-                             motor_names: pa.Array):
-        self.write("Operating_Mode",
-                   pa.scalar(operating_mode.value, pa.int32()) if isinstance(operating_mode,
-                                                                             OperatingMode) else pa.array(
-                       [mode.value for mode in operating_mode], pa.int32()),
-                   motor_names)
+    def write_operating_mode(self, operating_mode: pa.StructArray):
+        self.write("Operating_Mode", operating_mode)
 
-    def read_position(self, motor_names: pa.Array) -> pa.Scalar:
+    def read_position(self, motor_names: pa.Array) -> pa.StructArray:
         return self.read("Present_Position", motor_names)
 
-    def read_velocity(self, motor_names: pa.Array) -> pa.Scalar:
+    def read_velocity(self, motor_names: pa.Array) -> pa.StructArray:
         return self.read("Present_Velocity", motor_names)
 
-    def read_current(self, motor_names: pa.Array) -> pa.Scalar:
+    def read_current(self, motor_names: pa.Array) -> pa.StructArray:
         return self.read("Present_Current", motor_names)
 
-    def write_goal_position(self, goal_position: Union[pa.Scalar, pa.Scalar],
-                            motor_names: pa.Array):
-        self.write("Goal_Position", goal_position, motor_names)
+    def write_goal_position(self, goal_position: pa.StructArray):
+        self.write("Goal_Position", goal_position)
 
-    def write_goal_current(self, goal_current: Union[pa.Scalar, pa.Scalar],
-                           motor_names: pa.Array):
-        self.write("Goal_Current", goal_current, motor_names)
+    def write_goal_current(self, goal_current: pa.StructArray):
+        self.write("Goal_Current", goal_current)
 
-    def write_position_p_gain(self, position_p_gain: Union[pa.Scalar, pa.Scalar],
-                              motor_names: pa.Array):
-        self.write("Position_P_Gain", position_p_gain, motor_names)
+    def write_position_p_gain(self, position_p_gain: pa.StructArray):
+        self.write("Position_P_Gain", position_p_gain)
 
-    def write_position_i_gain(self, position_i_gain: Union[pa.Scalar, pa.Scalar],
-                              motor_names: pa.Array):
-        self.write("Position_I_Gain", position_i_gain, motor_names)
+    def write_position_i_gain(self, position_i_gain: pa.StructArray):
+        self.write("Position_I_Gain", position_i_gain)
 
-    def write_position_d_gain(self, position_d_gain: Union[pa.Scalar, pa.Scalar],
-                              motor_names: pa.Array):
-        self.write("Position_D_Gain", position_d_gain, motor_names)
+    def write_position_d_gain(self, position_d_gain: pa.StructArray):
+        self.write("Position_D_Gain", position_d_gain)

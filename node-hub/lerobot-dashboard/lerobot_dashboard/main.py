@@ -16,12 +16,30 @@ from dora import Node
 def main():
     # Handle dynamic nodes, ask for the name of the node in the dataflow
     parser = argparse.ArgumentParser(
-        description="LeRobot Record: This node is used to record episodes of a robot interacting with the environment.")
+        description="LeRobot Record: This node is used to record episodes of a robot interacting with the environment."
+    )
 
-    parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="lerobot_record")
-    parser.add_argument("--window-width", type=int, required=False, help="The width of the window.", default=640)
-    parser.add_argument("--window-height", type=int, required=False, help="The height of the window.", default=480)
+    parser.add_argument(
+        "--name",
+        type=str,
+        required=False,
+        help="The name of the node in the dataflow.",
+        default="lerobot_record",
+    )
+    parser.add_argument(
+        "--window-width",
+        type=int,
+        required=False,
+        help="The width of the window.",
+        default=640,
+    )
+    parser.add_argument(
+        "--window-height",
+        type=int,
+        required=False,
+        help="The height of the window.",
+        default=480,
+    )
 
     args = parser.parse_args()
 
@@ -61,11 +79,12 @@ def main():
                     "width": arrow_image["width"].as_py(),
                     "height": arrow_image["height"].as_py(),
                     "channels": arrow_image["channels"].as_py(),
-                    "data": arrow_image["data"].values.to_numpy()
+                    "data": arrow_image["data"].values.to_numpy(),
                 }
 
-                image_left = pygame.image.frombuffer(image["data"], (image["width"], image["height"]),
-                                                     "BGR")
+                image_left = pygame.image.frombuffer(
+                    image["data"], (image["width"], image["height"]), "BGR"
+                )
 
             elif event_id == "image_right":
                 arrow_image = event["value"][0]
@@ -73,18 +92,15 @@ def main():
                     "width": arrow_image["width"].as_py(),
                     "height": arrow_image["height"].as_py(),
                     "channels": arrow_image["channels"].as_py(),
-                    "data": arrow_image["data"].values.to_numpy()
+                    "data": arrow_image["data"].values.to_numpy(),
                 }
 
-                image_right = pygame.image.frombuffer(image["data"], (image["width"], image["height"]),
-                                                      "BGR")
+                image_right = pygame.image.frombuffer(
+                    image["data"], (image["width"], image["height"]), "BGR"
+                )
 
             elif event_id == "tick":
-                node.send_output(
-                    "tick",
-                    pa.array([]),
-                    event["metadata"]
-                )
+                node.send_output("tick", pa.array([]), event["metadata"])
 
                 running = True
                 for pygame_event in pygame.event.get():
@@ -97,7 +113,11 @@ def main():
                         if key == "space":
                             recording = not recording
                             if recording:
-                                text = font.render(f"Recording episode {episode_index}", True, (255, 255, 255))
+                                text = font.render(
+                                    f"Recording episode {episode_index}",
+                                    True,
+                                    (255, 255, 255),
+                                )
 
                                 node.send_output(
                                     "episode",
@@ -105,7 +125,11 @@ def main():
                                     event["metadata"],
                                 )
                             else:
-                                text = font.render(f"Stopped recording episode {episode_index}", True, (255, 255, 255))
+                                text = font.render(
+                                    f"Stopped recording episode {episode_index}",
+                                    True,
+                                    (255, 255, 255),
+                                )
 
                                 node.send_output(
                                     "episode",
@@ -118,7 +142,11 @@ def main():
                         elif key == "return":
                             if recording:
                                 recording = not recording
-                                text = font.render(f"Failed episode {episode_index}", True, (255, 255, 255))
+                                text = font.render(
+                                    f"Failed episode {episode_index}",
+                                    True,
+                                    (255, 255, 255),
+                                )
 
                                 node.send_output(
                                     "failed",
@@ -133,7 +161,11 @@ def main():
                                 )
 
                             elif episode_index >= 2:
-                                text = font.render(f"Failed episode {episode_index - 1}", True, (255, 255, 255))
+                                text = font.render(
+                                    f"Failed episode {episode_index - 1}",
+                                    True,
+                                    (255, 255, 255),
+                                )
 
                                 node.send_output(
                                     "failed",
@@ -153,18 +185,17 @@ def main():
                 screen.blit(image_right, (window_width // 2, 0))
 
                 # Draw the text bottom center
-                screen.blit(text,
-                            (window_width // 2 - text.get_width() // 2, int(window_height)))
+                screen.blit(
+                    text,
+                    (window_width // 2 - text.get_width() // 2, int(window_height)),
+                )
 
                 pygame.display.flip()
 
         elif event_type == "ERROR":
             raise ValueError("An error occurred in the dataflow: " + event["error"])
 
-    node.send_output(
-        "end",
-        pa.array([])
-    )
+    node.send_output("end", pa.array([]))
 
     pygame.quit()
 
