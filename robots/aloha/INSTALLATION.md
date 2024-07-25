@@ -44,19 +44,19 @@ cd dora-lerobot
 path_to_your_python3_executable -m venv venv
 ```
 
-- Activate the virtual environment by running the following command:
+- Activate the virtual environment and install the required Python packages by running the following command:
 
 ```bash
+# If you are using a custom environment, you will have to activate it before running the command
+source [your_custom_env_bin]/activate
+
+# If you followed the installation instructions, you can run the following command
 source venv/bin/activate # On Linux
 source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
-```
 
-Finally, install the required Python packages by running the following command:
-
-```bash
-pip install -r robots/aloha/requirements.txt # You **MUST** be inside dora-lerobot to run this command, not robots/aloha
+pip install -r robots/so100/requirements.txt
 ```
 
 If you want to install the required Python packages in development mode, you can run the following command, but you will

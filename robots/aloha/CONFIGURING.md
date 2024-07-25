@@ -30,7 +30,7 @@ recommend using our on-board tool to set all of that automatically:
 
 - Connect the Follower arm to your computer.
 - Retrieve the device port from the official wizard.
-- Run the wizard with the following command and follow the instructions:
+- Run the configuration tool with the following command and follow the instructions:
 
 ```bash
 cd dora-lerobot/
@@ -48,7 +48,7 @@ python ./robots/aloha/configure.py --port /dev/ttyUSB0 --follower --left # (or r
 ```
 
 **Note:** change `/dev/ttyUSB0` to the device port you retrieved from the official wizard (like `COM3` on Windows).
-**Note:** The wizard will disable all torque so you can move the arm freely to the Position 1.
+**Note:** The configuration tool will disable all torque so you can move the arm freely to the Position 1.
 **Note:** You will be asked to set the arm in two different positions. The two positions are:
 
 TODO: image for aloha
@@ -62,7 +62,7 @@ python ./robots/aloha/configure.py --port /dev/ttyUSB1 --leader --left # (or rig
 ```
 
 **Note:** change `/dev/ttyUSB1` to the device port you retrieved from the official wizard (like `COM4` on Windows).
-**Note:** The wizard will disable all torque so you can move the arm freely to the Position 1.
+**Note:** The configuration tool will disable all torque so you can move the arm freely to the Position 1.
 **Node:** You will be asked the path of the configuration file, you can press enter to use the default one.
 
 After following the guide, you should have the following configuration:

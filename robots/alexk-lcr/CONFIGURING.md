@@ -30,7 +30,7 @@ recommend using our on-board tool to set all of that automatically:
 
 - Connect the Follower arm to your computer.
 - Retrieve the device port from the official wizard.
-- Run the wizard with the following command and follow the instructions:
+- Run the configuration tool with the following command and follow the instructions:
 
 ```bash
 cd dora-lerobot/
@@ -48,7 +48,7 @@ python ./robots/alexk-lcr/configure.py --port /dev/ttyUSB0 --follower --left # (
 ```
 
 **Note:** change `/dev/ttyUSB0` to the device port you retrieved from the official wizard (like `COM3` on Windows).
-**Note:** The wizard will disable all torque so you can move the arm freely to the Position 1.
+**Note:** The configuration tool will disable all torque so you can move the arm freely to the Position 1.
 **Note:** You will be asked to set the arm in two different positions. The two positions are:
 
 ![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_positions.png)
@@ -62,7 +62,7 @@ python ./robots/alexk-lcr/configure.py --port /dev/ttyUSB1 --leader --left # (or
 ```
 
 **Note:** change `/dev/ttyUSB1` to the device port you retrieved from the official wizard (like `COM4` on Windows).
-**Note:** The wizard will disable all torque so you can move the arm freely to the Position 1.
+**Note:** The configuration tool will disable all torque so you can move the arm freely to the Position 1.
 **Node:** You will be asked the path of the configuration file, you can press enter to use the default one.
 
 After following the guide, you should have the following configuration:
