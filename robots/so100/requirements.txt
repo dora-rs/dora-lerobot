@@ -1,0 +1,9 @@
+node-hub/dynamixel-client
+node-hub/feetech-client
+node-hub/mujoco-client
+node-hub/lerobot-dashboard
+node-hub/opencv-video-capture
+node-hub/replay-client
+node-hub/video-encoder
+
+pwm-position-control @ git+https://github.com/Hennzau/pwm-position-control
