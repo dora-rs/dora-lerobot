@@ -31,27 +31,51 @@ nodes:
 
 ### Outputs
 
-Arrow **Struct** of type:
+Arrow **StructArray** with two fields, **joints** and **values**:
 
 ```Python
-pa.struct([
-    pa.field("joints", pa.list_(pa.string())),
-    pa.field("values", pa.list_(pa.int32()))
-])
+import pyarrow as pa
+
+# Create a StructArray from a list of joints (py_list, numpy_array or pyarrow_array) and a list of values (py_list, numpy_array or pyarrow_array)
+arrow_struct = pa.StructArray.from_arrays(
+    arrays=[joints, values],
+    names=["joints", "values"]
+)
+
+# Send the StructArray to the dataflow
+node.send_output("output_name", arrow_struct, None)
+
+# Receive the StructArray from the dataflow
+event = node.next()
+arrow_struct = event["value"]
+joints = arrow_struct.field("joints")  # PyArrow Array of Strings
+values = arrow_struct.field("values")  # PyArrow Array of Int32/Uint32/Float32...
 ```
 
 ### Inputs
 
-Arrow **Array** of type:
+Arrow **StructArray** with two fields, **joints** and **values**:
 
 ```Python
-pa.struct([
-    pa.field("joints", pa.list_(pa.string())),
-    pa.field("values", pa.list_(pa.int32()))
-])
+import pyarrow as pa
+
+# Create a StructArray from a list of joints (py_list, numpy_array or pyarrow_array) and a list of values (py_list, numpy_array or pyarrow_array)
+arrow_struct = pa.StructArray.from_arrays(
+    arrays=[joints, values],
+    names=["joints", "values"]
+)
+
+# Send the StructArray to the dataflow
+node.send_output("output_name", arrow_struct, None)
+
+# Receive the StructArray from the dataflow
+event = node.next()
+arrow_struct = event["value"]
+joints = arrow_struct.field("joints")  # PyArrow Array of Strings
+values = arrow_struct.field("values")  # PyArrow Array of Int32/Uint32/Float32...
 ```
 
-**Note**: only the first element of the array is used, the rest are ignored.
+**Note**: The zero-copy is available for numpy arrays (with no None values) and pyarrow arrays.
 
 ## Configuration
 

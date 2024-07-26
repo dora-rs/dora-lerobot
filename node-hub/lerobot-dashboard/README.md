@@ -26,6 +26,15 @@ nodes:
       WINDOW_HEIGHT: 1080 # window height (default is 480)
 ````
 
+## Inputs
+
+## Outputs:
+
+- `text` : Array containing 1 element, the text in Arrow format.
+- `episode` : Array containing 1 element, the episode number in Arrow format (or -1, marks episode end).
+- `failed` : Array containing 1 element, the episode number failed in Arrow format.
+- `end` : Array containing 1 empty element, indicates the end of recording to the dataflow.
+
 ## License
 
 This library is licensed under the [Apache License 2.0](../../LICENSE).

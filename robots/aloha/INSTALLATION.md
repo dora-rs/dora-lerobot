@@ -1,7 +1,7 @@
 # Dora pipeline Robots
 
-AlexK Low Cost Robot is a low-cost robotic arm that can be teleoperated using a similar arm. This repository contains
-the Dora pipeline to manipulate the arms, the camera, and record/replay episodes with LeRobot.
+Aloha is a bi manual robot that can be teleoperated using a similar arm. This repository contains
+the Dora pipeline to manipulate arms, cameras, and record/replay episodes with LeRobot.
 
 ## Installation
 
@@ -10,7 +10,7 @@ See [Dora repository](https://github.com/dora-rs/dora).
 
 **Please read the instructions carefully before installing the required software and environment to run the robot.**
 
-You must install Dora before attempting to run the AlexK Low Cost Robot pipeline. Here are the steps to install Dora:
+You must install Dora before attempting to run theAloha Robot pipeline. Here are the steps to install Dora:
 
 - Install Rust by following the instructions at [Rustup](https://rustup.rs/). (You may need to install Visual Studio C++
   build tools on Windows.)
@@ -20,7 +20,7 @@ You must install Dora before attempting to run the AlexK Low Cost Robot pipeline
 cargo install dora-cli
 ```
 
-Now you're ready to run Rust dataflow applications! We decided to only make Python dataflow for AlexK Low Cost Robot, so
+Now you're ready to run Rust dataflow applications! We decided to only make Python dataflow for Aloha Robot, so
 you may need to setup your Python environment:
 
 - Install Python 3.12 or later by following the instructions at [Python](https://www.python.org/downloads/).
@@ -56,14 +56,14 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
-pip install -r robots/alexk-lcr/requirements.txt
+pip install -r robots/so100/requirements.txt
 ```
 
 If you want to install the required Python packages in development mode, you can run the following command, but you will
 have to avoid using `dora build` during execution procedure:
 
 ```bash
-pip install -r robots/alexk-lcr/development.txt # You **MUST** be inside dora-lerobot to run this command, not robots/alexk-lcr
+pip install -r robots/aloha/development.txt # You **MUST** be inside dora-lerobot to run this command, not robots/aloha
 ```
 
 **Note**: You're totally free to use your own Python environment, a Conda environment, or whatever you prefer, you will
@@ -76,6 +76,11 @@ from [here](https://www.gyan.dev/ffmpeg/builds/). You can
 extract the zip file and add the `bin` folder to your PATH.
 If you're on Linux, you can install ffmpeg using the package manager of your distribution. (
 e.g `sudo apt install ffmpeg` on Ubuntu, `brew install ffmpeg` on macOS)
+
+## Acknowledgement
+
+This work is inspired from [tonyzhaozh/aloha](https://github.com/tonyzhaozh/aloha) and we're trying to bring perfornance
+improvement.
 
 ## License
 

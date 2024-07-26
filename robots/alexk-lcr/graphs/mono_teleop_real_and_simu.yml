@@ -13,6 +13,7 @@ nodes:
       CONFIG: ../configs/leader.left.json
 
   - id: lcr-to-lcr
+    build: pip install git+https://github.com/Hennzau/pwm-position-control
     path: ../nodes/interpolate_lcr_to_lcr.py
     inputs:
       leader_position: lcr-leader/position
@@ -38,6 +39,7 @@ nodes:
       CONFIG: ../configs/follower.left.json
 
   - id: lcr-to-simu-lcr
+    build: pip install git+https://github.com/Hennzau/pwm-position-control
     path: ../nodes/interpolate_lcr_to_simu_lcr.py
     inputs:
       leader_position:
@@ -55,7 +57,7 @@ nodes:
     # path: mujoco-client
     # for macos
     path: mjpython
-    args: ../../../node-hub/mujoco-client/main.py
+    args: ../../../node-hub/mujoco-client/mujoco_client/main.py
     inputs:
       write_goal_position: lcr-to-simu-lcr/follower_goal
       tick: dora/timer/millis/10

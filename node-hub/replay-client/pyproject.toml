@@ -5,11 +5,10 @@ authors = ["Hennzau <dev@enzo-le-van.fr>"]
 description = "Dora Node client for replaying recorded data."
 readme = "README.md"
 
-packages = [
-    { include = "main.py", to = "replay_client" }
-]
+packages = [{ include = "replay_client" }]
 
 [tool.poetry.dependencies]
+python = "^3.9"
 dora-rs = "0.3.5"
 pandas = "~2.2.2"
 

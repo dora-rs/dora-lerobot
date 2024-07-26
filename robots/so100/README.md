@@ -32,7 +32,36 @@ There are also some other example applications in the `graphs` folder. Have fun!
 
 Here is a list of the available examples:
 
-TODO: Add examples
+There are also some other example applications in the `graphs` folder. Have fun!
+
+Here is a list of the available examples:
+
+- `mono_teleop_real_with_alexk_lcr.yml`: A simple real teleoperation pipeline that allows you to control a follower arm
+  using a leader
+  arm. It
+  does not record the episodes, so you don't need to have a camera.
+
+You must configure the arms, retrieve the device port, and modify the file `mono_teleop_real_with_alexk_lcr.yml` to set
+the correct
+environment variables. (e.g. `PORT` and `CONFIG`, `LEADER_CONTROL` and `FOLLOWER_CONTROL`)
+
+```bash
+cd dora-lerobot/
+
+# If you are using a custom environment, you will have to activate it before running the command
+source [your_custom_env_bin]/activate
+
+# If you followed the installation instructions, you can run the following command
+source venv/bin/activate # On Linux
+source venv/Scripts/activate # On Windows bash
+venv\Scripts\activate.bat # On Windows cmd
+venv\Scripts\activate.ps1 # On Windows PowerShell
+
+dora build ./robots/so100/graphs/mono_teleop_real_with_alexk_lcr.yml # Only the first time, it will install all the requirements if needed
+
+dora up
+dora start ./robots/so100/graphs/mono_teleop_real_with_alexk_lcr.yml
+```
 
 ## License
 

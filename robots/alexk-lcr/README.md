@@ -8,9 +8,9 @@ the Dora pipeline to record episodes for LeRobot.
 Check the [ASSEMBLING.md](ASSEMBLING.md) file for instructions on how to assemble the robot from scratch using the
 provided parts from the [AlexK Low Cost Robot](https://github.com/AlexanderKoch-Koch/low_cost_robot)
 
-## Installations
+## Installation
 
-Check the [INSTALLATIONS.md](INSTALLATION.md) file for instructions on how to install the required software and
+Check the [INSTALLATION.md](INSTALLATION.md) file for instructions on how to install the required software and
 environment
 to run the robot.
 
@@ -38,7 +38,7 @@ Here is a list of the available examples:
   does not record the episodes, so you don't need to have a camera.
 
 You must configure the arms, retrieve the device port, and modify the file `mono_teleop_real.yml` to set the correct
-environment variables. (e.g. `PORT` and `CONFIG`)
+environment variables. (e.g. `PORT` and `CONFIG`, `LEADER_CONTROL` and `FOLLOWER_CONTROL`)
 
 ```bash
 cd dora-lerobot/

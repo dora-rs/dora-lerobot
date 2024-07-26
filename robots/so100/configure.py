@@ -20,57 +20,76 @@ import json
 import pyarrow as pa
 
 from bus import FeetechBus, TorqueMode, OperatingMode
-from nodes.position_control.utils import physical_to_logical, logical_to_physical
-from nodes.position_control.configure import build_physical_to_logical_tables, build_logical_to_physical_tables, \
-    build_physical_to_logical, build_logical_to_physical
+from pwm_position_control.transform import pwm_to_logical_arrow, wrap_joints_and_values
 
-FULL_ARM = pa.array([
-    "shoulder_pan",
-    "shoulder_lift",
-    "elbow_flex",
-    "wrist_flex",
-    "wrist_roll",
-    "gripper"
-], type=pa.string())
+from pwm_position_control.tables import (
+    construct_logical_to_pwm_conversion_table_arrow,
+    construct_pwm_to_logical_conversion_table_arrow,
+)
 
-ARM_WITHOUT_GRIPPER = pa.array([
-    "shoulder_pan",
-    "shoulder_lift",
-    "elbow_flex",
-    "wrist_flex",
-    "wrist_roll"
-], type=pa.string())
+from pwm_position_control.functions import construct_control_table
+
+FULL_ARM = pa.array(
+    [
+        "shoulder_pan",
+        "shoulder_lift",
+        "elbow_flex",
+        "wrist_flex",
+        "wrist_roll",
+        "gripper",
+    ],
+    type=pa.string(),
+)
+
+ARM_WITHOUT_GRIPPER = pa.array(
+    ["shoulder_pan", "shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll"],
+    type=pa.string(),
+)
 
 GRIPPER = pa.array(["gripper"], type=pa.string())
 
 
 def pause():
-    """
-    Pause the program until the user presses the enter key.
-    """
     input("Press Enter to continue...")
 
 
 def configure_servos(bus: FeetechBus):
-    """
-    Configure the servos for the LCR.
-    :param bus: FeetechBus
-    """
+    bus.write_torque_enable(
+        wrap_joints_and_values(FULL_ARM, [TorqueMode.DISABLED.value] * 6)
+    )
 
-    bus.write_torque_enable(TorqueMode.DISABLED, FULL_ARM)
-    bus.write_operating_mode(OperatingMode.ONE_TURN, FULL_ARM)
-    bus.write_min_angle_limit(pa.scalar(0, pa.uint32()), FULL_ARM)
-    bus.write_max_angle_limit(pa.scalar(0, pa.uint32()), FULL_ARM)
+    bus.write_operating_mode(
+        wrap_joints_and_values(FULL_ARM, [OperatingMode.ONE_TURN.value] * 6)
+    )
+
+    bus.write_max_angle_limit(
+        wrap_joints_and_values(FULL_ARM, [pa.scalar(0, pa.uint32())] * 6)
+    )
+
+    bus.write_min_angle_limit(
+        wrap_joints_and_values(FULL_ARM, [pa.scalar(0, pa.uint32())] * 6)
+    )
 
 
 def main():
     parser = argparse.ArgumentParser(
         description="SO100 Auto Configure: This program is used to automatically configure the Low Cost Robot (SO100) "
-                    "for the user.")
+        "for the user."
+    )
 
-    parser.add_argument("--port", type=str, required=True, help="The port of the SO100.")
-    parser.add_argument("--right", action="store_true", help="If the SO100 is on the right side of the user.")
-    parser.add_argument("--left", action="store_true", help="If the SO100 is on the left side of the user.")
+    parser.add_argument(
+        "--port", type=str, required=True, help="The port of the SO100."
+    )
+    parser.add_argument(
+        "--right",
+        action="store_true",
+        help="If the SO100 is on the right side of the user.",
+    )
+    parser.add_argument(
+        "--left",
+        action="store_true",
+        help="If the SO100 is on the left side of the user.",
+    )
 
     args = parser.parse_args()
 
@@ -79,71 +98,82 @@ def main():
 
     args = parser.parse_args()
 
-    wanted_position_1 = pa.array([0, -90, 90, 0, -90, 0], type=pa.int32())
-    wanted_position_2 = pa.array([90, 0, 0, 90, 0, -90], type=pa.int32())
-
-    wanted = pa.array([
-        (wanted_position_1[i], wanted_position_2[i])
-
-        for i in range(len(wanted_position_1))
-    ])
+    targets = (
+        wrap_joints_and_values(FULL_ARM, [0, -90, 90, 0, -90, 0]),
+        wrap_joints_and_values(FULL_ARM, [90, 0, 0, 90, 0, -90]),
+    )
 
     arm = FeetechBus(
-        args.port, {
-            "shoulder_pan": (1, "scs_series"),
-            "shoulder_lift": (2, "scs_series"),
-            "elbow_flex": (3, "scs_series"),
-            "wrist_flex": (4, "scs_series"),
-            "wrist_roll": (5, "scs_series"),
-            "gripper": (6, "scs_series")
-        }
+        args.port,
+        {
+            "shoulder_pan": (1, "st3215"),
+            "shoulder_lift": (2, "st3215"),
+            "elbow_flex": (3, "st3215"),
+            "wrist_flex": (4, "st3215"),
+            "wrist_roll": (5, "st3215"),
+            "gripper": (6, "st3215"),
+        },
     )
 
     configure_servos(arm)
 
     print("Please move the SO100 to the first position.")
     pause()
-    physical_position_1 = arm.read_position(FULL_ARM)["values"].values
+    pwm_position_1 = arm.read_position(FULL_ARM)["values"].values
 
     print("Please move the SO100 to the second position.")
     pause()
-    physical_position_2 = arm.read_position(FULL_ARM)["values"].values
+    pwm_position_2 = arm.read_position(FULL_ARM)["values"].values
 
     print("Configuration completed.")
 
-    physical_to_logical_tables = build_physical_to_logical_tables(physical_position_1, physical_position_2, wanted)
-    logical_to_physical_tables = build_logical_to_physical_tables(physical_position_1, physical_position_2, wanted)
+    pwm_positions = (pwm_position_1, pwm_position_2)
 
-    control_table = {}
+    pwm_to_logical_conversion_table = construct_pwm_to_logical_conversion_table_arrow(
+        pwm_positions, targets
+    )
+    logical_to_pwm_conversion_table = construct_logical_to_pwm_conversion_table_arrow(
+        pwm_positions, targets
+    )
+
     control_table_json = {}
     for i in range(len(FULL_ARM)):
-        control_table[FULL_ARM[i].as_py()] = {
-            "physical_to_logical": build_physical_to_logical(physical_to_logical_tables[i]),
-            "logical_to_physical": build_logical_to_physical(logical_to_physical_tables[i])
-        }
-
         control_table_json[FULL_ARM[i].as_py()] = {
             "id": i + 1,
             "model": "sts3215",
             "torque": True,
-            "physical_to_logical": physical_to_logical_tables[i],
-            "logical_to_physical": logical_to_physical_tables[i]
+            "pwm_to_logical": pwm_to_logical_conversion_table[FULL_ARM[i].as_py()],
+            "logical_to_pwm": logical_to_pwm_conversion_table[FULL_ARM[i].as_py()],
         }
 
     left = "left" if args.left else "right"
-    path = (input(
-        f"Please enter the path of the configuration file (default is ./robots/so100/configs/follower.{left}.json): ")
-            or f"./robots/so100/configs/follower.{left}.json")
+    path = (
+        input(
+            f"Please enter the path of the configuration file (default is ./robots/so100/configs/follower.{left}.json): "
+        )
+        or f"./robots/so100/configs/follower.{left}.json"
+    )
 
     with open(path, "w") as file:
         json.dump(control_table_json, file)
 
-    while True:
-        base_physical_position = arm.read_position(FULL_ARM)
-        logical_position = physical_to_logical(base_physical_position, control_table)
+    control_table = construct_control_table(
+        pwm_to_logical_conversion_table, logical_to_pwm_conversion_table
+    )
 
-        print(
-            f"Logical Position: {logical_position["values"]}")
+    while True:
+        try:
+            pwm_position = arm.read_position(FULL_ARM)
+            logical_position = pwm_to_logical_arrow(
+                pwm_position, control_table, ranged=True
+            ).field("values")
+
+            print(f"Logical Position: {logical_position}")
+
+        except ConnectionError:
+            print(
+                "Connection error occurred. Please check the connection and try again."
+            )
 
         time.sleep(0.5)
 

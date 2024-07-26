@@ -30,10 +30,10 @@ recommend using our on-board tool to set all of that automatically:
 
 - Connect the Follower arm to your computer.
 - Retrieve the device port from the official wizard.
-- Run the wizard with the following command and follow the instructions:
+- Run the configuration tool with the following command and follow the instructions:
 
 ```bash
-cd dora-lerobot/robots/alexk-lcr
+cd dora-lerobot/
 
 # If you are using a custom environment, you will have to activate it before running the command
 source [your_custom_env_bin]/activate
@@ -44,11 +44,11 @@ source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
 
-python configure.py --port /dev/ttyUSB0 --follower --left # (or right)
+python ./robots/alexk-lcr/configure.py --port /dev/ttyUSB0 --follower --left # (or right)
 ```
 
 **Note:** change `/dev/ttyUSB0` to the device port you retrieved from the official wizard (like `COM3` on Windows).
-**Note:** The wizard will disable all torque so you can move the arm freely to the Position 1.
+**Note:** The configuration tool will disable all torque so you can move the arm freely to the Position 1.
 **Note:** You will be asked to set the arm in two different positions. The two positions are:
 
 ![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_positions.png)
@@ -58,20 +58,19 @@ python configure.py --port /dev/ttyUSB0 --follower --left # (or right)
 - Repeat the same steps for the Leader arm:
 
 ```bash
-python configure.py --port /dev/ttyUSB1 --leader --left # (or right)
+python ./robots/alexk-lcr/configure.py --port /dev/ttyUSB1 --leader --left # (or right)
 ```
 
 **Note:** change `/dev/ttyUSB1` to the device port you retrieved from the official wizard (like `COM4` on Windows).
-**Note:** The wizard will disable all torque so you can move the arm freely to the Position 1.
+**Note:** The configuration tool will disable all torque so you can move the arm freely to the Position 1.
 **Node:** You will be asked the path of the configuration file, you can press enter to use the default one.
 
 After following the guide, you should have the following configuration:
 
 ![image](https://github.com/Hennzau/Hennzau/blob/main/assets/Koch_arm_wanted_configuration.png)
 
-This configuration file has to be imported inside the ENV variable of the nodes in the graph file. By default it searches
-for `./robots/alexk-lcr/configs/leader.left.json` and `./robots/alexk-lcr/configs/follower.left.json`. If you want to change the
-path, you can do it by adding the `CONFIG` variable in the ENV of the nodes in the graph file.
+This configuration has to be exported into environment variables inside the graph file. Here is an example of the
+configuration:
 
 ```YAML
 nodes:

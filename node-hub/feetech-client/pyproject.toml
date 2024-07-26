@@ -5,12 +5,10 @@ authors = ["Hennzau <dev@enzo-le-van.fr>"]
 description = "Dora Node client for feetech motors."
 readme = "README.md"
 
-packages = [
-    { include = "main.py", to = "feetech_client" },
-    { include = "bus.py", to = "feetech_client" },
-]
+packages = [{ include = "feetech_client" }]
 
 [tool.poetry.dependencies]
+python = "^3.9"
 dora-rs = "0.3.5"
 feetech-servo-sdk = "1.0.0"
 

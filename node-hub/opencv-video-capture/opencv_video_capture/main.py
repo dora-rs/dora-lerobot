@@ -11,16 +11,37 @@ from dora import Node
 def main():
     # Handle dynamic nodes, ask for the name of the node in the dataflow, and the same values as the ENV variables.
     parser = argparse.ArgumentParser(
-        description="OpenCV Video Capture: This node is used to capture video from a camera.")
+        description="OpenCV Video Capture: This node is used to capture video from a camera."
+    )
 
-    parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="opencv-video-capture")
-    parser.add_argument("--path", type=int, required=False,
-                        help="The path of the device to capture (e.g. /dev/video1, or an index like 0, 1...", default=0)
-    parser.add_argument("--image-width", type=int, required=False,
-                        help="The width of the image output. Default is the camera width.", default=None)
-    parser.add_argument("--image-height", type=int, required=False,
-                        help="The height of the camera. Default is the camera height.", default=None)
+    parser.add_argument(
+        "--name",
+        type=str,
+        required=False,
+        help="The name of the node in the dataflow.",
+        default="opencv-video-capture",
+    )
+    parser.add_argument(
+        "--path",
+        type=int,
+        required=False,
+        help="The path of the device to capture (e.g. /dev/video1, or an index like 0, 1...",
+        default=0,
+    )
+    parser.add_argument(
+        "--image-width",
+        type=int,
+        required=False,
+        help="The width of the image output. Default is the camera width.",
+        default=None,
+    )
+    parser.add_argument(
+        "--image-height",
+        type=int,
+        required=False,
+        help="The height of the camera. Default is the camera height.",
+        default=None,
+    )
 
     args = parser.parse_args()
 
@@ -60,7 +81,7 @@ def main():
                     frame = np.zeros((480, 640, 3), dtype=np.uint8)
                     cv2.putText(
                         frame,
-                        f'Error: Could not read frame from camera at path {video_capture_path}.',
+                        f"Error: Could not read frame from camera at path {video_capture_path}.",
                         (int(30), int(30)),
                         cv2.FONT_HERSHEY_SIMPLEX,
                         0.50,
@@ -77,14 +98,10 @@ def main():
                     "width": pa.scalar(frame.shape[1], type=pa.uint32()),
                     "height": pa.scalar(frame.shape[0], type=pa.uint32()),
                     "channels": pa.scalar(frame.shape[2], type=pa.uint8()),
-                    "data": frame.ravel()
+                    "data": frame.ravel(),
                 }
 
-                node.send_output(
-                    "image",
-                    pa.array([image]),
-                    event["metadata"]
-                )
+                node.send_output("image", pa.array([image]), event["metadata"])
 
         elif event_type == "ERROR":
             raise Exception(event["error"])

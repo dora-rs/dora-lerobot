@@ -35,11 +35,7 @@ class Client:
                     event_id = event["id"]
 
                     if event_id == "tick":
-                        self.node.send_output(
-                            "tick",
-                            pa.array([]),
-                            event["metadata"]
-                        )
+                        self.node.send_output("tick", pa.array([]), event["metadata"])
 
                         if not viewer.is_running():
                             break
@@ -51,7 +47,9 @@ class Client:
                         viewer.sync()
 
                         # Rudimentary time keeping, will drift relative to wall clock.
-                        time_until_next_step = self.m.opt.timestep - (time.time() - step_start)
+                        time_until_next_step = self.m.opt.timestep - (
+                            time.time() - step_start
+                        )
                         if time_until_next_step > 0:
                             time.sleep(time_until_next_step)
 
@@ -67,12 +65,11 @@ class Client:
                         break
 
                 elif event_type == "ERROR":
-                    raise ValueError("An error occurred in the dataflow: " + event["error"])
+                    raise ValueError(
+                        "An error occurred in the dataflow: " + event["error"]
+                    )
 
-            self.node.send_output(
-                "end",
-                pa.array([])
-            )
+            self.node.send_output("end", pa.array([]))
 
     def pull_position(self, node, metadata):
         pass
@@ -84,8 +81,8 @@ class Client:
         pass
 
     def write_goal_position(self, goal_position_with_joints):
-        joints = goal_position_with_joints[0]["joints"].values
-        goal_position = goal_position_with_joints[0]["values"].values
+        joints = goal_position_with_joints.field("joints")
+        goal_position = goal_position_with_joints.field("values")
 
         for i, joint in enumerate(joints):
             self.data.joint(joint.as_py()).qpos[0] = goal_position[i].as_py()
@@ -95,19 +92,33 @@ def main():
     # Handle dynamic nodes, ask for the name of the node in the dataflow
     parser = argparse.ArgumentParser(
         description="MujoCo Client: This node is used to represent a MuJoCo simulation. It can be used instead of a "
-                    "follower arm to test the dataflow."
+        "follower arm to test the dataflow."
     )
 
-    parser.add_argument("--name", type=str, required=False, help="The name of the node in the dataflow.",
-                        default="mujoco_client")
-    parser.add_argument("--scene", type=str, required=False, help="The scene file of the MuJoCo simulation.");
+    parser.add_argument(
+        "--name",
+        type=str,
+        required=False,
+        help="The name of the node in the dataflow.",
+        default="mujoco_client",
+    )
+    parser.add_argument(
+        "--scene",
+        type=str,
+        required=False,
+        help="The scene file of the MuJoCo simulation.",
+    )
 
-    parser.add_argument("--config", type=str, help="The configuration of the joints.", default=None)
+    parser.add_argument(
+        "--config", type=str, help="The configuration of the joints.", default=None
+    )
 
     args = parser.parse_args()
 
     if not os.getenv("SCENE") and args.scene is None:
-        raise ValueError("Please set the SCENE environment variable or pass the --scene argument.")
+        raise ValueError(
+            "Please set the SCENE environment variable or pass the --scene argument."
+        )
 
     scene = os.getenv("SCENE", args.scene)
 
@@ -115,7 +126,8 @@ def main():
     if not os.environ.get("CONFIG") and args.config is None:
         raise ValueError(
             "The configuration is not set. Please set the configuration of the simulated motors in the environment "
-            "variables or as an argument.")
+            "variables or as an argument."
+        )
 
     with open(os.environ.get("CONFIG") if args.config is None else args.config) as file:
         config = json.load(file)
@@ -126,7 +138,6 @@ def main():
     bus = {
         "name": args.name,
         "scene": scene,
-
         "joints": pa.array(joints, pa.string()),
     }
 
@@ -136,5 +147,5 @@ def main():
     client.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

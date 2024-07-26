@@ -36,34 +36,39 @@ git clone https://github.com/dora-rs/dora-lerobot
 cd dora-lerobot
 ```
 
-- Create a virtual environment by running the following command:
+- Create a virtual environment by running the following command (you can find where is all your pythons executable with
+  the command `whereis python3` on Linux, on default for Windows it's located
+  in `C:\Users\<User>\AppData\Local\Programs\Python\Python3.12\python.exe)`):
 
 ```bash
-python -m venv venv
+path_to_your_python3_executable -m venv venv
 ```
 
-- Activate the virtual environment by running the following command:
+- Activate the virtual environment and install the required Python packages by running the following command:
 
 ```bash
+# If you are using a custom environment, you will have to activate it before running the command
+source [your_custom_env_bin]/activate
+
+# If you followed the installation instructions, you can run the following command
 source venv/bin/activate # On Linux
 source venv/Scripts/activate # On Windows bash
 venv\Scripts\activate.bat # On Windows cmd
 venv\Scripts\activate.ps1 # On Windows PowerShell
+
+pip install -r robots/so100/requirements.txt
 ```
 
-Finally, install the required Python packages by running the following command:
+If you want to install the required Python packages in development mode, you can run the following command, but you will
+have to avoid using `dora build` during execution procedure:
 
 ```bash
-pip install -r robots/so100
+pip install -r robots/so100/development.txt # You **MUST** be inside dora-lerobot to run this command, not robots/so100
 ```
 
 **Note**: You're totally free to use your own Python environment, a Conda environment, or whatever you prefer, you will
 have to activate
 your custom python environment before running `dora up && dora start [graph].yml`.
-
-**Note**: If you want to install only the packages for 1 dora application (e.g. `record_mono_teleop_real.yml`), you can
-skip the two last steps and install the required packages by running the `dora build` command for the desired
-application. (see **Examples**)
 
 In order to record episodes, you need ffmpeg installed on your system. You can download it from
 the [official website](https://ffmpeg.org/download.html). If you're on Windows, you can download the latest build
