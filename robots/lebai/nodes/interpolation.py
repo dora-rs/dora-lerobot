@@ -38,9 +38,11 @@ for event in node:
                 node.send_output("movec", pa.array([-0.02, 0, 0, 0, 0, 0, 0.1]))
             elif char == "s":
                 node.send_output("movec", pa.array([0.02, 0, 0, 0, 0, 0, 0.1]))
-            elif char == "d":
-                node.send_output("movec", pa.array([0, -0.02, 0, 0, 0, 0, 0.1]))
+            elif char == "c":
+                node.send_output("go_to", pa.array([" home"]))
             elif char == "a":
+                node.send_output("movec", pa.array([0, -0.02, 0, 0, 0, 0, 0.1]))
+            elif char == "d":
                 node.send_output("movec", pa.array([0, 0.02, 0, 0, 0, 0, 0.1]))
             elif char == "e":
                 node.send_output("movec", pa.array([0, 0, 0.02, 0, 0, 0, 0.1]))
@@ -68,7 +70,7 @@ for event in node:
                 node.send_output("movej", pa.array([0, 0, 0, 0, 0, -0.1, 0.1]))
             elif char == "x":
                 node.send_output("stop", pa.array([]))
-        elif event["id"] == "text":
+        elif event["id"] == "text" or event["id"] == "key_interpolation":
             text = event["value"][0].as_py().lower()
             text = text.replace(".", "")
             number = get_number_in_text(text)
@@ -115,8 +117,8 @@ for event in node:
                 node.send_output("cut", pa.array([text]))
             elif "playing" in text:
                 node.send_output("play", pa.array([text.replace("playing ", "")]))
-            elif "go to" in text:
-                node.send_output("go_to", pa.array([text.replace("go to ", "")]))
+            elif "go " in text:
+                node.send_output("go_to", pa.array([text.replace("go ", "")]))
             elif "end of teaching" in text:
                 node.send_output("end_teach", pa.array([text]))
             elif "teaching" in text:
