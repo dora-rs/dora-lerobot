@@ -46,8 +46,8 @@ nodes:
     outputs:
       - text
 
-  - id: voice-interpolation
-    path: ../nodes/voice_interpolation.py
+  - id: prompt-interpolation
+    path: ../nodes/prompt_interpolation.py
     inputs:
       text: dora-distil-whisper/text
     outputs:
@@ -56,7 +56,7 @@ nodes:
   - id: interpolation
     path: ../nodes/interpolation.py
     inputs:
-      keyboard: keyboard-listener/char
+      keyboard: key-interpolation/text
       vlm: dora-qwenvl/tick
     outputs:
       - movec
@@ -90,7 +90,7 @@ nodes:
       image:
         source: camera/image
         queue_size: 1
-      text_vlm: dora-qwenvl/text
+      text_vlm: dora-qwenvl/tick
       text_whisper: dora-distil-whisper/text
     env:
       IMAGE_WIDTH: 640
@@ -106,10 +106,10 @@ nodes:
       tick:
         source: key-interpolation/text
         queue_size: 1
-      text: voice-interpolation/text
+      text: prompt-interpolation/text
     outputs:
       - text
       - tick
     env:
       CUSTOM_MODEL_PATH: /home/peter/Documents/work/LLaMA-Factory/saves/qwen2_vl-2b/lora-dora-demo/sft
-      DEFAULT_QUESTION: Respond with left, right, forward, back, up or go home in order for the robotic arm to get the cup.
+      DEFAULT_QUESTION: Respond with left, right, forward, back, up, down or go home in order for the robotic arm to get the cup.

@@ -14,7 +14,7 @@ for event in node:
             elif char == "s":
                 node.send_output("text", pa.array(["back"]))
             elif char == "c":
-                node.send_output("text", pa.array(["go home"]))
+                node.send_output("text", pa.array([" go home"]))
             elif char == "d":
                 node.send_output("text", pa.array(["right"]))
             elif char == "a":
