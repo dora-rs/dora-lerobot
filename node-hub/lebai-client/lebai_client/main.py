@@ -24,17 +24,18 @@ def save_json_file(file_path, data):
         json.dump(data, file, indent=4)
 
 
-file_path = "/home/peter/Documents/work/dora-aloha/robots/lebai/pose_library.json"
-
+SAVED_POSE_PATH = "pose_library.json"
 
 lebai_sdk.init()
-robot_ip = "10.42.0.253"  # 设定机器人ip地址，需要根据机器人实际ip地址修改
+ROBOT_IP = os.getenv(
+    "LEBAI_IP", "10.42.0.253"
+)  # 设定机器人ip地址，需要根据机器人实际ip地址修改
 
 
 def main():
     # Load the JSON file
-    pose_library = load_json_file(file_path)
-    lebai = lebai_sdk.connect(robot_ip, False)  # 创建实例
+    pose_library = load_json_file(SAVED_POSE_PATH)
+    lebai = lebai_sdk.connect(ROBOT_IP, False)  # 创建实例
 
     lebai.start_sys()  # 启动手臂
     node = Node()
@@ -66,9 +67,12 @@ def main():
                     "rz": rz + drz,
                 }  # 目标位姿笛卡尔数据
 
-                t = 0.15  # 运动时间 (s)。 当 t > 0 时，参数速度 v 和加速度 a 无效
-
-                joint_position = lebai.kinematics_inverse(cartesian_pose)
+                t = 0.25  # 运动时间 (s)。 当 t > 0 时，参数速度 v 和加速度 a 无效
+                try:
+                    joint_position = lebai.kinematics_inverse(cartesian_pose)
+                except TypeError:
+                    print("could not compute inverse kinematics")
+                    continue
                 [x, y, z, rx, ry, rz] = list(cartesian_pose.values())
                 lebai.move_pvat(
                     joint_position,
@@ -179,6 +183,4 @@ def main():
                 ]
                 start_time = time.time()
 
-        save_json_file(file_path, pose_library)
-    # scene_number = "10000" #需要调用的场景编号
-    # lebai.start_task(scene_number, None, None, False, 1) #调用场景
+        save_json_file(SAVED_POSE_PATH, pose_library)

@@ -46,13 +46,18 @@ nodes:
     outputs:
       - text
 
+  - id: voice-interpolation
+    path: ../nodes/voice_interpolation.py
+    inputs:
+      text: dora-distil-whisper/text
+    outputs:
+      - text
+
   - id: interpolation
     path: ../nodes/interpolation.py
     inputs:
-      # keyboard: keyboard-listener/char
-      # text: dora-distil-whisper/text
-      vlm: dora-qwenvl/text
-      text: dora-qwenvl-recorder/text
+      keyboard: keyboard-listener/char
+      vlm: dora-qwenvl/tick
     outputs:
       - movec
       - movej
@@ -86,23 +91,10 @@ nodes:
         source: camera/image
         queue_size: 1
       text_vlm: dora-qwenvl/text
+      text_whisper: dora-distil-whisper/text
     env:
       IMAGE_WIDTH: 640
       IMAGE_HEIGHT: 480
-
-  - id: dora-qwenvl-recorder
-    build: pip install -e ../../../dora/node-hub/llama-factory-recorder
-    path: llama-factory-recorder
-    inputs:
-      image:
-        source: camera/image
-        queue_size: 1
-      ground_truth: key-interpolation/text
-    outputs:
-      - text
-    env:
-      DEFAULT_QUESTION: Respond with left, right, forward, back, up or go home in order for the robotic arm to get the cup.
-      LLAMA_FACTORY_ROOT_PATH: /home/peter/Documents/work/LLaMA-Factory/data
 
   - id: dora-qwenvl
     build: pip install -e ../../../dora/node-hub/dora-qwenvl
@@ -114,15 +106,10 @@ nodes:
       tick:
         source: key-interpolation/text
         queue_size: 1
-      text: terminal-input/data
+      text: voice-interpolation/text
     outputs:
       - text
+      - tick
     env:
       CUSTOM_MODEL_PATH: /home/peter/Documents/work/LLaMA-Factory/saves/qwen2_vl-2b/lora-dora-demo/sft
       DEFAULT_QUESTION: Respond with left, right, forward, back, up or go home in order for the robotic arm to get the cup.
-
-  - id: terminal-input
-    build: pip install ../../node-hub/terminal-input
-    path: dynamic
-    outputs:
-      - data

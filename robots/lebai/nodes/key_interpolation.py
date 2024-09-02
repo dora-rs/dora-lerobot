@@ -32,9 +32,9 @@ for event in node:
             elif char == "4":
                 node.send_output("text", pa.array(["yaw left"]))
             elif char == "3":
-                node.send_output("text", pa.array(["rotate shoulder right"]))
+                node.send_output("text", pa.array(["yaw shoulder right"]))
             elif char == "1":
-                node.send_output("text", pa.array(["rotate shoulder left"]))
+                node.send_output("text", pa.array(["yaw shoulder left"]))
             elif char == "8":
                 node.send_output("text", pa.array(["pitch up"]))
             elif char == "2":
@@ -44,4 +44,6 @@ for event in node:
             elif char == "9":
                 node.send_output("text", pa.array(["roll right"]))
             elif char == "x":
-                node.send_output("text", pa.array([]))
+                node.send_output("text", pa.array(["stop"]))
+            elif char == "j":
+                node.send_output("text", pa.array([""]))
