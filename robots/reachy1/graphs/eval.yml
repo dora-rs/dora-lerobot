@@ -39,7 +39,7 @@ nodes:
         IMAGE_WIDTH: 1280
         IMAGE_HEIGHT: 800
 
-  - id: dora-record
+  - id: lerobot-record
     custom:
       build: cargo install --git https://github.com/dora-rs/dora dora-record
       source: dora-record
@@ -68,3 +68,13 @@ nodes:
       outputs:
         - space
         - failed
+
+
+
+--- 
+
+- [ ] Add support for EoF action space recording and action
+- [ ] Add support for tokenized action
+- [ ] Add support for mulitple images, videos, ...
+- [ ] Add support for multiple actions
+- [ ] Add support for multiple observations
