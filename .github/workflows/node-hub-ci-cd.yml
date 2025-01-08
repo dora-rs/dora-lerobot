@@ -1,0 +1,196 @@
+name: node-hub
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  release:
+    types: [published]
+
+jobs:
+  find-jobs:
+    runs-on: ubuntu-22.04
+    name: Find Jobs
+    outputs:
+      folders: ${{ steps.jobs.outputs.folders }}
+    steps:
+      - uses: actions/checkout@v1
+
+      - id: jobs
+        uses: kmanimaran/list-folder-action@v4
+        with:
+          path: ./node-hub
+
+  ci:
+    runs-on: ${{ matrix.platform }}
+    needs: [find-jobs]
+    defaults:
+      run:
+        working-directory: node-hub/${{ matrix.folder }}
+    strategy:
+      matrix:
+        platform: [ubuntu-22.04, macos-14]
+        folder: ${{ fromJson(needs.find-jobs.outputs.folders )}}
+      fail-fast: false
+    steps:
+      - name: Checkout repository
+        if: runner.os == 'Linux' || github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && startsWith(github.ref, 'refs/tags/'))
+        uses: actions/checkout@v4
+        with:
+          submodules: true # Make sure to check out the sub-module
+
+      - name: Update submodule
+        if: runner.os == 'Linux'
+        run: |
+          git submodule update --init --recursive
+          git submodule update --remote --recursive
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+
+      - name: Set up Python
+        if: runner.os == 'Linux' || github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && startsWith(github.ref, 'refs/tags/'))
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Set up Poetry
+        if: runner.os == 'Linux' || github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && startsWith(github.ref, 'refs/tags/'))
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          pip install black pylint pytest
+
+      - name: Set up Rust
+        if: runner.os == 'Linux' || github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && startsWith(github.ref, 'refs/tags/'))
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Run Linting and Tests
+        ## Run Linting and testing only on Mac for release workflows.
+        if: runner.os == 'Linux' || github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && startsWith(github.ref, 'refs/tags/'))
+        run: |
+          chmod +x ../../.github/workflows/node_hub_test.sh
+          ../../.github/workflows/node_hub_test.sh
+
+  publish:
+    needs: [ci, find-jobs]
+    defaults:
+      run:
+        working-directory: node-hub/${{ matrix.folder }}
+    strategy:
+      matrix:
+        platform: [ubuntu-22.04, macos-14]
+        folder: ${{ fromJson(needs.find-jobs.outputs.folders )}}
+      fail-fast: false
+    runs-on: ${{ matrix.platform }}
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'release' && startsWith(github.ref, 'refs/tags/'))
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        if: runner.os == 'Linux'
+        with:
+          # this might remove tools that are actually needed,
+          # if set to "true" but frees about 6 GB
+          tool-cache: true
+
+          # all of these default to true, but feel free to set to
+          # "false" if necessary for your workflow
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.10"
+
+      - name: Set up Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+
+      - name: Publish Projects
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_PASS }}
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_PASS }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          dir=$(pwd)
+          base_dir=$(basename "$dir")
+          ignored_folders=("dora-parler")
+
+          if [[ " ${ignored_folders[@]} " =~ " ${base_dir} " ]]; then
+              echo "Skipping $base_dir as there is a hf model fetching issue..."
+          else
+            if [[ -f "Cargo.toml" && -f "pyproject.toml" ]]; then
+              echo "Publishing $dir using maturin..."
+              if [[ "${{ runner.os }}" == "Linux" ]]; then
+                pip3 install "maturin[zig]"
+                
+                ## The CI/CD is sequential to limit the number of workers used.
+                
+                # x86_64-unknown-linux-gnu
+                maturin publish  --skip-existing --zig 
+                
+                # aarch64-unknown-linux-gnu
+                rustup target add aarch64-unknown-linux-gnu
+                maturin publish --target aarch64-unknown-linux-gnu --zig --skip-existing
+                
+                # armv7-unknown-linux-musleabihf
+                rustup target add armv7-unknown-linux-musleabihf
+                maturin publish --target armv7-unknown-linux-musleabihf --zig --skip-existing
+
+              else
+                pip3 install maturin
+                maturin publish  --skip-existing
+              fi
+            else
+              if [ -f "pyproject.toml" ]; then
+                echo "Publishing $dir using Poetry..."
+                poetry publish --build  --skip-existing
+              fi
+
+              if [ -f "Cargo.toml" ]; then
+                echo "Publishing $dir using Cargo..."
+                package_name=$(cargo metadata --no-deps --format-version=1 | jq -r '.packages[0].name')
+                version=$(cargo metadata --no-deps --format-version=1 | jq -r '.packages[0].version')
+                if cargo search "$package_name" | grep -q "^$package_name = \"$version\""; then
+                    echo "Package '$package_name' version '$version' already exists on crates.io. Skipping publish."
+                else
+                    echo "Publishing package '$package_name' version '$version'..."
+                    cargo publish 
+                fi
+              fi
+            fi
+          fi
