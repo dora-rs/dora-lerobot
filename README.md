@@ -1,6 +1,6 @@
 # Dora-LeRobot
 
-Dora-LeRobot is a 100% Dora pipeline for manipulating robots, cameras and all possible hardware compatible with LeRobot.
+Dora-LeRobot is a 100% DORA pipeline for manipulating robots, cameras and all possible hardware compatible with LeRobot.
 
 ## About Dora
 
