@@ -12,6 +12,13 @@ This repo will contain all application related to dora-rs powered robots.
 
 ## [TheRobotStudio - SO-ARM100](so100/README.md)
 
+The SO-ARM100 is a low-cost robotic arm that can be teleoperated using a similar arm. It now includes enhanced support with:
+- Simplified calibration script for easier setup
+- Comprehensive calibration documentation
+- Teleoperation and recording capabilities
+
+See the [SO-ARM100 README](so100/README.md) for full details.
+
 ## Add your own robot!
 
 If you want to add your own robot, please follow the instructions below:

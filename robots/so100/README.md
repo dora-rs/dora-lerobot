@@ -13,6 +13,33 @@ Check the [INSTALLATIONS.md](INSTALLATION.md) file for instructions on how to in
 environment
 to run the robot.
 
+## Calibration
+
+Calibration is a critical step to ensure your SO-ARM100 functions correctly. We provide a simplified calibration tool to guide you through the process:
+
+```bash
+cd dora-lerobot/
+
+# Activate your environment
+source venv/bin/activate # On Linux
+source venv/Scripts/activate # On Windows bash
+venv\Scripts\activate.bat # On Windows cmd
+venv\Scripts\activate.ps1 # On Windows PowerShell
+
+# Run the calibration script
+python ./robots/so100/calibrate_so_arm100.py --port <YOUR_PORT> --left
+# Or use --right if your arm is positioned on the right side
+```
+
+The calibration script will:
+1. Connect to your SO-ARM100 arm
+2. Guide you through positioning the arm in reference positions
+3. Calculate the necessary calibration parameters
+4. Save the configuration to a file
+5. Let you verify the calibration with real-time feedback
+
+For more detailed calibration information, check the [CONFIGURING.md](CONFIGURING.md) file.
+
 ## Configuring
 
 Check the [CONFIGURING.md](CONFIGURING.md) file for instructions on how to configure the robot to record episodes for

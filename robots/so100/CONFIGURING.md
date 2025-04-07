@@ -17,6 +17,30 @@ correctly for the robot to work as expected. Here are the reasons why you need t
 
 **Please read the instructions carefully before configuring the robot.**
 
+### Simplified Calibration (Recommended)
+
+We now provide a simplified calibration script that guides you through the entire process:
+
+```bash
+cd dora-lerobot/
+
+# Activate your environment
+source venv/bin/activate # On Linux
+source venv/Scripts/activate # On Windows bash
+venv\Scripts\activate.bat # On Windows cmd
+venv\Scripts\activate.ps1 # On Windows PowerShell
+
+# Run the calibration script
+python ./robots/so100/calibrate_so_arm100.py --port <YOUR_PORT> --left
+# Or use --right if your arm is positioned on the right side
+```
+
+For a comprehensive guide to calibration, please see our [CALIBRATION.md](CALIBRATION.md) documentation.
+
+### Manual Configuration (Alternative Method)
+
+If you prefer to configure the arm manually, you can follow these steps:
+
 The first thing to do is to configure the Servo BUS:
 
 - Setting all the servos to the same baud rate (1M).
